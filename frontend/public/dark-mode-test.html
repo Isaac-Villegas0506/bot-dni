@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+</head>
+
+<body class="min-h-screen bg-white dark:bg-slate-900 transition-colors p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-8">
+            Test de Dark Mode
+        </h1>
+
+        <div class="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 mb-6">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                Este texto debe cambiar de color
+            </h2>
+            <p class="text-slate-600 dark:text-slate-300">
+                Si el modo oscuro funciona, este texto se verá claro sobre fondo oscuro.
+            </p>
+        </div>
+
+        <button onclick="toggleDark()"
+            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all">
+            Cambiar Tema
+        </button>
+
+        <div
+            class="mt-6 p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                Estado actual: <span id="theme-status" class="font-bold"></span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function toggleDark() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            updateStatus(isDark);
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function updateStatus(isDark) {
+            document.getElementById('theme-status').textContent = isDark ? 'Modo Oscuro' : 'Modo Claro';
+        }
+
+        // Initialize on load
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+        updateStatus(document.documentElement.classList.contains('dark'));
+    </script>
+</body>
+
+</html>

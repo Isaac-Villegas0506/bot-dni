@@ -1,0 +1,17 @@
+[Unit]
+Description=Bot DNI Python Service
+After=network.target
+
+[Service]
+# User running the service (change if needed)
+User=root
+# Working directory of the bot
+WorkingDirectory=/var/www/html/bot-dni/backend
+# Command to run (use full path to python/uvicorn)
+ExecStart=/usr/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+# Restart policy
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

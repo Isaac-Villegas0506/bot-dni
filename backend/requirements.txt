@@ -1,0 +1,40 @@
+# ── Web Framework ─────────────────────────────────────────────────────────────
+fastapi
+uvicorn[standard]
+gunicorn
+mangum
+
+# ── Data validation ────────────────────────────────────────────────────────────
+pydantic
+
+# ── Database ───────────────────────────────────────────────────────────────────
+psycopg2-binary
+
+# ── Auth & Security ────────────────────────────────────────────────────────────
+python-jose[cryptography]
+bcrypt
+passlib[bcrypt]
+
+# ── HTTP Clients ───────────────────────────────────────────────────────────────
+requests
+httpx
+
+# ── Telegram / Bot ─────────────────────────────────────────────────────────────
+telethon
+
+# ── Firebase / Google ──────────────────────────────────────────────────────────
+firebase-admin
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+
+# ── Image Processing ───────────────────────────────────────────────────────────
+Pillow
+
+# ── File Uploads / Forms ───────────────────────────────────────────────────────
+python-multipart
+
+# ── Utilities ──────────────────────────────────────────────────────────────────
+python-dotenv
+pytz
+emoji
