@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ── Brand Colors ─────────────────────────────── */
+  --color-primary:        #0071E3;   /* Apple Blue */
+  --color-primary-hover:  #0058B0;   
+  --color-primary-dark:   #2997FF;   /* Apple Blue Dark Mode */
+
+  /* ── Backgrounds ──────────────────────────────── */
+  --color-background-light: #F8FAFC; /* Slate 50 */
+  --color-background-dark:  #020617; /* Slate 950 */
+
+  /* ── Surface / Cards ──────────────────────────── */
+  --color-card-light: #FFFFFF;
+  --color-card-dark:  #0F172A;       /* Slate 900 */
+
+  /* ── Text ─────────────────────────────────────── */
+  --color-text-main-light:      #1D1D1F; /* Apple Dark Gray Text */
+  --color-text-main-dark:       #F5F5F7; /* Apple Light Text */
+  --color-text-secondary-light: #86868B; /* Apple Secondary Gray */
+  --color-text-secondary-dark:  #8D8D93; /* Apple Secondary Dark */
+
+  /* ── Accent ───────────────────────────────────── */
+  --color-accent-blue:   #0071E3;
+  --color-accent-amber:  #F59E0B;
+  --color-accent-emerald:#34C759;    /* iOS Green */
+
+  /* ── Fonts ────────────────────────────────────── */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Border Radius (Apple heavily uses rounded corners) ────────── */
+  --radius-sm:  0.5rem;    /* 8px  */
+  --radius-md:  0.75rem;   /* 12px */
+  --radius-lg:  1rem;      /* 16px */
+  --radius-xl:  1.25rem;   /* 20px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-3xl: 2rem;      /* 32px */
+  --radius-full: 9999px;
+
+  /* ── Shadows (Apple soft drop shadows) ────────────────── */
+  --shadow-xs:   0 1px 2px 0 rgba(0,0,0,0.02);
+  --shadow-sm:   0 2px 8px 0 rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 16px 0 rgba(0,0,0,0.06);
+  --shadow-lg:   0 8px 24px 0 rgba(0,0,0,0.08);
+  --shadow-xl:   0 12px 32px 0 rgba(0,0,0,0.1);
+  --shadow-glow: 0 0 0 4px rgba(0, 113, 227, 0.2);
+
+  /* ── Transitions ──────────────────────────────── */
+  --duration-fast:   150ms;
+  --duration-base:   250ms;
+  --duration-slow:   350ms;
+  --ease-smooth:     cubic-bezier(0.25, 1, 0.5, 1); /* Apple-like springy ease */
+
+  /* ── Animations ───────────────────────────────── */
+  --animate-fade-in:  fadeIn  0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  --animate-slide-up: slideUp 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+}
+
+/* ── Base Layer ────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light dark;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background-light);
+  color: var(--color-text-main-light);
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+.dark body {
+  background-color: var(--color-background-dark);
+  color: var(--color-text-main-dark);
+}
+
+/* Improve default focus outline */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ── Glass Card ────────────────────────────────────────────────────────────── */
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-md);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Focus Ring Utility ────────────────────────────────────────────────────── */
+@utility focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900;
+}
+
+/* ── Material Icons ────────────────────────────────────────────────────────── */
+.material-symbols-rounded,
+.material-icons-round {
+  font-family: 'Material Symbols Rounded', 'Material Icons Round', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ── Z-Index Scale ─────────────────────────────────────────────────────────── */
+.z-header  { z-index: 40; }
+.z-sidebar { z-index: 45; }
+.z-modal   { z-index: 50; }
+.z-toast   { z-index: 60; }
+
+/* ── Scrollbar (Webkit) ────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb { background: #334155; }

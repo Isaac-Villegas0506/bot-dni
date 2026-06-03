@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+backend/anon.session
+backend/anon.session-journal
+
+# Node / React
+node_modules/
+frontend/dist/
+.eslintcache
+
+# Variables de entorno (¡MUY IMPORTANTE!)
+.env
+backend/.env
+frontend/.env.local
+backend/serviceAccountKey.json
+
+# Otros
+.DS_Store
+Thumbs.db
+.gemini/
+anon.session
+anon.session-journal
+backend/static/files/*.pdf
+backend/static/files/
+backend/*.session
+backend/*.session-journal
