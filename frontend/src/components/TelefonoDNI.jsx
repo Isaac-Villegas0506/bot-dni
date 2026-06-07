@@ -134,7 +134,7 @@ function parseTelpUnified(rawText) {
     for (const line of lines) {
         const n = norm(line);
 
-        if (n.includes('KING DATA') || n.includes('DATTATOMMY') || n.includes('TELEFONOS PREMIUM') || n.includes('SHIELDGRAM DB') || n.includes('REGISTROS:') || n.includes('ENCONTRADOS:') || n.includes('SITEX DATA') || n.includes('OSIPTEL') || n.includes('DETALLE DE LINEAS') || n.includes('SALDO:') || n.includes('CONSULTOR:') || n.includes('━━━━━━━━━━━━━━━━━━━━') || n.includes('LINEAS ENCONTRADAS') || n.includes('RESULTADOS')) continue;
+        if (n.includes('KING DATA') || n.includes('DATTATOMMY') || n.includes('TELEFONOS PREMIUM') || n.includes('SHIELDGRAM DB') || n.includes('REGISTROS:') || n.includes('ENCONTRADOS:') || n.includes('SITEX DATA') || n.includes('OSIPTEL') || n.includes('DETALLE DE LINEAS') || n.includes('SALDO:') || n.includes('CONSULTOR:') || n.includes('━━━━━━━━━━━━━━━━━━━━') || n.includes('LINEAS ENCONTRADAS') || n.includes('RESULTADOS') || n.includes('CUENTA:') || n.includes('USUARIO:') || n.includes('TELEFONIA')) continue;
 
         // Catch global operator if it's on its own line (🟢 ENTEL, 🔵 MOVISTAR, etc)
         if ((n.includes('ENTEL') || n.includes('MOVISTAR') || n.includes('CLARO') || n.includes('BITEL') || n.includes('WIN')) && !line.includes('|') && !line.includes('│')) {
