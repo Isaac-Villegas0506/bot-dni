@@ -1132,6 +1132,7 @@ async def get_familiares_texto(request: Request, body: DniRequest, Authorization
     dni = body.dni
     if not dni or len(dni) != 8:
         raise HTTPException(400, "DNI inválido")
+    check_banned_dni(dni)
 
     try:
         result = await bot_client.generate_familiares_texto(dni)
@@ -1173,6 +1174,7 @@ async def get_familiares_arbol_visual(request: Request, body: DniRequest, Author
     dni = body.dni
     if not dni or len(dni) != 8:
         raise HTTPException(400, "DNI inválido")
+    check_banned_dni(dni)
 
     try:
         result = await bot_client.query_arbol_visual_pdf(dni)
@@ -1216,6 +1218,7 @@ async def get_numeros_por_dni(request: Request, body: DniRequest, Authorization:
     dni = body.dni
     if not dni or len(dni) != 8:
         raise HTTPException(400, "DNI inválido")
+    check_banned_dni(dni)
 
     try:
         result = await bot_client.query_telx(dni)
