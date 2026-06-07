@@ -684,7 +684,7 @@ class BotClient:
                         raise Exception("Ocurrió un error al procesar la consulta.")
 
                 # Detectar respuesta válida
-                is_valid = "SHIELDGRAM DB" in text_upper or "RESULTADOS" in text_upper or "LÍNEAS ENCONTRADAS" in text_upper or "OSIPTEL" in text_upper
+                is_valid = "SHIELDGRAM DB" in text_upper or "RESULTADOS" in text_upper or "LÍNEAS ENCONTRADAS" in text_upper or "OSIPTEL" in text_upper or "TELEFONÍA" in text_upper or "TITULAR" in text_upper
                 if not is_valid:
                     continue
 
