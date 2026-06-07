@@ -439,8 +439,8 @@ class BotClient:
 
         for global_attempt in range(max_global_retries):
             try:
-                print(f"📱 Enviando /tels {dni} al grupo {target_group} (intento {global_attempt + 1})...")
-                sent_msg = await self.client.send_message(target_group, f'/tels {dni}')
+                print(f"📱 Enviando /telp {dni} al grupo {target_group} (intento {global_attempt + 1})...")
+                sent_msg = await self.client.send_message(target_group, f'/telp {dni}')
 
                 # Espera inicial
                 await asyncio.sleep(5)
@@ -477,7 +477,7 @@ class BotClient:
                                 raise Exception("Ocurrió un error al procesar la consulta.")
 
                         # Detectar resultado (TELEFONOS PREMIUM o OSIPTEL nuevo formato)
-                        is_result = "TELEFONOS PREMIUM" in text_upper or "OSIPTEL" in text_upper or "DETALLE DE LINEAS" in text_upper
+                        is_result = "TELEFONOS PREMIUM" in text_upper or "OSIPTEL" in text_upper or "DETALLE DE LINEAS" in text_upper or "TELEFONÍA" in text_upper
                         if not is_result:
                             continue
 

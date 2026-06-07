@@ -171,7 +171,18 @@ function parsePersonas(raw) {
             continue;
         }
 
-        // NOMBRE / NOMBRES also starts a new person if not already in one
+        // DNI starts a new person if we already have one (new format)
+        if (n.includes('DNI') && !n.includes('APELLIDOS') && (line.includes('➟') || line.includes('➣') || line.includes('➺') || line.includes(':') || line.includes('>'))) {
+            if (!cur || cur.dni) {
+                if (cur) all.push(cur);
+                cur = nextIsTitular ? { is_titular: true } : {};
+                nextIsTitular = false;
+            }
+            cur.dni = val(line).replace(/[*#]/g, '').split('-')[0].trim();
+            continue;
+        }
+
+        // NOMBRE / NOMBRES also starts a new person if not already in one (old format)
         if ((n.includes('NOMBRE') || n.includes('NOMBRES')) && (line.includes('➟') || line.includes('➣') || line.includes('➺') || line.includes(':') || line.includes('>'))) {
             if (!cur || cur.nombres) {
                 if (cur) all.push(cur);
@@ -182,15 +193,7 @@ function parsePersonas(raw) {
             continue;
         }
 
-        if (!cur) {
-            // New format starts with DNI before NOMBRES
-            if (n.includes('DNI') && !n.includes('APELLIDOS') && (line.includes('➟') || line.includes('➣') || line.includes('➺') || line.includes(':') || line.includes('>'))) {
-                cur = nextIsTitular ? { is_titular: true } : {};
-                nextIsTitular = false;
-                cur.dni = val(line).replace(/[*#]/g, '').split('-')[0].trim();
-            }
-            continue;
-        }
+        if (!cur) continue;
 
         if (n.includes('APELLIDO PATERNO')) {
             cur.paterno = val(line);
@@ -201,7 +204,6 @@ function parsePersonas(raw) {
             cur.apellidos = `${cur.paterno || ''} ${cur.materno || ''}`.trim();
         }
         else if (n.includes('APELLIDOS') && !n.includes('PATERNO') && !n.includes('MATERNO')) cur.apellidos = val(line);
-        else if (n.includes('DNI') && !n.includes('APELLIDOS')) cur.dni = val(line).replace(/[*#]/g, '').split('-')[0].trim();
         else if (n.includes('EDAD')) cur.edad = val(line).replace('AÑOS', '').replace('años', '').trim();
         else if (n.includes('GENERO') || n.includes('GÉNERO')) cur.genero = val(line);
         else if (n.includes('F. NAC') || n.includes('FECHA NAC')) cur.fnac = val(line);
