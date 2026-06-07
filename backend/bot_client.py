@@ -644,8 +644,8 @@ class BotClient:
         except:
             target_bot_id = 0 # Dynamic fetch preferred
 
-        print(f"📱 Enviando /fono {phone} al grupo {target_group}...")
-        sent_msg = await self.client.send_message(target_group, f'/fono {phone}')
+        print(f"📱 Enviando /telp {phone} al grupo {target_group}...")
+        sent_msg = await self.client.send_message(target_group, f'/telp {phone}')
 
         # Espera inicial
         await asyncio.sleep(5)
@@ -676,7 +676,9 @@ class BotClient:
                     seen_ids.add(message.id)
                     raise SinResultadosError("「❌️」Sin Resultados. Verifique los datos e intente nuevamente.")
                     
-                if phone in text:
+                is_result = "KING DATA" in text_upper or "SHIELDGRAM DB" in text_upper or "DETALLE DE LINEAS" in text_upper or "TITULAR" in text_upper or "TELEFONÍA" in text_upper
+
+                if phone in text and is_result:
                     if "error" in text.lower() or "no encontrado" in text.lower():
                         seen_ids.add(message.id)
                         raise Exception("Ocurrió un error al procesar la consulta.")
@@ -1293,7 +1295,7 @@ class BotClient:
             found_texts = []
             target_grouped_id = None
             for attempt in range(12):  # ~24s max polling
-                print(f"🔄 Polling DNI Azul intento {attempt+1}/12...")
+                print(f" Polling DNI Azul intento {attempt+1}/12...")
                 async for message in self.client.iter_messages(target_group, limit=100, min_id=sent_msg.id, reverse=True):
                     if message.sender_id != target_bot_id:
                         continue
@@ -1910,6 +1912,8 @@ class BotClient:
                             is_part = True
                         elif "SITEX DATA" in text.upper():
                             is_part = True
+                        elif "ÁRBOL GENEALÓGICO" in text.upper():
+                            is_part = True
                         elif message.document and message.file and message.file.name and (dni in message.file.name or "Arbol" in message.file.name):
                             is_part = True
 
@@ -1920,6 +1924,8 @@ class BotClient:
 
                             # Detectar si es el mensaje final (contiene el conteo de registros)
                             if "hallado" in text.lower() and "registros" in text.lower():
+                                found_final = True
+                            elif "total de familiares" in text.lower() or "árbol genealógico" in text.lower():
                                 found_final = True
 
                             # Si es el archivo TXT, descargarlo

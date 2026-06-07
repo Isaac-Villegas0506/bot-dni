@@ -129,8 +129,10 @@ function parsePersonas(raw) {
         // Detect total found from header or footer
         const totalMatch = line.match(/hallado\s+(\d+)\s+registros/i);
         const halladosMatch = line.match(/(\d+)\s+HALLADOS/i);
+        const newTotalMatch = line.match(/Total de familiares:\s+(\d+)/i);
         if (totalMatch) foundTotal = parseInt(totalMatch[1]);
         else if (halladosMatch) foundTotal = parseInt(halladosMatch[1]);
+        else if (newTotalMatch) foundTotal = parseInt(newTotalMatch[1]);
 
         // Skip decorative and system headers
         if (n.includes('ARBOL GENEALOGICO') || n.includes('KING DATA') || n.includes('SITEX DATA') || n.includes('REPORTE COMPLETO') ||
@@ -180,7 +182,15 @@ function parsePersonas(raw) {
             continue;
         }
 
-        if (!cur) continue;
+        if (!cur) {
+            // New format starts with DNI before NOMBRES
+            if (n.includes('DNI') && !n.includes('APELLIDOS') && (line.includes('➟') || line.includes('➣') || line.includes('➺') || line.includes(':') || line.includes('>'))) {
+                cur = nextIsTitular ? { is_titular: true } : {};
+                nextIsTitular = false;
+                cur.dni = val(line).replace(/[*#]/g, '').split('-')[0].trim();
+            }
+            continue;
+        }
 
         if (n.includes('APELLIDO PATERNO')) {
             cur.paterno = val(line);
