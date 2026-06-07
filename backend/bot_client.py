@@ -2132,7 +2132,11 @@ class BotClient:
                     
                     # Extract Summary Text
                     if "DENUNCIA POLICIAL" in text.upper() or "DENUNCIA" in text.upper() or "INFOR DATA" in text.upper():
-                        raw_text = text
+                        if raw_text:
+                            raw_text += "\n\n" + text
+                        else:
+                            raw_text = text
+
 
                 # Break early if we have all expected PDFs
                 expected_files = 0

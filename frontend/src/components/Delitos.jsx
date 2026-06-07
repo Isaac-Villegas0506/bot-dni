@@ -19,7 +19,7 @@ function parseDenuncias(rawText) {
         const cleanLine = line.replace(/[*_`]/g, '').trim();
         
         if (cleanLine.includes('INFOR DATA') || cleanLine.includes('DENUNCIA POLICIAL')) continue;
-        if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) break;
+        if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
         
         if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine)) {
             if (currentDenuncia) denuncias.push(currentDenuncia);
