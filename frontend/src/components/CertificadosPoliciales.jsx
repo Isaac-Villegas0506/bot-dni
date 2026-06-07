@@ -12,13 +12,28 @@ import PdfViewer from './PdfViewer';
 export default function CertificadosPoliciales() {
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
-    const [view, setView] = useState('selection'); // 'selection' | 'result'
+    const [view, setView] = useState(() => sessionStorage.getItem('certificados_view') || 'selection'); // 'selection' | 'result'
     const [selectedOption, setSelectedOption] = useState(null);
     const [showInputModal, setShowInputModal] = useState(false);
     const [dni, setDni] = useState('');
     const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
-    const [generatedData, setGeneratedData] = useState(null);
+    const [generatedData, setGeneratedData] = useState(() => {
+        const saved = sessionStorage.getItem('certificados_data');
+        return saved ? JSON.parse(saved) : null;
+    });
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
+
+    useEffect(() => {
+        sessionStorage.setItem('certificados_view', view);
+    }, [view]);
+
+    useEffect(() => {
+        if (generatedData) {
+            sessionStorage.setItem('certificados_data', JSON.stringify(generatedData));
+        } else {
+            sessionStorage.removeItem('certificados_data');
+        }
+    }, [generatedData]);
     const [hasDownloaded, setHasDownloaded] = useState(false);
     const [showExitModal, setShowExitModal] = useState(false);
     const [exitCountDown, setExitCountDown] = useState(5);
@@ -199,6 +214,8 @@ export default function CertificadosPoliciales() {
     const resetView = () => {
         setView('selection');
         setGeneratedData(null);
+        sessionStorage.removeItem('certificados_view');
+        sessionStorage.removeItem('certificados_data');
         setSelectedOption(null);
         setDni('');
         setHasDownloaded(false);

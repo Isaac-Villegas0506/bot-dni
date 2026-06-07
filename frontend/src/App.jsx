@@ -25,6 +25,7 @@ const FamiliaresPage = lazy(() => import('./pages/Familiares'));
 const TelefonoPage = lazy(() => import('./pages/Telefono'));
 const PolicialesPage = lazy(() => import('./pages/Policiales'));
 const DelitosPage = lazy(() => import('./components/Delitos'));
+const VehiculosPage = lazy(() => import('./pages/Vehiculos'));
 const AdminPage = lazy(() => import('./pages/Admin'));
 const TermsPage = lazy(() => import('./pages/Terms'));
 const FacialPage = lazy(() => import('./pages/Facial'));
@@ -44,7 +45,7 @@ window.fetch = (...args) => {
 const VIEW_ROUTES = {
     home: '/', history: '/historial', shop: '/tienda',
     generator: '/generador', familiares: '/familiares',
-    telefono: '/telefono', policiales: '/policiales', delitos: '/delitos', admin: '/admin',
+    telefono: '/telefono', policiales: '/policiales', delitos: '/delitos', vehiculos: '/vehiculos', admin: '/admin',
     terms: '/terminos', facial: '/facial', creditos: '/creditos'
 };
 
@@ -124,6 +125,7 @@ export default function App() {
                         <Route path="/telefono" element={<RequireAuth openModalOnFail={true}><TelefonoPage /></RequireAuth>} />
                         <Route path="/policiales" element={<RequireAuth openModalOnFail={true}><PolicialesPage /></RequireAuth>} />
                         <Route path="/delitos" element={<RequireAuth openModalOnFail={true}><DelitosPage /></RequireAuth>} />
+                        <Route path="/vehiculos" element={<RequireAuth openModalOnFail={true}><VehiculosPage /></RequireAuth>} />
                         <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
                         <Route path="/terminos" element={<TermsPage />} />
                         <Route path="/facial" element={<RequireAuth openModalOnFail={true}><FacialPage /></RequireAuth>} />

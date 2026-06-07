@@ -1507,14 +1507,49 @@ export default function TelefonoDNI() {
     const { loading, showLoading, hideLoading } = useLoading();
     const { getCost } = useCreditCosts();
     const [activeModal, setActiveModal] = useState(null);
-    const [result, setResult] = useState(null);          // { dni, rawText } — numeros_dni result
-    const [infoLineaResult, setInfoLineaResult] = useState(null); // { phone, rawText } — info_linea result
-    const [operadoraResult, setOperadoraResult] = useState(null); // { telefono, operador, empresa, ruc, fecha } — verificador
-    const [titularResult, setTitularResult] = useState(null);     // { phone, rawText } — titular_numero result
+    
+    // session storage initialized states
+    const [result, setResult] = useState(() => {
+        const saved = sessionStorage.getItem('telefono_result');
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [infoLineaResult, setInfoLineaResult] = useState(() => {
+        const saved = sessionStorage.getItem('telefono_infolinea');
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [operadoraResult, setOperadoraResult] = useState(() => {
+        const saved = sessionStorage.getItem('telefono_operadora');
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [titularResult, setTitularResult] = useState(() => {
+        const saved = sessionStorage.getItem('telefono_titular');
+        return saved ? JSON.parse(saved) : null;
+    });
+    
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
 
     const location = useLocation();
     const hasAutoTriggered = useRef(false);
+
+    useEffect(() => {
+        if (result) sessionStorage.setItem('telefono_result', JSON.stringify(result));
+        else sessionStorage.removeItem('telefono_result');
+    }, [result]);
+
+    useEffect(() => {
+        if (infoLineaResult) sessionStorage.setItem('telefono_infolinea', JSON.stringify(infoLineaResult));
+        else sessionStorage.removeItem('telefono_infolinea');
+    }, [infoLineaResult]);
+
+    useEffect(() => {
+        if (operadoraResult) sessionStorage.setItem('telefono_operadora', JSON.stringify(operadoraResult));
+        else sessionStorage.removeItem('telefono_operadora');
+    }, [operadoraResult]);
+
+    useEffect(() => {
+        if (titularResult) sessionStorage.setItem('telefono_titular', JSON.stringify(titularResult));
+        else sessionStorage.removeItem('telefono_titular');
+    }, [titularResult]);
 
 
 
@@ -1736,6 +1771,10 @@ export default function TelefonoDNI() {
         setInfoLineaResult(null);
         setOperadoraResult(null);
         setTitularResult(null);
+        sessionStorage.removeItem('telefono_result');
+        sessionStorage.removeItem('telefono_infolinea');
+        sessionStorage.removeItem('telefono_operadora');
+        sessionStorage.removeItem('telefono_titular');
     };
 
     // Show result views

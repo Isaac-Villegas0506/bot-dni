@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
@@ -55,13 +56,28 @@ function parseDenuncias(rawText) {
 export default function Delitos() {
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
-    const [view, setView] = useState('selection'); // 'selection' | 'result'
+    const [view, setView] = useState(() => sessionStorage.getItem('delitos_view') || 'selection'); // 'selection' | 'result'
     const [selectedOption, setSelectedOption] = useState(null);
     const [showInputModal, setShowInputModal] = useState(false);
     const [targetId, setTargetId] = useState('');
     const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
-    const [generatedData, setGeneratedData] = useState(null);
+    const [generatedData, setGeneratedData] = useState(() => {
+        const saved = sessionStorage.getItem('delitos_data');
+        return saved ? JSON.parse(saved) : null;
+    });
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
+
+    useEffect(() => {
+        sessionStorage.setItem('delitos_view', view);
+    }, [view]);
+
+    useEffect(() => {
+        if (generatedData) {
+            sessionStorage.setItem('delitos_data', JSON.stringify(generatedData));
+        } else {
+            sessionStorage.removeItem('delitos_data');
+        }
+    }, [generatedData]);
     const [hasDownloaded, setHasDownloaded] = useState(false);
     const [showExitModal, setShowExitModal] = useState(false);
     const [exitCountDown, setExitCountDown] = useState(5);
@@ -125,12 +141,14 @@ export default function Delitos() {
         setShowInputModal(true);
     };
 
-    const handleGenerate = async () => {
+    const handleGenerate = useCallback(async (overrideId = null) => {
+        if (loading) return;
         if (!user) {
             openLoginModal();
             return;
         }
-        if (!targetId) return;
+        const finalTargetId = typeof overrideId === 'string' ? overrideId : targetId;
+        if (!finalTargetId) return;
 
         const cost = selectedOption.credits;
         const userCredits = user?.credits ?? 0;
@@ -157,7 +175,7 @@ export default function Delitos() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ target: targetId, type: selectedOption.id })
+                body: JSON.stringify({ target: finalTargetId, type: selectedOption.id })
             });
 
             const data = await res.json();
@@ -165,11 +183,10 @@ export default function Delitos() {
                 throw new Error(data.detail || 'Error al generar la búsqueda');
             }
 
-            // data.data should have { raw_text: "...", archivos: ["files/x.pdf", ...] }
             setGeneratedData({
                 ...data.data,
                 parsedDenuncias: parseDenuncias(data.data.raw_text),
-                queryTarget: targetId,
+                queryTarget: finalTargetId,
                 queryType: selectedOption.id
             });
             setHasDownloaded(false);
@@ -185,7 +202,7 @@ export default function Delitos() {
         } finally {
             hideLoading();
         }
-    };
+    }, [user, openLoginModal, targetId, selectedOption, showLoading, hideLoading]);
 
     const downloadPdf = async (filePath, index) => {
         try {
@@ -218,6 +235,8 @@ export default function Delitos() {
         } else {
             setView('selection');
             setGeneratedData(null);
+            sessionStorage.removeItem('delitos_view');
+            sessionStorage.removeItem('delitos_data');
         }
     };
 
@@ -226,6 +245,8 @@ export default function Delitos() {
         setShowExitModal(false);
         setView('selection');
         setGeneratedData(null);
+        sessionStorage.removeItem('delitos_view');
+        sessionStorage.removeItem('delitos_data');
     };
 
     return (
@@ -357,60 +378,81 @@ export default function Delitos() {
                         </div>
                     </motion.div>
                 )}
-            {/* Input Modal */}
-            <AnimatePresence>
-                {showInputModal && selectedOption && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowInputModal(false)}></div>
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700 relative z-10"
-                        >
-                            <div className="flex items-center gap-3 mb-5">
-                                <div className={`w-10 h-10 rounded-xl ${selectedOption.color} flex items-center justify-center text-white shrink-0`}>
-                                    <span className="material-icons-round">{selectedOption.icon}</span>
+            {/* INPUT MODAL (PORTAL) */}
+            {createPortal(
+                <AnimatePresence>
+                    {showInputModal && selectedOption && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                            <motion.div 
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700 relative z-10"
+                            >
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className={`w-10 h-10 rounded-lg ${selectedOption.color} flex items-center justify-center text-white shrink-0`}>
+                                        <span className="material-icons-round">{selectedOption.icon}</span>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 dark:text-white leading-tight">
+                                            {selectedOption.title}
+                                        </h3>
+                                        <p className="text-xs text-slate-500">
+                                            Ingrese {selectedOption.id === 'dni' ? 'el DNI' : 'la Placa'} a consultar
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{selectedOption.title}</p>
-                                    <p className="text-xs text-amber-500 font-bold flex items-center gap-1">
-                                        <span className="material-icons-round text-xs">toll</span>{selectedOption.credits} créditos
-                                    </p>
+
+                                <input 
+                                    inputMode={selectedOption.id === 'dni' ? 'numeric' : 'text'}
+                                    maxLength={selectedOption.id === 'dni' ? 8 : 6} 
+                                    placeholder={selectedOption.placeholder} 
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
+                                    type="text" 
+                                    value={targetId}
+                                    onChange={(e) => {
+                                        const val = e.target.value.toUpperCase();
+                                        setTargetId(val);
+                                        const isDniValid = selectedOption.id === 'dni' && val.length === 8;
+                                        const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(val);
+                                        if (isDniValid || isPlacaValid) {
+                                            handleGenerate(val);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const isDniValid = selectedOption.id === 'dni' && targetId.length === 8;
+                                            const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(targetId);
+                                            if (isDniValid || isPlacaValid) handleGenerate();
+                                        }
+                                    }}
+                                    autoFocus
+                                />
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => setShowInputModal(false)} 
+                                        className="flex-1 py-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        onClick={handleGenerate}
+                                        disabled={!targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))} 
+                                        className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${
+                                            !targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))
+                                            ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
+                                            : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+                                        }`}
+                                    >
+                                        <span className="material-icons-round text-sm">search</span>Consultar
+                                    </button>
                                 </div>
-                            </div>
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                                Ingresa {selectedOption.id === 'dni' ? 'el DNI' : 'la Placa'} a consultar
-                            </label>
-                            <input 
-                                inputMode={selectedOption.id === 'dni' ? 'numeric' : 'text'}
-                                maxLength={selectedOption.id === 'dni' ? 8 : 6} 
-                                placeholder={selectedOption.placeholder} 
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4 disabled:opacity-50" 
-                                type="text" 
-                                value={targetId}
-                                onChange={(e) => setTargetId(e.target.value.toUpperCase())}
-                                autoFocus
-                            />
-                            <div className="flex gap-3">
-                                <button 
-                                    onClick={() => setShowInputModal(false)} 
-                                    className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm disabled:opacity-50"
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
-                                    onClick={handleGenerate}
-                                    disabled={!targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))} 
-                                    className="flex-1 py-3 rounded-xl font-bold text-white dark:text-slate-900 text-sm transition-all shadow-lg flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed disabled:text-white"
-                                >
-                                    <span className="material-icons-round text-sm">search</span>Consultar
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* Exit Confirmation Modal */}
             <AnimatePresence>

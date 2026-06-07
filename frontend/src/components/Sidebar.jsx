@@ -223,6 +223,7 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                                                 <MenuItem icon="phone_android" label="Teléfono" active={path === '/telefono'} disabled={!isFeatureEnabled('feature_telefono')} onClick={() => handleNavClick('telefono')} />
                                                 <MenuItem icon="gavel" label="Delitos" active={path === '/delitos'} disabled={!isFeatureEnabled('feature_delitos')} onClick={() => handleNavClick('delitos')} />
                                                 <MenuItem icon="policy" label="Certificados Policiales" active={path === '/policiales'} disabled={!isFeatureEnabled('feature_policiales')} onClick={() => handleNavClick('policiales')} />
+                                                <MenuItem icon="directions_car" label="Vehículos" active={path === '/vehiculos'} disabled={!isFeatureEnabled('feature_vehiculos')} onClick={() => handleNavClick('vehiculos')} />
                                             </div>
                                         </div>
 
