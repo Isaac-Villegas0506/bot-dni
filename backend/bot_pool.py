@@ -14,7 +14,7 @@ class BotPool:
         Initialize bot pool with locks for each bot.
         
         Args:
-            bot_names: List of bot usernames (e.g., ['@Sitexdata_bot', '@SiriusxData_bot'])
+            bot_names: List of bot usernames (e.g., ['@Infordata1_bot', '@SiriusxData_bot'])
         """
         # Create a lock for each bot
         self.bots = {bot: asyncio.Lock() for bot in bot_names}
@@ -113,3 +113,4 @@ class BotPool:
             }
             for bot, lock in self.bots.items()
         }
+

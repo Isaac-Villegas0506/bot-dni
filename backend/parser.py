@@ -72,8 +72,8 @@ def parse_bot_response(text):
     # Eliminar ornamentos (NO ➜ — lo mantenemos como separador)
     text_clean = text_clean.replace('❰', '').replace('❱', '').replace('➟', '').replace('•', '')
     
-    # Soporta: ➾, ➜, >, :, -, →, ➺, ❯, ➟
-    pattern = r"([a-záéíóúñA-ZÁÉÍÓÚÑ\s]+)\s*[➾➜>:\-→➺❯]+\s*(.+)"
+    # Soporta: ➾, ➜, >, :, -, →, ➺, ❯, ➟, ➣
+    pattern = r"([a-záéíóúñA-ZÁÉÍÓÚÑ\s]+)\s*[➾➜>:\-→➺❯➟➣]+\s*(.+)"
     
     current_section = None
     lines = text_clean.split('\n')
@@ -85,7 +85,7 @@ def parse_bot_response(text):
             continue
         
         # Detectar secciones (solo si NO es una línea de datos con separador)
-        is_data_line = any(sep in line for sep in ["➾", "❯", "➺", "→", "➜", ">"])
+        is_data_line = any(sep in line for sep in ["➾", "❯", "➺", "→", "➜", ">", "➣", "➟"])
         
         line_upper = line.upper()
         if not is_data_line:
@@ -130,8 +130,8 @@ def parse_bot_response(text):
             if ' - ' in value:
                 value = value.split(' - ')[0].strip()
             
-            # Normalizar el key (remover tildes, espacios -> _)
-            key = key.replace(" ", "_")
+            # Normalizar el key (remover tildes, espacios -> _, remover puntos)
+            key = key.replace(" ", "_").replace(".", "")
             key = re.sub(r'[áàâã]', 'a', key)
             key = re.sub(r'[éèê]', 'e', key)
             key = re.sub(r'[íìî]', 'i', key)
@@ -154,6 +154,7 @@ def parse_bot_response(text):
                 "fecha_de_nacimiento": "fecha_nacimiento",
                 "fecha_nacimiento": "fecha_nacimiento",
                 "fec_nacimiento": "fecha_nacimiento",
+                "f_nacimiento": "fecha_nacimiento",
                 "edad": "edad",
                 "sexo": "genero",
                 "genero": "genero",

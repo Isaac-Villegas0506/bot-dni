@@ -427,7 +427,7 @@ export default function GeneratorReniec() {
                         {/* Back button (Arrow) */}
                         <button
                             onClick={handleBackClick}
-                            className="absolute top-6 left-6 p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95 shadow-md shadow-black/10 dark:shadow-black/30"
+                            className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95 shadow-md shadow-black/10 dark:shadow-black/30"
                             title="Volver"
                         >
                             <span className="material-icons-round">arrow_back</span>

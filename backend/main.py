@@ -236,7 +236,7 @@ async def startup_event():
             '@SeleneSearch_Bot', 
             '@DEALERDATABOT', 
             '@HexDataBOT', 
-            '@Sitexdata_bot', 
+            '@Infordata1_bot', 
             '@ImperialData_bot',
             '@Infordata1_bot'
         ]
