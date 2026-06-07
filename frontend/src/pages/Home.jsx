@@ -12,7 +12,6 @@ import AlertModal from '../components/AlertModal';
 import ModalLoading from '../components/ModalLoading';
 import SearchOptionModal from '../components/SearchOptionModal';
 import AnnouncementModal from '../components/AnnouncementModal';
-import PromoModal from '../components/PromoModal';
 
 export default function Home({ darkMode }) {
     const navigate = useNavigate();
@@ -223,7 +222,6 @@ export default function Home({ darkMode }) {
                 />
             )}
 
-            <PromoModal />
 
             <SearchBar
                 searchMode={searchMode}

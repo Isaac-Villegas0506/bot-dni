@@ -132,7 +132,7 @@ class BotClient:
             '@SeleneSearch_Bot', 
             '@DEALERDATABOT', 
             '@HexDataBOT', 
-            '@Sitexdata_bot', 
+            '@Infordata1_bot', 
             '@ImperialData_bot'
         ]
         bots = list(dict.fromkeys([b for b in bots if b])) 
@@ -287,7 +287,7 @@ class BotClient:
             '@SeleneSearch_Bot', 
             '@DEALERDATABOT', 
             '@HexDataBOT', 
-            '@Sitexdata_bot', 
+            '@Infordata1_bot', 
             '@ImperialData_bot'
         ]
         free_bots = list(dict.fromkeys([b for b in free_bots if b]))
@@ -425,10 +425,10 @@ class BotClient:
         )
 
     async def query_telx(self, dni: str) -> dict:
-        """Consulta números de celular de un DNI usando /telp en @Sitexdata_bot."""
+        """Consulta números de celular de un DNI usando /telp en @Infordata1_bot."""
         await self._ensure_connection()
 
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -634,10 +634,10 @@ class BotClient:
         return {"raw_text": combined}
 
     async def query_cel(self, phone: str) -> dict:
-        """Consulta titular de un número usando /telp en @Sitexdata_bot."""
+        """Consulta titular de un número usando /telp en @Infordata1_bot."""
         await self._ensure_connection()
 
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -733,7 +733,7 @@ class BotClient:
             '@SeleneSearch_Bot', 
             '@DEALERDATABOT', 
             '@HexDataBOT', 
-            '@Sitexdata_bot', 
+            '@Infordata1_bot', 
             '@ImperialData_bot'
         ]
         
@@ -940,7 +940,7 @@ class BotClient:
         """Busca en el grupo premium con reintentos automáticos Anti-Spam."""
         await self._ensure_connection()
         
-        target_group = '@Sitexdata_bot' 
+        target_group = '@Infordata1_bot' 
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -952,7 +952,7 @@ class BotClient:
         for global_attempt in range(max_global_retries):
             try:
                 print(f"💎 Enviando DNI {dni} al grupo {target_group} (Bot ID: {target_bot_id}) (Intento {global_attempt + 1}/{max_global_retries})...")
-                sent_msg = await self.client.send_message(target_group, f'/dnif {dni}')
+                sent_msg = await self.client.send_message(target_group, f'/dnig {dni}')
                 
                 # Esperar respuesta
                 print("⏳ Esperando respuesta del bot premium (5s reales)...")
@@ -1103,7 +1103,7 @@ class BotClient:
         """Genera Ficha C4 Azul (Premium). SIN REINTENTOS. SOLO PDF VÁLIDO."""
         await self._ensure_connection()
         
-        target_group = '@Sitexdata_bot' 
+        target_group = '@Infordata1_bot' 
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -1186,7 +1186,7 @@ class BotClient:
         """Genera Ficha de Inscripción (Premium). SIN REINTENTOS. SOLO PDF VÁLIDO."""
         await self._ensure_connection()
         
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         # Obtener ID dinámicamente para evitar errores de hardcoding
         try:
             bot_entity = await self.client.get_entity(target_group)
@@ -1270,7 +1270,7 @@ class BotClient:
         """Genera DNI Azul Virtual (Premium). Devuelve 2 imágenes PNG: frontal y reverso."""
         await self._ensure_connection()
 
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         # Obtener ID dinámicamente para evitar errores de hardcoding
         try:
             bot_entity = await self.client.get_entity(target_group)
@@ -1288,8 +1288,9 @@ class BotClient:
             print("⏳ Esperando respuesta DNI Azul (8s iniciales)...")
             await asyncio.sleep(15)
 
-            # 3. Buscar imágenes en la respuesta
+            # 3. Buscar imágenes y texto en la respuesta
             found_images = []  # List of messages with images
+            found_texts = []
             target_grouped_id = None
             for attempt in range(12):  # ~24s max polling
                 print(f"🔄 Polling DNI Azul intento {attempt+1}/12...")
@@ -1304,20 +1305,26 @@ class BotClient:
                         continue
 
                     # Sin Resultados check
-                    if self._is_sin_resultados(text) and str(dni) in text:
+                    if self._is_sin_resultados(text) and (str(dni) in text or message.reply_to_msg_id == sent_msg.id):
                         print("⛔ DNI Azul: Bot reportó Sin Resultados.")
                         raise SinResultadosError("No se encontraron resultados para los datos ingresados. Verifica la información e intenta nuevamente.")
 
-                    # Identificar por DNI o por Grouped ID coincidente
-                    is_our_dni = str(dni) in text
+                    # Identificar por respuesta directa, por DNI o por Grouped ID coincidente
+                    # Priorizamos reply_to_msg_id para evitar conflictos si buscan el mismo DNI a la vez
+                    is_our_response = (message.reply_to_msg_id == sent_msg.id) or (str(dni) in text)
                     is_part_of_album = target_grouped_id and message.grouped_id == target_grouped_id
                     
-                    if not is_our_dni and not is_part_of_album:
+                    if not is_our_response and not is_part_of_album:
                         continue
                     
-                    # Si encontramos el DNI, guardamos el grouped_id para capturar el resto del album
-                    if is_our_dni and message.grouped_id:
+                    # Si es nuestra respuesta y tiene álbum, guardamos el grouped_id
+                    if is_our_response and message.grouped_id:
                         target_grouped_id = message.grouped_id
+
+                    # Guardar mensaje de texto si es que hay (para extraer data)
+                    if text and not message.photo and not message.document:
+                        if not found_texts or len(text) > len(found_texts[0].text):
+                            found_texts.insert(0, message)
 
                     # Recopilar mensajes con imagen
                     if message.photo or (message.document and message.document.mime_type and 'image' in message.document.mime_type):
@@ -1345,7 +1352,16 @@ class BotClient:
                 reverso_msg = found_images[1]
 
             valid_images = [frontal_msg, reverso_msg]
-            raw_text = frontal_msg.text # Tomamos los datos del anverso
+            
+            # Tomar el texto principal
+            raw_text = ""
+            if found_texts:
+                raw_text = found_texts[0].text
+            else:
+                for m in valid_images:
+                    if m.text:
+                        raw_text = m.text
+                        break
             
             parsed_data = parse_bot_response(raw_text)
             print(f"📝 Texto extraído: {raw_text[:50]}...")
@@ -1382,7 +1398,7 @@ class BotClient:
         """Genera DNI Amarillo Virtual (Premium). Devuelve 2 imágenes PNG: frontal y reverso."""
         await self._ensure_connection()
 
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         # Obtener ID dinámicamente para evitar errores de hardcoding
         try:
             bot_entity = await self.client.get_entity(target_group)
@@ -1393,15 +1409,16 @@ class BotClient:
         print(f"💛 Generating DNI Amarillo Virtual for {dni}...")
 
         try:
-            # 1. Enviar comando /dniva
-            sent_msg = await self.client.send_message(target_group, f'/dniva {dni}')
+            # 1. Enviar comando /dnia
+            sent_msg = await self.client.send_message(target_group, f'/dnia {dni}')
 
             # 2. Esperar respuesta inicial
             print("⏳ Esperando respuesta DNI Amarillo (8s iniciales)...")
             await asyncio.sleep(15)
 
-            # 3. Buscar imágenes en la respuesta
+            # 3. Buscar imágenes y texto en la respuesta
             found_images = []
+            found_texts = []
             target_grouped_id = None
             for attempt in range(12):  # ~24s max polling
                 print(f"🔄 Polling DNI Amarillo intento {attempt+1}/12...")
@@ -1416,21 +1433,27 @@ class BotClient:
                         continue
 
                     # Sin Resultados check
-                    if self._is_sin_resultados(text) and str(dni) in text:
+                    if self._is_sin_resultados(text) and (str(dni) in text or message.reply_to_msg_id == sent_msg.id):
                         print("⛔ DNI Amarillo: Bot reportó Sin Resultados.")
                         raise SinResultadosError("No se encontraron resultados para los datos ingresados. Verifica la información e intenta nuevamente.")
 
 
-                    # Identificar por DNI o por Grouped ID coincidente
-                    is_our_dni = str(dni) in text
+                    # Identificar por respuesta directa, por DNI o por Grouped ID coincidente
+                    # Priorizamos reply_to_msg_id para evitar conflictos si buscan el mismo DNI a la vez
+                    is_our_response = (message.reply_to_msg_id == sent_msg.id) or (str(dni) in text)
                     is_part_of_album = target_grouped_id and message.grouped_id == target_grouped_id
                     
-                    if not is_our_dni and not is_part_of_album:
+                    if not is_our_response and not is_part_of_album:
                         continue
                     
-                    # Si encontramos el DNI, guardamos el grouped_id para capturar el resto del album
-                    if is_our_dni and message.grouped_id:
+                    # Si es nuestra respuesta y tiene álbum, guardamos el grouped_id
+                    if is_our_response and message.grouped_id:
                         target_grouped_id = message.grouped_id
+
+                    # Guardar mensaje de texto si es que hay (para extraer data)
+                    if text and not message.photo and not message.document:
+                        if not found_texts or len(text) > len(found_texts[0].text):
+                            found_texts.insert(0, message)
 
                     # Recopilar mensajes con imagen
                     if message.photo or (message.document and message.document.mime_type and 'image' in message.document.mime_type):
@@ -1459,7 +1482,16 @@ class BotClient:
 
 
             valid_images = [frontal_msg, reverso_msg]
-            raw_text = frontal_msg.text # Tomamos los datos del anverso
+            
+            # Tomar el texto principal
+            raw_text = ""
+            if found_texts:
+                raw_text = found_texts[0].text
+            else:
+                for m in valid_images:
+                    if m.text:
+                        raw_text = m.text
+                        break
             
             parsed_data = parse_bot_response(raw_text)
             print(f"📝 Texto Amarillo extraído: {raw_text[:50]}...")
@@ -1496,7 +1528,7 @@ class BotClient:
         """Genera Árbol Visual v2 PDF con fotos (Premium). Devuelve PDF + datos del titular."""
         await self._ensure_connection()
 
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         # Obtener ID dinámicamente para evitar errores de hardcoding
         try:
             bot_entity = await self.client.get_entity(target_group)
@@ -1587,7 +1619,7 @@ class BotClient:
         """Genera Certificado de Antecedentes Penales (Premium)."""
         await self._ensure_connection()
         
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -1660,7 +1692,7 @@ class BotClient:
         """Genera Certificado de Antecedentes Judiciales (Premium)."""
         await self._ensure_connection()
         
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -1733,7 +1765,7 @@ class BotClient:
         """Genera Certificado de Antecedentes Policiales (Premium)."""
         await self._ensure_connection()
         
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -1806,7 +1838,7 @@ class BotClient:
         """Genera Árbol Genealógico en texto usando /ag {dni}."""
         await self._ensure_connection()
 
-        target_group = '@Sitexdata_bot'
+        target_group = '@Infordata1_bot'
         try:
             bot_entity = await self.client.get_entity(target_group)
             target_bot_id = bot_entity.id
@@ -2227,5 +2259,6 @@ class BotClient:
         finally:
             if self.bot_pool and acquired_bot:
                 await self.bot_pool.release_bot(bot)
+
 
 
