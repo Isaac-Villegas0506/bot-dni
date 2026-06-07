@@ -52,11 +52,26 @@ const options = [
 export default function GeneratorReniec() {
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
-    const [view, setView] = useState('selection'); // 'selection' | 'result'
+    const [view, setView] = useState(() => sessionStorage.getItem('reniec_view') || 'selection'); // 'selection' | 'result'
     const [selectedOption, setSelectedOption] = useState(null);
     const [showInputModal, setShowInputModal] = useState(false);
     const [dni, setDni] = useState('');
-    const [generatedData, setGeneratedData] = useState(null);
+    const [generatedData, setGeneratedData] = useState(() => {
+        const saved = sessionStorage.getItem('reniec_data');
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem('reniec_view', view);
+    }, [view]);
+
+    useEffect(() => {
+        if (generatedData) {
+            sessionStorage.setItem('reniec_data', JSON.stringify(generatedData));
+        } else {
+            sessionStorage.removeItem('reniec_data');
+        }
+    }, [generatedData]);
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
     const [previewImage, setPreviewImage] = useState(null); // { url: string, label: string }
     const location = useLocation();
@@ -255,6 +270,8 @@ export default function GeneratorReniec() {
     const resetView = () => {
         setView('selection');
         setGeneratedData(null);
+        sessionStorage.removeItem('reniec_view');
+        sessionStorage.removeItem('reniec_data');
         setSelectedOption(null);
         setDni('');
         setHasDownloaded(false);

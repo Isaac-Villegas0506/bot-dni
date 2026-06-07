@@ -9,73 +9,93 @@ import AlertModal from './AlertModal';
 import { getApiUrl } from '../utils/api';
 import PdfViewer from './PdfViewer';
 
-function parseDenuncias(rawText) {
+function parseRecord(rawText) {
     if (!rawText) return [];
     
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-    const denuncias = [];
-    let currentDenuncia = null;
+    const groups = [];
+    let currentGroup = { title: 'Información', icon: 'info', items: [] };
     
     for (const line of lines) {
-        const cleanLine = line.replace(/[*_`]/g, '').trim();
+        // Remover caracteres especiales de Telegram
+        let cleanLine = line.replace(/[*_`~]/g, '').trim();
         
-        if (cleanLine.includes('INFOR DATA') || cleanLine.includes('DENUNCIA POLICIAL')) continue;
+        if (cleanLine.includes('INFOR DATA') || cleanLine.includes('RECORD VEHICULAR 「PREMIUM」')) continue;
         if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
         
-        if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine)) {
-            if (currentDenuncia) denuncias.push(currentDenuncia);
-            currentDenuncia = [];
+        // Detectar headers (con o sin emojis, que se van a eliminar)
+        const headerMatch = cleanLine.match(/^(?:\u2700-\u27BF|\uE000-\uF8FF|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])?\s*(DATOS DEL CONDUCTOR|DATOS DE LICENCIA|UBICACIÓN|UBICACION|RECORD VEHICULAR)/i);
+        
+        if (headerMatch) {
+            if (currentGroup.items.length > 0 || currentGroup.title !== 'Información') {
+                groups.push(currentGroup);
+            }
+            let label = headerMatch[1].toUpperCase();
+            let icon = 'info';
+            if (label.includes('CONDUCTOR')) icon = 'person';
+            else if (label.includes('LICENCIA')) icon = 'card_membership';
+            else if (label.includes('UBICACIÓN') || label.includes('UBICACION')) icon = 'location_on';
+            else if (label.includes('VEHICULAR')) icon = 'directions_car';
+            
+            currentGroup = { title: label, icon, items: [] };
+            continue;
         }
         
-        if (currentDenuncia) {
-            let parts = cleanLine.split('➣');
-            if (parts.length < 2) parts = cleanLine.split(':');
+        // Limpiar emojis al inicio de las líneas de datos
+        cleanLine = cleanLine.replace(/^(?:\u2700-\u27BF|\uE000-\uF8FF|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])?\s*/, '');
+
+        let parts = cleanLine.split('➣');
+        if (parts.length < 2) parts = cleanLine.split(':');
+        
+        if (parts.length >= 2) {
+            let label = parts[0].replace(/^[•\d.\s]+/, '').trim();
+            let value = parts.slice(1).join('➣').trim();
             
-            if (parts.length >= 2) {
-                let label = parts[0].replace(/^[•\d.\s]+/, '').trim();
-                let value = parts.slice(1).join('➣').trim();
-                
-                let icon = 'info';
-                const labelUpper = label.toUpperCase();
-                if (labelUpper.includes('TIPO')) icon = 'category';
-                else if (labelUpper.includes('DNI')) icon = 'badge';
-                else if (labelUpper.includes('PLACA')) icon = 'directions_car';
-                else if (labelUpper.includes('COMISARÍA') || labelUpper.includes('COMISARIA')) icon = 'local_police';
-                else if (labelUpper.includes('HECHO') || labelUpper.includes('FECHA')) icon = 'event';
-                else if (labelUpper.includes('CLAVE')) icon = 'key';
-                
-                currentDenuncia.push({ label, value, icon });
-            }
+            let icon = 'info';
+            const labelUpper = label.toUpperCase();
+            if (labelUpper.includes('DNI') || labelUpper.includes('DOC')) icon = 'badge';
+            else if (labelUpper.includes('NOMBRE') || labelUpper.includes('PATERNO') || labelUpper.includes('MATERNO')) icon = 'person';
+            else if (labelUpper.includes('LICENCIA')) icon = 'card_membership';
+            else if (labelUpper.includes('CATEGORÍA') || labelUpper.includes('CLASE')) icon = 'category';
+            else if (labelUpper.includes('ESTADO')) icon = 'verified';
+            else if (labelUpper.includes('EXPEDICIÓN') || labelUpper.includes('VIGENTE') || labelUpper.includes('FECHA')) icon = 'event';
+            else if (labelUpper.includes('DIRECCIÓN') || labelUpper.includes('DISTRITO') || labelUpper.includes('PROVINCIA') || labelUpper.includes('DEPARTAMENTO')) icon = 'location_on';
+            else if (labelUpper.includes('INFRACCION') || labelUpper.includes('SANCION')) icon = 'warning';
+            else if (labelUpper.includes('RECORD')) icon = 'history';
+            
+            currentGroup.items.push({ label, value, icon });
         }
     }
-    if (currentDenuncia) denuncias.push(currentDenuncia);
     
-    return denuncias;
+    if (currentGroup.items.length > 0) {
+        groups.push(currentGroup);
+    }
+    return groups;
 }
 
-export default function Delitos() {
+export default function Vehiculos() {
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
-    const [view, setView] = useState(() => sessionStorage.getItem('delitos_view') || 'selection'); // 'selection' | 'result'
+    const [view, setView] = useState(() => sessionStorage.getItem('vehiculos_view') || 'selection');
     const [selectedOption, setSelectedOption] = useState(null);
     const [showInputModal, setShowInputModal] = useState(false);
     const [targetId, setTargetId] = useState('');
     const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
     const [generatedData, setGeneratedData] = useState(() => {
-        const saved = sessionStorage.getItem('delitos_data');
+        const saved = sessionStorage.getItem('vehiculos_data');
         return saved ? JSON.parse(saved) : null;
     });
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
 
     useEffect(() => {
-        sessionStorage.setItem('delitos_view', view);
+        sessionStorage.setItem('vehiculos_view', view);
     }, [view]);
 
     useEffect(() => {
         if (generatedData) {
-            sessionStorage.setItem('delitos_data', JSON.stringify(generatedData));
+            sessionStorage.setItem('vehiculos_data', JSON.stringify(generatedData));
         } else {
-            sessionStorage.removeItem('delitos_data');
+            sessionStorage.removeItem('vehiculos_data');
         }
     }, [generatedData]);
     const [hasDownloaded, setHasDownloaded] = useState(false);
@@ -86,33 +106,18 @@ export default function Delitos() {
 
     const options = [
         {
-            id: 'dni',
-            title: 'Denuncias por DNI',
-            icon: 'badge',
-            color: 'bg-red-800',
-            desc: 'Historial de denuncias registradas por DNI',
-            credits: getCost('dni', 2),
-            placeholder: 'Ej: 72345678',
-            helpDesc: 'Reporte completo que detalla si la persona cuenta con denuncias en las comisarías del país.',
-            helpDetails: [
-                'Fecha y hora de los hechos',
-                'Comisaría donde se registró',
-                'Múltiples actas policiales (si existen)'
-            ]
-        },
-        {
-            id: 'placa',
-            title: 'Denuncias por Placa',
+            id: 'record',
+            title: 'Récord Vehicular',
             icon: 'directions_car',
-            color: 'bg-orange-800',
-            desc: 'Denuncias y reportes asociados al vehículo',
-            credits: getCost('placa', 2),
-            placeholder: 'Ej: ABC123',
-            helpDesc: 'Reporte que detalla denuncias vehiculares como robo, choques u otros incidentes vinculados a una placa.',
+            color: 'bg-indigo-600',
+            desc: 'Récord vehicular de un conductor por DNI',
+            credits: getCost('record_vehicular', 7),
+            placeholder: 'DNI',
+            helpDesc: 'Reporte completo que detalla el récord vehicular, datos del conductor, licencias, infracciones y sanciones.',
             helpDetails: [
-                'Historial de reportes del vehículo',
-                'Fechas y jurisdicciones',
-                'Formato de denuncias completas'
+                'Datos de licencia e infracciones',
+                'Reporte de sanciones',
+                'Documento en formato PDF si está disponible'
             ]
         }
     ];
@@ -169,13 +174,13 @@ export default function Delitos() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/delitos/search', {
+            const res = await fetch('/api/vehiculos/record', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ target: finalTargetId, type: selectedOption.id })
+                body: JSON.stringify({ target: finalTargetId })
             });
 
             const data = await res.json();
@@ -185,9 +190,10 @@ export default function Delitos() {
 
             setGeneratedData({
                 ...data.data,
-                parsedDenuncias: parseDenuncias(data.data.raw_text),
+                parsedRecord: parseRecord(data.data.raw_text),
                 queryTarget: finalTargetId,
-                queryType: selectedOption.id
+                queryType: selectedOption.id,
+                file_path: data.file_path
             });
             setHasDownloaded(false);
             setExitCountDown(5);
@@ -204,10 +210,11 @@ export default function Delitos() {
         }
     }, [user, openLoginModal, targetId, selectedOption, showLoading, hideLoading]);
 
-    const downloadPdf = async (filePath, index) => {
+    const downloadPdf = async () => {
+        if (!generatedData?.file_path) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/api/static/${filePath}`), {
+            const res = await fetch(getApiUrl(`/api/static/${generatedData.file_path}`), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -218,7 +225,7 @@ export default function Delitos() {
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = `DENUNCIA_${index + 1}_${generatedData.queryTarget}.pdf`;
+            a.download = `RECORD_${generatedData.queryTarget}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -230,13 +237,13 @@ export default function Delitos() {
     };
 
     const handleBackClick = () => {
-        if (!hasDownloaded && generatedData?.archivos?.length > 0) {
+        if (!hasDownloaded && generatedData?.file_path) {
             setShowExitModal(true);
         } else {
             setView('selection');
             setGeneratedData(null);
-            sessionStorage.removeItem('delitos_view');
-            sessionStorage.removeItem('delitos_data');
+            sessionStorage.removeItem('vehiculos_view');
+            sessionStorage.removeItem('vehiculos_data');
         }
     };
 
@@ -245,8 +252,8 @@ export default function Delitos() {
         setShowExitModal(false);
         setView('selection');
         setGeneratedData(null);
-        sessionStorage.removeItem('delitos_view');
-        sessionStorage.removeItem('delitos_data');
+        sessionStorage.removeItem('vehiculos_view');
+        sessionStorage.removeItem('vehiculos_data');
     };
 
     return (
@@ -313,71 +320,76 @@ export default function Delitos() {
                                 Resultados de Búsqueda
                             </h2>
                         </div>
+                        <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
+                                {/* Visor de PDF (Arriba) */}
+                                {generatedData.file_path ? (
+                                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex flex-col">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                                                <span className="material-icons-round text-red-600 dark:text-red-400">picture_as_pdf</span>
+                                            </div>
+                                            <div className="flex-1 truncate">
+                                                <span className="text-sm font-bold text-slate-800 dark:text-white block truncate">
+                                                    RECORD_{generatedData.queryTarget}.pdf
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 w-full flex justify-center">
+                                            <PdfViewer
+                                                url={getApiUrl(`/api/static/${generatedData.file_path}`)}
+                                                height="500px"
+                                                className="w-full max-w-[600px] object-contain bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={downloadPdf}
+                                            className="mt-4 w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
+                                        >
+                                            <span className="material-icons-round text-base">download</span>
+                                            Descargar PDF
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 text-center flex flex-col items-center justify-center min-h-[200px]">
+                                        <span className="material-icons-round text-slate-400 text-4xl mb-3">description</span>
+                                        <p className="text-slate-600 dark:text-slate-400 font-medium text-sm">
+                                            Esta consulta no contiene documento adjunto.
+                                        </p>
+                                    </div>
+                                )}
 
-                        {/* List of PDFs */}
-                        <div className="mb-8">
-                            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest">
-                                Archivos de Denuncias Generados
-                            </h3>
-                            {generatedData.archivos && generatedData.archivos.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {generatedData.archivos.map((filePath, idx) => (
-                                        <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                                                    <span className="material-icons-round text-red-600 dark:text-red-400">picture_as_pdf</span>
-                                                </div>
-                                                <div className="flex-1 truncate">
-                                                    <span className="text-sm font-bold text-slate-800 dark:text-white block truncate">
-                                                        DENUNCIA_{idx + 1}-{generatedData.queryTarget}.pdf
-                                                    </span>
+                                {/* Datos Parseados (Abajo) */}
+                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+                                    <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                                        <span className="material-icons-round text-indigo-500">directions_car</span>
+                                        Detalles del Récord
+                                    </h3>
+                                    <div className="flex flex-col gap-6">
+                                        {generatedData.parsedRecord.map((group, gIndex) => (
+                                            <div key={gIndex} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
+                                                <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-3 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                                                    <span className="material-icons-round text-[16px]">{group.icon}</span>
+                                                    {group.title}
+                                                </h4>
+                                                <div className="flex flex-col gap-0.5 mt-2">
+                                                    {group.items.map((item, i) => (
+                                                        <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 last:border-0 gap-1 sm:gap-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="material-icons-round text-slate-400 dark:text-slate-500 text-[16px]">{item.icon}</span>
+                                                                <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">{item.label}</span>
+                                                            </div>
+                                                            <span className="font-medium text-[14px] text-slate-800 dark:text-white sm:text-right">{item.value}</span>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            {/* Preview PDF — funciona en desktop y móvil */}
-                                            <PdfViewer
-                                                url={getApiUrl(`/api/static/${filePath}`)}
-                                                height="300px"
-                                                className="mb-3"
-                                            />
-                                            
-                                            {/* Texto parseado */}
-                                            {generatedData.parsedDenuncias && generatedData.parsedDenuncias[idx] && (
-                                                <div className="mb-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 flex-1 overflow-y-auto">
-                                                    <div className="flex flex-col gap-2.5">
-                                                        {generatedData.parsedDenuncias[idx].map((item, i) => (
-                                                            <div key={i} className="flex items-start gap-2">
-                                                                <span className="material-icons-round text-blue-500 dark:text-blue-400 text-[18px] mt-0.5 shrink-0">{item.icon}</span>
-                                                                <div className="flex flex-col w-full min-w-0">
-                                                                    <span className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider leading-tight">{item.label}</span>
-                                                                    <span className="font-semibold text-sm text-slate-800 dark:text-white break-words leading-snug">{item.value}</span>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <button
-                                                onClick={() => downloadPdf(filePath, idx)}
-                                                className="mt-auto w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
-                                            >
-                                                <span className="material-icons-round text-base">download</span>
-                                                Descargar PDF
-                                            </button>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
-                                    <span className="material-icons-round text-slate-400 text-3xl mb-2">description</span>
-                                    <p className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-                                        Esta consulta no contiene archivos adjuntos.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
                     </motion.div>
                 )}
+
             {/* INPUT MODAL (PORTAL) */}
             {createPortal(
                 <AnimatePresence>
@@ -398,32 +410,29 @@ export default function Delitos() {
                                             {selectedOption.title}
                                         </h3>
                                         <p className="text-xs text-slate-500">
-                                            Ingrese {selectedOption.id === 'dni' ? 'el DNI' : 'la Placa'} a consultar
+                                            Ingrese {selectedOption.placeholder} a consultar
                                         </p>
                                     </div>
                                 </div>
 
                                 <input 
-                                    inputMode={selectedOption.id === 'dni' ? 'numeric' : 'text'}
-                                    maxLength={selectedOption.id === 'dni' ? 8 : 6} 
+                                    inputMode="numeric"
+                                    maxLength={8} 
                                     placeholder={selectedOption.placeholder} 
-                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white uppercase"
                                     type="text" 
                                     value={targetId}
                                     onChange={(e) => {
-                                        const val = e.target.value.toUpperCase();
+                                        const val = e.target.value.replace(/\D/g, '');
                                         setTargetId(val);
-                                        const isDniValid = selectedOption.id === 'dni' && val.length === 8;
-                                        const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(val);
-                                        if (isDniValid || isPlacaValid) {
+                                        if (/^\d{8}$/.test(val)) {
                                             handleGenerate(val);
                                         }
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-                                            const isDniValid = selectedOption.id === 'dni' && targetId.length === 8;
-                                            const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(targetId);
-                                            if (isDniValid || isPlacaValid) handleGenerate();
+                                            const isDni = /^\d{8}$/.test(targetId);
+                                            if (isDni) handleGenerate();
                                         }
                                     }}
                                     autoFocus
@@ -437,11 +446,11 @@ export default function Delitos() {
                                     </button>
                                     <button 
                                         onClick={handleGenerate}
-                                        disabled={!targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))} 
+                                        disabled={!/^\d{8}$/.test(targetId)} 
                                         className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${
-                                            !targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))
+                                            !/^\d{8}$/.test(targetId)
                                             ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
-                                            : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'
                                         }`}
                                     >
                                         <span className="material-icons-round text-sm">search</span>Consultar
