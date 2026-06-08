@@ -153,11 +153,10 @@ function HistoryList() {
                                 role="tab"
                                 aria-selected={isActive}
                                 onClick={() => setActiveFilter(f.id)}
-                                className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 sm:px-5 rounded-full text-xs font-black uppercase tracking-wide sm:tracking-widest border transition-all whitespace-nowrap ${
-                                    isActive
+                                className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 sm:px-5 rounded-full text-xs font-black uppercase tracking-wide sm:tracking-widest border transition-all whitespace-nowrap ${isActive
                                         ? activeClass
                                         : 'bg-white dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                                }`}
+                                    }`}
                             >
                                 <span className="material-icons-round text-base" aria-hidden="true">{f.icon}</span>
                                 {f.label}
@@ -257,8 +256,8 @@ function HistoryList() {
                                                     let path = `/${info.category}`;
                                                     if (info.category === 'reniec') path = '/';
                                                     if (info.category === 'telefonos') path = '/telefono';
-                                                    
-                                                    const searchState = info.category === 'reniec' 
+
+                                                    const searchState = info.category === 'reniec'
                                                         ? { autoSearch: item.search_term, type: item.search_type }
                                                         : { autoDni: item.search_term, autoOption: item.search_type };
                                                     navigate(path, { state: searchState });
@@ -305,7 +304,7 @@ export default function UserHistory() {
 
                 <div className="px-5 sm:px-8 md:px-12 py-5 md:py-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tus búsquedas están seguras y solo tú puedes verlas</p>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bot DNI v1.2</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bot DNI v2.0.2</span>
                 </div>
             </motion.div>
         </div>

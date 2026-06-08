@@ -49,7 +49,7 @@ const CountdownTimer = ({ lastSearch }) => {
 };
 
 // ─── MenuItem ─────────────────────────────────────────────────────────────────
-function MenuItem({ icon, label, active, onClick, disabled }) {
+function MenuItem({ icon, label, active, onClick, disabled, isNew }) {
     return (
         <button
             onClick={(e) => {
@@ -71,13 +71,18 @@ function MenuItem({ icon, label, active, onClick, disabled }) {
                 }
             `}
         >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className={`material-icons-round text-[20px] shrink-0 ${active && !disabled ? 'text-white' : 'text-slate-400'}`}>
                     {icon}
                 </span>
-                <span className="text-sm">{label}</span>
+                <span className="text-sm truncate">{label}</span>
             </div>
-            {disabled && <span className="material-icons-round text-[16px] opacity-70">lock</span>}
+            {isNew && !disabled && (
+                <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-black shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-yellow-200/50 dark:bg-yellow-800/50 text-yellow-800 dark:text-yellow-300'}`}>
+                    NUEVO
+                </span>
+            )}
+            {disabled && <span className="material-icons-round text-[16px] opacity-70 shrink-0">lock</span>}
         </button>
     );
 }
@@ -184,46 +189,14 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                                         <div>
                                             <p className="px-3 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Servicios</p>
                                             <div className="space-y-0.5">
-                                                <button
-                                                    onClick={() => {
-                                                        if (!isFeatureEnabled('feature_facial')) {
-                                                            toast.info('Esta función está en mantenimiento o deshabilitada temporalmente.');
-                                                            return;
-                                                        }
-                                                        handleNavClick('facial');
-                                                    }}
-                                                    className={`
-                                                        w-full min-h-[44px] flex items-center justify-between px-3 py-2.5 rounded-xl font-bold
-                                                        transition-all duration-150 focus-ring mb-1
-                                                        ${!isFeatureEnabled('feature_facial')
-                                                            ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-800/30 text-slate-400'
-                                                            : path === '/facial'
-                                                                ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-md shadow-yellow-500/30'
-                                                                : 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/10 dark:to-amber-900/10 text-yellow-700 dark:text-yellow-500 hover:from-yellow-100 hover:to-amber-100 dark:hover:from-yellow-900/20 dark:hover:to-amber-900/20 border border-yellow-200/50 dark:border-yellow-700/30'
-                                                        }
-                                                    `}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <span className={`material-icons-round text-[20px] shrink-0 ${!isFeatureEnabled('feature_facial') ? 'text-slate-400' : path === '/facial' ? 'text-white' : 'text-yellow-600 dark:text-yellow-500'}`}>
-                                                            face
-                                                        </span>
-                                                        <span className="text-sm truncate">Búsqueda Facial</span>
-                                                    </div>
-                                                    {!isFeatureEnabled('feature_facial') ? (
-                                                        <span className="material-icons-round text-[16px] text-slate-400">lock</span>
-                                                    ) : (
-                                                        <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${path === '/facial' ? 'bg-white/20 text-white' : 'bg-yellow-200/50 dark:bg-yellow-800/50 text-yellow-800 dark:text-yellow-300'} font-black`}>
-                                                            NUEVO
-                                                        </span>
-                                                    )}
-                                                </button>
+                                                <MenuItem icon="face" label="Búsqueda Facial" active={path === '/facial'} disabled={!isFeatureEnabled('feature_facial')} onClick={() => handleNavClick('facial')} isNew={true} />
                                                 <MenuItem icon="home" label="Reniec" active={path === '/'} onClick={() => handleNavClick('home')} />
                                                 <MenuItem icon="badge" label="Generador Reniec" active={path === '/generador'} disabled={!isFeatureEnabled('feature_generador')} onClick={() => handleNavClick('generator')} />
                                                 <MenuItem icon="family_restroom" label="Familiares" active={path === '/familiares'} disabled={!isFeatureEnabled('feature_familiares')} onClick={() => handleNavClick('familiares')} />
                                                 <MenuItem icon="phone_android" label="Teléfono" active={path === '/telefono'} disabled={!isFeatureEnabled('feature_telefono')} onClick={() => handleNavClick('telefono')} />
-                                                <MenuItem icon="gavel" label="Delitos" active={path === '/delitos'} disabled={!isFeatureEnabled('feature_delitos')} onClick={() => handleNavClick('delitos')} />
+                                                <MenuItem icon="gavel" label="Delitos" active={path === '/delitos'} disabled={!isFeatureEnabled('feature_delitos')} onClick={() => handleNavClick('delitos')} isNew={true} />
                                                 <MenuItem icon="policy" label="Certificados Policiales" active={path === '/policiales'} disabled={!isFeatureEnabled('feature_policiales')} onClick={() => handleNavClick('policiales')} />
-                                                <MenuItem icon="directions_car" label="Vehículos" active={path === '/vehiculos'} disabled={!isFeatureEnabled('feature_vehiculos')} onClick={() => handleNavClick('vehiculos')} />
+                                                <MenuItem icon="directions_car" label="Vehículos" active={path === '/vehiculos'} disabled={!isFeatureEnabled('feature_vehiculos')} onClick={() => handleNavClick('vehiculos')} isNew={true} />
                                             </div>
                                         </div>
 

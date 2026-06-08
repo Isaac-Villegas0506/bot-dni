@@ -795,6 +795,28 @@ class Database:
             print(f"Error process_referral: {e}")
             return False, None
 
+    async def get_referred_users(self, user_id):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            # Retrieve referred users.
+            cursor.execute("""
+                SELECT id, full_name, email, created_at 
+                FROM users 
+                WHERE referred_by = %s 
+                ORDER BY created_at DESC
+            """, (user_id,))
+            res = cursor.fetchall()
+            cursor.close()
+            # Convert datetime to ISO format string so FastAPI can serialize it
+            for row in res:
+                if 'created_at' in row and row['created_at']:
+                    row['created_at'] = row['created_at'].isoformat()
+            return res
+        except Exception as e:
+            print(f"Error get_referred_users: {e}")
+            return []
+
     async def create_promo_request(self, user_id, tiktok_username, video_url):
         await self._ensure_connection()
         try:

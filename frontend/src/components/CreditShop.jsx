@@ -19,10 +19,13 @@ function PaymentMethodModal({ plan, onSelect, onClose }) {
                 onClick={e => e.stopPropagation()}
                 className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-sm border border-slate-200 dark:border-slate-800"
             >
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white text-center mb-1">Método de Pago</h3>
-                <p className="text-sm text-slate-500 text-center mb-8">
-                    {plan.name} • S/{parseFloat(plan.price_soles).toFixed(2)}
-                </p>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white text-center mb-4">Método de Pago</h3>
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 mb-6 flex flex-col items-center border border-indigo-100 dark:border-indigo-800/50">
+                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Plan a comprar</p>
+                    <p className="text-lg font-black text-indigo-700 dark:text-indigo-400 text-center leading-tight mb-2">{plan.name}</p>
+                    <div className="w-full h-px bg-indigo-200/50 dark:bg-indigo-800/50 my-1"></div>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">S/ {parseFloat(plan.price_soles).toFixed(2)}</p>
+                </div>
                 <div className="grid grid-cols-1 gap-4">
                     {['yape'].map(method => (
                         <button
@@ -137,9 +140,17 @@ function QRPaymentModal({ plan, method, onClose, onSuccess }) {
                             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 cursor-zoom-in" onClick={() => setQrZoom(true)}>
                                 <img src={`/payments/${method}/${method}-qr.png`} alt="QR" className="w-32 h-32 md:w-48 md:h-48 object-contain" />
                             </div>
-                            <div className="text-center">
-                                <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-2">Monto a pagar</p>
-                                <p className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white">S/ {parseFloat(plan.price_soles).toFixed(2)}</p>
+                            <div className="text-center flex flex-col items-center w-full">
+                                <div className="mb-5 w-full bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 p-4 rounded-2xl">
+                                    <p className="text-[10px] md:text-xs text-indigo-400 uppercase tracking-widest font-bold mb-1">Plan a Comprar</p>
+                                    <p className="text-xl md:text-2xl font-black text-indigo-700 dark:text-indigo-400 leading-tight">
+                                        {plan.name}
+                                    </p>
+                                </div>
+                                <div className="w-full">
+                                    <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Total a Pagar</p>
+                                    <p className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">S/ {parseFloat(plan.price_soles).toFixed(2)}</p>
+                                </div>
                             </div>
                         </div>
 
