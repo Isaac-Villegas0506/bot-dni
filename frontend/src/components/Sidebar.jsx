@@ -121,7 +121,7 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
+                        className="hidden md:block fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
                     />
 
                     {/* Panel */}
@@ -130,7 +130,7 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                         animate="open"
                         exit="closed"
                         variants={sidebarVariants}
-                        className="fixed top-0 left-0 h-full w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl z-[70] flex flex-col overflow-hidden"
+                        className="hidden md:flex fixed top-0 left-0 h-full w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl z-[70] flex-col overflow-hidden"
                     >
                         {/* Header */}
                         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-slate-800/40 shrink-0">

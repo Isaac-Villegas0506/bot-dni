@@ -13,6 +13,7 @@ import ModalLoading from './components/ModalLoading';
 import { useLoading } from './context/LoadingContext';
 import { createPortal } from 'react-dom';
 import UserNotificationModal from './components/UserNotificationModal';
+import MobileNav from './components/MobileNav';
 
 import { Suspense, lazy } from 'react';
 
@@ -65,7 +66,7 @@ export default function App() {
     const { loading, message, showDonation, closeDonation } = useLoading();
     const { notifications, markAsRead } = useNotifications();
 
-    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
 
     const isAdminRoute = location.pathname === '/admin';
 
@@ -114,26 +115,28 @@ export default function App() {
             )}
 
             {/* Main content */}
-            <main className={`flex-grow flex flex-col w-full ${isAdminRoute ? 'w-full h-full' : 'items-center justify-start max-w-6xl'}`}>
+            <main className={`flex-grow flex flex-col w-full pb-20 md:pb-0 ${isAdminRoute ? 'w-full h-full' : 'items-center justify-start max-w-6xl'}`}>
                 <Suspense fallback={<div className="flex items-center justify-center w-full h-64"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
                     <Routes>
                         <Route path="/" element={<Home darkMode={darkMode} />} />
                         <Route path="/historial" element={<RequireAuth openModalOnFail={true}><HistorialPage /></RequireAuth>} />
                         <Route path="/tienda" element={<RequireAuth openModalOnFail={true}><TiendaPage /></RequireAuth>} />
-                        <Route path="/generador" element={<RequireAuth openModalOnFail={true}><GeneradorPage /></RequireAuth>} />
-                        <Route path="/familiares" element={<RequireAuth openModalOnFail={true}><FamiliaresPage /></RequireAuth>} />
-                        <Route path="/telefono" element={<RequireAuth openModalOnFail={true}><TelefonoPage /></RequireAuth>} />
-                        <Route path="/policiales" element={<RequireAuth openModalOnFail={true}><PolicialesPage /></RequireAuth>} />
-                        <Route path="/delitos" element={<RequireAuth openModalOnFail={true}><DelitosPage /></RequireAuth>} />
-                        <Route path="/vehiculos" element={<RequireAuth openModalOnFail={true}><VehiculosPage /></RequireAuth>} />
+                        <Route path="/generador" element={<GeneradorPage />} />
+                        <Route path="/familiares" element={<FamiliaresPage />} />
+                        <Route path="/telefono" element={<TelefonoPage />} />
+                        <Route path="/policiales" element={<PolicialesPage />} />
+                        <Route path="/delitos" element={<DelitosPage />} />
+                        <Route path="/vehiculos" element={<VehiculosPage />} />
                         <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
                         <Route path="/terminos" element={<TermsPage />} />
-                        <Route path="/facial" element={<RequireAuth openModalOnFail={true}><FacialPage /></RequireAuth>} />
+                        <Route path="/facial" element={<FacialPage />} />
                         <Route path="/creditos" element={<RequireAuth openModalOnFail={true}><ReferidosPage /></RequireAuth>} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </Suspense>
             </main>
+
+            {!isAdminRoute && <MobileNav />}
 
             {/* Global auth modals — visibles desde cualquier ruta */}
             <AuthModal
