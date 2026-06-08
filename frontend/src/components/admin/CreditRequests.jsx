@@ -111,15 +111,24 @@ function RequestDetailModal({ purchase, onClose, onAction, onRejectModalOpen }) 
                                 <p className="text-[8px] md:text-[9px] text-blue-400 uppercase font-black tracking-widest mb-2">Plan y Método</p>
                                 <div className="flex justify-between items-center gap-3">
                                     <div className="min-w-0 flex-1">
-                                        <p className="font-black text-blue-800 dark:text-blue-400 text-base md:text-xl tracking-tighter truncate">{purchase.plan_label}</p>
+                                        <p className="font-black text-blue-800 dark:text-blue-400 text-lg md:text-2xl tracking-tight truncate leading-none mb-1">{purchase.plan_label || "No especificado"}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <img src={`/payments/${purchase.payment_method}/logo.png`} alt="" className="h-3 md:h-4 object-contain opacity-80" onError={e => e.target.style.display = 'none'} />
                                             <span className="text-[10px] md:text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 truncate">{purchase.payment_method}</span>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase">Costo</p>
-                                        <p className="text-base md:text-lg font-black text-slate-700 dark:text-slate-300">S/ {purchase.amount_soles}</p>
+                                    <div className="text-right shrink-0 flex flex-col items-end">
+                                        <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase mb-1">Costo / A Recibir</p>
+                                        <p className="text-base md:text-lg font-black text-slate-700 dark:text-slate-300 leading-none mb-1.5">S/ {purchase.amount_soles}</p>
+                                        {purchase.is_premium_plan || purchase.unlimited_days ? (
+                                            <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border border-indigo-200 dark:border-indigo-800">
+                                                {purchase.unlimited_days ? `${purchase.unlimited_days} DÍAS ∞` : 'ILIMITADO ∞'}
+                                            </span>
+                                        ) : (
+                                            <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border border-emerald-200 dark:border-emerald-800">
+                                                +{purchase.credits_to_assign} CRÉDITOS
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -297,10 +306,15 @@ export default function CreditRequests() {
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate tracking-tight">{p.full_name || p.email}</h4>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <img src={`/payments/${p.payment_method}/logo.png`} alt="" className="h-2.5 object-contain opacity-60" onError={e => e.target.style.display = 'none'} />
-                                            <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 truncate tracking-tight uppercase">{p.plan_label}</p>
+                                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate tracking-tight mb-1">{p.full_name || p.email}</h4>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="inline-block w-fit bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded text-[10px] font-black text-blue-700 dark:text-blue-300 tracking-tight uppercase border border-blue-200 dark:border-blue-800/50">
+                                                Plan: {p.plan_label || "No especificado"}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 opacity-70">
+                                                <img src={`/payments/${p.payment_method}/logo.png`} alt="" className="h-2.5 object-contain" onError={e => e.target.style.display = 'none'} />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{p.payment_method}</span>
+                                            </div>
                                         </div>
                                         <div className="mt-2 flex items-center justify-between">
                                             <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ${s.color}`}>{s.label}</span>

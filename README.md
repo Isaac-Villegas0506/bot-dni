@@ -19,7 +19,7 @@ bot-dni/
     └── dist/
 ```
 
-## ✨ Características (v1.2 Beta)
+## ✨ Características (v2.0.2 Beta)
 - **Búsqueda Pública**: DNI y Nombres.
 - **Sistema de Usuarios**: Registro, Login, Historial.
 - **Panel de Administración**:

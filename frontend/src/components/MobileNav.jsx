@@ -22,13 +22,13 @@ export default function MobileNav() {
     ];
 
     const menuItems = [
-        { id: '/facial', icon: 'face', label: 'Búsqueda Facial', featureKey: 'feature_facial' },
+        { id: '/facial', icon: 'face', label: 'Búsqueda Facial', featureKey: 'feature_facial', isNew: true },
         { id: '/generador', icon: 'badge', label: 'Generador Reniec', featureKey: 'feature_generador' },
         { id: '/familiares', icon: 'family_restroom', label: 'Familiares', featureKey: 'feature_familiares' },
         { id: '/telefono', icon: 'phone_android', label: 'Teléfonos', featureKey: 'feature_telefono' },
-        { id: '/delitos', icon: 'gavel', label: 'Delitos', featureKey: 'feature_delitos' },
+        { id: '/delitos', icon: 'gavel', label: 'Delitos', featureKey: 'feature_delitos', isNew: true },
         { id: '/policiales', icon: 'policy', label: 'Certificados Policiales', featureKey: 'feature_policiales' },
-        { id: '/vehiculos', icon: 'directions_car', label: 'Vehículos', featureKey: 'feature_vehiculos' }
+        { id: '/vehiculos', icon: 'directions_car', label: 'Vehículos', featureKey: 'feature_vehiculos', isNew: true }
     ];
 
     const handleTabClick = (id, requireAuth) => {
@@ -117,10 +117,15 @@ export default function MobileNav() {
                                         onClick={() => handleMenuClick(item.id, item.featureKey)}
                                         className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors ${path === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
                                     >
-                                        <span className={`material-icons-round text-[22px] ${path === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
-                                            {item.icon}
-                                        </span>
-                                        <span className="text-sm font-semibold">{item.label}</span>
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <span className={`material-icons-round text-[22px] ${path === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                                                {item.icon}
+                                            </span>
+                                            <span className="text-sm font-semibold">{item.label}</span>
+                                        </div>
+                                        {item.isNew && (
+                                            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-200/50 dark:bg-yellow-800/50 text-yellow-800 dark:text-yellow-300 font-black shrink-0">NUEVO</span>
+                                        )}
                                     </button>
                                 ))}
                                 

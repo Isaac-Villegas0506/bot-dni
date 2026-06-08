@@ -60,8 +60,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                 {/* Center: Version Badge */}
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
                     <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700 tracking-wide">
-                        v1.2
-                    </span>
+                        v2.0.2                    </span>
                 </div>
 
                 {/* Right: Theme Toggle */}

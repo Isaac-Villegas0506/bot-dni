@@ -661,6 +661,12 @@ async def get_user_referral(user: dict = Depends(get_current_user)):
     code = await db.get_or_create_referral_code(user['id'])
     return {"referral_code": code}
 
+@app.get("/api/user/referrals/history")
+async def get_referrals_history(user: dict = Depends(get_current_user)):
+    if not user: raise HTTPException(401, "No autenticado")
+    referred = await db.get_referred_users(user['id'])
+    return {"referred_users": referred}
+
 @app.post("/api/promos/request")
 async def submit_promo_request(req: PromoRequestCreate, user: dict = Depends(get_current_user)):
     if not user: raise HTTPException(401, "No autenticado")

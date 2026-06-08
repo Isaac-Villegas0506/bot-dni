@@ -113,12 +113,12 @@ async def send_purchase_notification_email(admin_email: str, purchase_details: d
             <h2 style="color: #2563eb;">Nueva Solicitud de Compra</h2>
             <p>Se ha registrado una nueva solicitud de compra en el sistema que requiere revisión.</p>
             
-            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+                <p style="margin: 0 0 10px 0; font-size: 18px; color: #1e40af;"><strong>Plan Comprado: <span style="background: #dbeafe; padding: 2px 8px; border-radius: 4px;">{purchase_details.get('plan_label', 'N/A')}</span></strong></p>
                 <p style="margin: 5px 0;"><strong>Usuario:</strong> {purchase_details.get('user_email', 'Desconocido')}</p>
-                <p style="margin: 5px 0;"><strong>Plan / Paquete:</strong> {purchase_details.get('plan_label', 'N/A')}</p>
                 <p style="margin: 5px 0;"><strong>Monto:</strong> S/ {purchase_details.get('amount_soles', '0')}</p>
                 <p style="margin: 5px 0;"><strong>Método de pago:</strong> <span style="text-transform: uppercase;">{purchase_details.get('payment_method', 'N/A')}</span></p>
-                <p style="margin: 5px 0;"><strong>ID de Compra:</strong> {purchase_details.get('purchase_id', 'N/A')}</p>
+                <p style="margin: 5px 0; font-size: 12px; color: #64748b;"><strong>ID de Compra:</strong> {purchase_details.get('purchase_id', 'N/A')}</p>
             </div>
             
             <p>Por favor, ingresa al Panel de Administrador para validar el comprobante y aprobar o rechazar la solicitud.</p>

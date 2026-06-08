@@ -15,6 +15,7 @@ export default function ReferidosPage() {
     
     // History & Alerts
     const [promoHistory, setPromoHistory] = useState([]);
+    const [referralsHistory, setReferralsHistory] = useState([]);
     const [alertModal, setAlertModal] = useState({ isOpen: false, data: null });
 
     useEffect(() => {
@@ -35,6 +36,15 @@ export default function ReferidosPage() {
                 const histRes = await fetch('/api/promos/history', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                // Fetch referrals history
+                const refsHistRes = await fetch('/api/user/referrals/history', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (refsHistRes.ok) {
+                    const refsData = await refsHistRes.json();
+                    setReferralsHistory(refsData.referred_users || []);
+                }
                 if (histRes.ok) {
                     const history = await histRes.json();
                     setPromoHistory(history);
@@ -178,6 +188,61 @@ export default function ReferidosPage() {
                             </div>
                         )}
                     </div>
+                </div>
+            </motion.div>
+
+            {/* Referrals List Card */}
+            <motion.div 
+                whileHover={{ y: -2 }}
+                className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden mx-4 md:mx-0"
+            >
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/40 rounded-xl flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-blue-600 dark:text-blue-400">group</span>
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Amigos Referidos</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">Usuarios que se registraron con tu enlace</p>
+                    </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    {loading ? (
+                        <div className="text-center py-10 text-slate-400">Cargando...</div>
+                    ) : referralsHistory.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center py-10 text-slate-500 dark:text-slate-400">
+                            <span className="material-icons-round text-4xl mb-2 opacity-50">person_add_disabled</span>
+                            <p className="text-sm">Aún no has invitado a ningún amigo.</p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-slate-200 dark:divide-slate-700 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {referralsHistory.map(refUser => (
+                                <div key={refUser.id} className="p-4 flex items-center justify-between hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold rounded-full flex items-center justify-center shrink-0 uppercase">
+                                            {refUser.full_name ? refUser.full_name.charAt(0) : refUser.email.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                                                {refUser.full_name || 'Usuario'}
+                                            </p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                {refUser.email}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full inline-block mb-1">
+                                            +15 Créditos
+                                        </div>
+                                        <p className="text-xs text-slate-400 font-medium block">
+                                            {refUser.created_at ? new Date(refUser.created_at).toLocaleDateString() : ''}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </motion.div>
 
