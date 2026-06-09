@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSettings } from '../context/SettingsContext';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import HelpModal from './HelpModal';
@@ -74,6 +75,7 @@ function parseRecord(rawText) {
 }
 
 export default function Vehiculos() {
+    const { isFeatureEnabled } = useSettings();
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
     const [view, setView] = useState(() => sessionStorage.getItem('vehiculos_view') || 'selection');
@@ -264,7 +266,7 @@ export default function Vehiculos() {
                         animate={{ opacity: 1, y: 0 }}
                         className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"
                     >
-                        {options.map((opt) => (
+                        {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
                             <div
                                 key={opt.id}
                                 onClick={() => handleOptionClick(opt)}

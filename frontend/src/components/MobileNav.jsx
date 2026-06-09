@@ -27,6 +27,7 @@ export default function MobileNav() {
         { id: '/familiares', icon: 'family_restroom', label: 'Familiares', featureKey: 'feature_familiares' },
         { id: '/telefono', icon: 'phone_android', label: 'Teléfonos', featureKey: 'feature_telefono' },
         { id: '/delitos', icon: 'gavel', label: 'Delitos', featureKey: 'feature_delitos', isNew: true },
+        { id: '/fiscalia', icon: 'balance', label: 'Fiscalía', featureKey: 'feature_fiscalia', isNew: true },
         { id: '/policiales', icon: 'policy', label: 'Certificados Policiales', featureKey: 'feature_policiales' },
         { id: '/vehiculos', icon: 'directions_car', label: 'Vehículos', featureKey: 'feature_vehiculos', isNew: true }
     ];

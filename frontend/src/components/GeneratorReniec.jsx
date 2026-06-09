@@ -1,3 +1,4 @@
+import { useSettings } from '../context/SettingsContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
@@ -30,6 +31,15 @@ const options = [
         helpDetails: ['Certificado oficial de RENIEC', 'Datos de registro de inscripción', 'Útil para trámites administrativos']
     },
     {
+        id: 'virtual_electronico',
+        title: 'DNI Electrónico',
+        icon: 'contact_page',
+        color: 'bg-purple-600',
+        desc: 'DNI Virtual Electrónico',
+        helpDesc: 'Genera una vista virtual del DNI Electrónico (Anverso y Reverso) basada en los datos de RENIEC.',
+        helpDetails: ['Imagen frontal del DNIe', 'Imagen posterior del DNIe', 'Versión electrónica oficial']
+    },
+    {
         id: 'virtual_azul',
         title: 'DNI Azul',
         icon: 'badge',
@@ -50,6 +60,7 @@ const options = [
 ];
 
 export default function GeneratorReniec() {
+    const { isFeatureEnabled } = useSettings();
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
     const [view, setView] = useState(() => sessionStorage.getItem('reniec_view') || 'selection'); // 'selection' | 'result'
@@ -149,6 +160,8 @@ export default function GeneratorReniec() {
                 endpoint = '/api/reniec/c4-inscripcion';
             } else if (selectedOption.id === 'virtual_azul') {
                 endpoint = '/api/reniec/dni-azul';
+            } else if (selectedOption.id === 'virtual_electronico') {
+                endpoint = '/api/reniec/dnie';
             } else if (selectedOption.id === 'amarillo') {
                 endpoint = '/api/reniec/dni-amarillo';
             } else if (selectedOption.id === 'arbol') {
@@ -395,7 +408,7 @@ export default function GeneratorReniec() {
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"
                 >
-                    {options.map((opt) => (
+                    {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
                         <div
                             key={opt.id}
                             onClick={() => handleOptionClick(opt)}
@@ -462,7 +475,9 @@ export default function GeneratorReniec() {
                                     ? 'DNI AZUL VIRTUAL GENERADO CON ÉXITO'
                                     : generatedData.type?.id === 'amarillo'
                                         ? 'DNI AMARILLO VIRTUAL GENERADO CON ÉXITO'
-                                        : 'FICHA C4 GENERADA CON ÉXITO'}
+                                        : generatedData.type?.id === 'virtual_electronico'
+                                            ? 'DNI ELECTRÓNICO GENERADO CON ÉXITO'
+                                            : 'FICHA C4 GENERADA CON ÉXITO'}
                         </h3>
 
                         {/* Display Data Table for ALL types (C4, Inscripcion, DNI Virtual) */}
@@ -479,7 +494,7 @@ export default function GeneratorReniec() {
                         </div>
 
                         {/* DNI VIRTUAL (Azul o Amarillo): Image view */}
-                        {(generatedData.type?.id === 'virtual_azul' || generatedData.type?.id === 'amarillo') ? (
+                        {(generatedData.type?.id === 'virtual_azul' || generatedData.type?.id === 'amarillo' || generatedData.type?.id === 'virtual_electronico') ? (
                             <div className="w-full flex flex-col gap-4 mb-8">
                                 {generatedData.frontal && (
                                     <div
@@ -523,7 +538,7 @@ export default function GeneratorReniec() {
 
                         {/* 3. Buttons */}
                         <div className="flex flex-col w-full gap-3">
-                            {(generatedData.type?.id === 'virtual_azul' || generatedData.type?.id === 'amarillo') ? (
+                            {(generatedData.type?.id === 'virtual_azul' || generatedData.type?.id === 'amarillo' || generatedData.type?.id === 'virtual_electronico') ? (
                                 <button
                                     onClick={downloadImages}
                                     className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg hover:scale-[1.02]"

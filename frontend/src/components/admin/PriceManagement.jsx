@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import AlertModal from '../AlertModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PRICE_LABELS = {
+export const PRICE_LABELS = {
     c4_azul:         { label: 'Ficha C4 Azul',           cat: 'RENIEC',    icon: 'article' },
     inscripcion:     { label: 'Ficha de Inscripción',     cat: 'RENIEC',    icon: 'assignment' },
     virtual_azul:    { label: 'DNI Azul Virtual',         cat: 'RENIEC',    icon: 'credit_card' },
+    virtual_electronico: { label: 'DNI Electrónico Virtual', cat: 'RENIEC', icon: 'contact_page' },
     amarillo:        { label: 'DNI Amarillo Virtual',     cat: 'RENIEC',    icon: 'credit_card' },
     familiares_pdf:  { label: 'Familiares PDF + Fotos (Antiguo)',   cat: 'Familiares',icon: 'family_restroom' },
     familiares_arbol_visual: { label: 'Ver Familiares (PDF + Fotos)', cat: 'Familiares', icon: 'account_tree' },
@@ -15,11 +16,18 @@ const PRICE_LABELS = {
     verificador_op:  { label: 'Verificador de Operadora', cat: 'Teléfonos', icon: 'wifi_calling' },
     titular_numero:  { label: 'Consulta Titular del Número',cat:'Teléfonos',icon: 'contact_phone' },
     dni_premium:     { label: 'RENIEC Premium (C4 + Biometría)', cat: 'RENIEC', icon: 'verified' },
+    busqueda_nombres:{ label: 'Búsqueda por Nombres', cat: 'RENIEC', icon: 'person_search' },
+    dni_gratis:      { label: 'Búsqueda por DNI (Gratis)', cat: 'RENIEC', icon: 'badge' },
+    fiscalia_dni:    { label: 'Fiscalía por DNI',      cat: 'Denuncias', icon: 'gavel' },
+    fiscalia_nombre: { label: 'Fiscalía por Nombres',  cat: 'Denuncias', icon: 'gavel' },
+    fiscalia_ruc:    { label: 'Fiscalía por RUC',      cat: 'Denuncias', icon: 'gavel' },
+    fiscalia_caso:   { label: 'Información Caso Fiscal',cat: 'Denuncias', icon: 'gavel' },
     busqueda_facial: { label: 'Búsqueda Facial IA',      cat: 'Facial',    icon: 'face' },
     antecedentes_policiales: { label: 'Certificado de Antecedentes Policiales', cat: 'Certificados', icon: 'policy' },
     antecedentes_penales:    { label: 'Certificado de Antecedentes Penales',    cat: 'Certificados', icon: 'gavel' },
     antecedentes_judiciales: { label: 'Certificado de Antecedentes Judiciales', cat: 'Certificados', icon: 'account_balance' },
     dni:             { label: 'Denuncias por DNI',        cat: 'Denuncias', icon: 'badge' },
+    antper:          { label: 'Antecedentes Global',      cat: 'Denuncias', icon: 'gavel' },
     placa:           { label: 'Denuncias por Placa',      cat: 'Denuncias', icon: 'directions_car' },
     daily_reward:    { label: 'Créditos Gratuitos Diarios',cat: 'Sistema',   icon: 'card_giftcard' },
 };
@@ -53,7 +61,7 @@ const CAT_ICONS  = {
 };
 const CATEGORIES = ['Sistema', 'RENIEC', 'Familiares', 'Teléfonos', 'Denuncias', 'Facial', 'Certificados'];
 
-const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
+const PackageCard = ({ pkg, index, onChange, onSave }) => (
     <motion.div 
         initial={{ opacity: 0, y: 15 }} 
         animate={{ opacity: 1, y: 0 }} 
@@ -81,7 +89,7 @@ const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
                 </div>
             </div>
             
-            <button onClick={() => onChange(pkg.id, 'is_active', !pkg.is_active)} 
+            <button onClick={() => { onChange(pkg.id, 'is_active', !pkg.is_active); onSave({...pkg, is_active: !pkg.is_active}); }} 
                 className={`px-2.5 md:px-3.5 py-1.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm shrink-0
                     ${pkg.is_active 
                         ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
@@ -94,7 +102,7 @@ const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
         <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 md:gap-4 relative z-10">
             <div className="space-y-1.5">
                 <label className="text-[9px] md:text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-0.5">Nombre Comercial</label>
-                <input type="text" value={pkg.name} onChange={e => onChange(pkg.id, 'name', e.target.value)}
+                <input type="text" value={pkg.name} onChange={e => onChange(pkg.id, 'name', e.target.value)} onBlur={() => onSave(pkg)}
                     className="w-full px-3 md:px-4 py-2 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50 rounded-xl text-xs md:text-sm font-semibold focus:border-violet-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all dark:text-white placeholder-slate-300" />
             </div>
             
@@ -102,7 +110,7 @@ const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
                 <label className="text-[9px] md:text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-0.5">Precio Unitario</label>
                 <div className="relative group/input">
                     <span className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold text-[11px] md:text-xs transition-colors group-focus-within/input:text-violet-500">S/</span>
-                    <input type="number" step="0.5" value={pkg.price_soles} onChange={e => onChange(pkg.id, 'price_soles', e.target.value)}
+                    <input type="number" step="0.5" value={pkg.price_soles} onChange={e => onChange(pkg.id, 'price_soles', e.target.value)} onBlur={() => onSave(pkg)}
                         className="w-full pl-8 md:pl-9 pr-3 md:pr-4 py-2 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50 rounded-xl text-xs md:text-sm font-semibold focus:border-violet-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all dark:text-white" />
                 </div>
             </div>
@@ -111,7 +119,7 @@ const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
                 <label className="text-[9px] md:text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-0.5">Bolsa de Créditos</label>
                 <div className="relative group/input">
                     <span className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 material-icons-round text-slate-300 text-base md:text-lg transition-colors group-focus-within/input:text-violet-500">toll</span>
-                    <input type="number" value={pkg.credits} onChange={e => onChange(pkg.id, 'credits', e.target.value)}
+                    <input type="number" value={pkg.credits} onChange={e => onChange(pkg.id, 'credits', e.target.value)} onBlur={() => onSave(pkg)}
                         className="w-full pl-3 md:pl-4 pr-8 md:pr-9 py-2 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50 rounded-xl text-xs md:text-sm font-semibold focus:border-violet-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all dark:text-white" />
                 </div>
             </div>
@@ -120,12 +128,12 @@ const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
                 <label className="text-[9px] md:text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-0.5">Días Ilimitados</label>
                 <div className="relative group/input">
                     <span className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 material-icons-round text-slate-300 text-base md:text-lg transition-colors group-focus-within/input:text-violet-500">all_inclusive</span>
-                    <input type="number" value={pkg.unlimited_days || ''} placeholder="0 días" onChange={e => onChange(pkg.id, 'unlimited_days', e.target.value)}
+                    <input type="number" value={pkg.unlimited_days || ''} placeholder="0 días" onChange={e => onChange(pkg.id, 'unlimited_days', e.target.value)} onBlur={() => onSave(pkg)}
                         className="w-full pl-3 md:pl-4 pr-8 md:pr-9 py-2 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50 rounded-xl text-xs md:text-sm font-semibold focus:border-violet-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all dark:text-white" />
                 </div>
             </div>
 
-            <button onClick={() => onChange(pkg.id, 'is_premium', !pkg.is_premium)} 
+            <button onClick={() => { onChange(pkg.id, 'is_premium', !pkg.is_premium); onSave({...pkg, is_premium: !pkg.is_premium}); }} 
                 className={`col-span-full flex items-center justify-center gap-2 py-2 md:py-2.5 rounded-xl border border-dashed transition-all font-black text-[9px] md:text-[10px] uppercase tracking-wider active:scale-[0.98]
                     ${pkg.is_premium 
                         ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-400 shadow-sm' 
@@ -136,31 +144,12 @@ const PackageCard = ({ pkg, index, onChange, onSave, isSaving }) => (
             </button>
         </div>
 
-        <div className="px-4 md:px-6 py-3 md:py-4 bg-slate-50/50 dark:bg-slate-900/30 mt-auto border-t border-slate-50 dark:border-slate-700/20 relative z-10 backdrop-blur-sm">
-            <button onClick={() => onSave(pkg)} disabled={isSaving}
-                className={`w-full py-2.5 md:py-3 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-md overflow-hidden relative group/btn
-                    ${pkg.is_premium 
-                        ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-[length:200%_auto] hover:bg-right text-white shadow-orange-500/10' 
-                        : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 bg-[length:200%_auto] hover:bg-right text-white shadow-violet-500/10'}`}>
-                {isSaving ? (
-                    <span className="flex items-center justify-center gap-2">
-                        <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span className="hidden xs:inline">GUARDANDO...</span>
-                        <span className="xs:hidden">...</span>
-                    </span>
-                ) : (
-                    <>
-                        <span className="hidden xs:inline">ACTUALIZAR PLAN</span>
-                        <span className="xs:hidden">GUARDAR</span>
-                    </>
-                )}
-            </button>
-        </div>
     </motion.div>
 );
 
 export default function PriceManagement() {
     const [costs, setCosts]               = useState({});
+        
     const [savingCost, setSavingCost]     = useState({});
     const [packages, setPackages]         = useState([]);
     const [savingPackage, setSavingPackage] = useState({});
@@ -303,14 +292,15 @@ export default function PriceManagement() {
                                         </div>
                                         <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
                                             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl md:rounded-2xl px-3 md:px-4 py-1.5 md:py-2 focus-within:border-blue-500 transition-all">
-                                                <input type="number" min="0" max="99" value={costs[id]?.cost ?? ''} onChange={e => handleCostChange(id, e.target.value)}
+                                                <input type="number" min="0" max="99" value={costs[id]?.cost ?? ''} onChange={e => handleCostChange(id, e.target.value)} onBlur={() => handleSaveCost(id)}
                                                     className="w-7 md:w-8 text-center font-black text-slate-900 dark:text-white bg-transparent outline-none text-xs md:text-sm" />
                                                 <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase ml-1 tracking-tighter">CR.</span>
                                             </div>
-                                            <button onClick={() => handleSaveCost(id)} disabled={savingCost[id]}
-                                                className="w-10 h-9 md:w-12 md:h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 active:scale-90 transition-all disabled:opacity-50">
-                                                {savingCost[id] ? <span className="material-icons-round animate-spin text-sm">refresh</span> : <span className="material-icons-round text-base md:text-lg">check</span>}
-                                            </button>
+                                            {savingCost[id] && (
+                                                <div className="w-10 h-9 md:w-12 md:h-10 flex items-center justify-center">
+                                                    <span className="material-icons-round animate-spin text-blue-500">refresh</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

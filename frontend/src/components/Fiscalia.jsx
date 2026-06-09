@@ -10,79 +10,55 @@ import AlertModal from './AlertModal';
 import { getApiUrl } from '../utils/api';
 import PdfViewer from './PdfViewer';
 
-function parseDenuncias(rawText) {
+function parseFiscalia(rawText) {
     if (!rawText) return [];
     
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-    const denuncias = [];
-    let currentDenuncia = null;
+    const data = [];
     
     for (const line of lines) {
         const cleanLine = line.replace(/[*_`]/g, '').trim();
         
-        if (cleanLine.includes('INFOR DATA') || cleanLine.includes('DENUNCIA POLICIAL')) continue;
+        if (cleanLine.includes('INFOR DATA') || cleanLine.includes('FISCALIA - PDF') || cleanLine.includes('FISCALÍA RUC') || cleanLine.includes('FISCALÍA NOMBRES') || cleanLine.includes('FISCALÍA CASO')) continue;
         if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
         
-        if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine)) {
-            if (currentDenuncia) denuncias.push(currentDenuncia);
-            currentDenuncia = [];
-        } else if (!currentDenuncia && cleanLine.includes('ANTECEDENTES - ONLINE')) {
-            currentDenuncia = [];
-        } else if (!currentDenuncia && (cleanLine.includes('➣') || cleanLine.includes(':'))) {
-            // Fallback para atrapar data si no detectó la cabecera
-            currentDenuncia = [];
-        }
+        let parts = cleanLine.split('➣');
+        if (parts.length < 2) parts = cleanLine.split(':');
         
-        if (currentDenuncia) {
-            let parts = cleanLine.split('➣');
-            if (parts.length < 2) parts = cleanLine.split(':');
+        if (parts.length >= 2) {
+            let label = parts[0].replace(/^[•\d.\s]+/, '').trim();
+            let value = parts.slice(1).join('➣').trim();
             
-            if (parts.length >= 2) {
-                let label = parts[0].replace(/^[•\d.\s]+/, '').trim();
-                let value = parts.slice(1).join('➣').trim();
-                
-                let icon = 'info';
-                const labelUpper = label.toUpperCase();
-                if (labelUpper.includes('TIPO')) icon = 'category';
-                else if (labelUpper.includes('DNI')) icon = 'badge';
-                else if (labelUpper.includes('PLACA')) icon = 'directions_car';
-                else if (labelUpper.includes('COMISARÍA') || labelUpper.includes('COMISARIA')) icon = 'local_police';
-                else if (labelUpper.includes('HECHO') || labelUpper.includes('FECHA')) icon = 'event';
-                else if (labelUpper.includes('CLAVE')) icon = 'key';
-                
-                currentDenuncia.push({ label, value, icon });
-            }
+            data.push({ label, value });
         }
     }
-    if (currentDenuncia) denuncias.push(currentDenuncia);
-    
-    return denuncias;
+    return [data];
 }
 
-export default function Delitos() {
+export default function Fiscalia() {
     const { isFeatureEnabled } = useSettings();
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
-    const [view, setView] = useState(() => sessionStorage.getItem('delitos_view') || 'selection'); // 'selection' | 'result'
+    const [view, setView] = useState(() => sessionStorage.getItem('fiscalia_view') || 'selection'); // 'selection' | 'result'
     const [selectedOption, setSelectedOption] = useState(null);
     const [showInputModal, setShowInputModal] = useState(false);
     const [targetId, setTargetId] = useState('');
     const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
     const [generatedData, setGeneratedData] = useState(() => {
-        const saved = sessionStorage.getItem('delitos_data');
+        const saved = sessionStorage.getItem('fiscalia_data');
         return saved ? JSON.parse(saved) : null;
     });
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
 
     useEffect(() => {
-        sessionStorage.setItem('delitos_view', view);
+        sessionStorage.setItem('fiscalia_view', view);
     }, [view]);
 
     useEffect(() => {
         if (generatedData) {
-            sessionStorage.setItem('delitos_data', JSON.stringify(generatedData));
+            sessionStorage.setItem('fiscalia_data', JSON.stringify(generatedData));
         } else {
-            sessionStorage.removeItem('delitos_data');
+            sessionStorage.removeItem('fiscalia_data');
         }
     }, [generatedData]);
     const [hasDownloaded, setHasDownloaded] = useState(false);
@@ -93,48 +69,63 @@ export default function Delitos() {
 
     const options = [
         {
-            id: 'antper',
-            title: 'Antecedentes Global',
-            icon: 'gavel',
-            color: 'bg-indigo-800',
-            desc: 'Antecedentes totales de una persona',
-            credits: getCost('antper', 1),
-            placeholder: 'Ej: 10001088',
-            helpDesc: 'Reporte completo de antecedentes de una persona a nivel nacional.',
-            helpDetails: [
-                'Historial de antecedentes',
-                'Documento en formato PDF',
-                'Detalle de tipo de registro'
-            ]
-        },
-        {
-            id: 'dni',
-            title: 'Denuncias por DNI',
+            id: 'fiscalia_dni',
+            title: 'Casos fiscales de un DNI',
             icon: 'badge',
-            color: 'bg-red-800',
-            desc: 'Historial de denuncias registradas por DNI',
-            credits: getCost('dni', 2),
+            color: 'bg-blue-800',
+            desc: 'Historial de casos fiscales vinculados a un DNI',
+            credits: getCost('fiscalia_dni', 2),
             placeholder: 'Ej: 72345678',
-            helpDesc: 'Reporte completo que detalla si la persona cuenta con denuncias en las comisarías del país.',
+            helpDesc: 'Reporte completo de casos fiscales vinculados a un Documento Nacional de Identidad.',
             helpDetails: [
-                'Fecha y hora de los hechos',
-                'Comisaría donde se registró',
-                'Múltiples actas policiales (si existen)'
+                'Historial de casos',
+                'Estado de los casos',
+                'Documentos relacionados'
             ]
         },
         {
-            id: 'placa',
-            title: 'Denuncias por Placa',
-            icon: 'directions_car',
-            color: 'bg-orange-800',
-            desc: 'Denuncias y reportes asociados al vehículo',
-            credits: getCost('placa', 2),
-            placeholder: 'Ej: ABC123',
-            helpDesc: 'Reporte que detalla denuncias vehiculares como robo, choques u otros incidentes vinculados a una placa.',
+            id: 'fiscalia_nombre',
+            title: 'Casos fiscales por nombre',
+            icon: 'person_search',
+            color: 'bg-indigo-700',
+            desc: 'Historial de casos fiscales buscando por nombre',
+            credits: getCost('fiscalia_nombre', 2),
+            placeholder: 'Ej: JUAN PEREZ',
+            helpDesc: 'Reporte completo de casos fiscales vinculados a un nombre y apellidos.',
             helpDetails: [
-                'Historial de reportes del vehículo',
-                'Fechas y jurisdicciones',
-                'Formato de denuncias completas'
+                'Búsqueda por nombres',
+                'Coincidencias encontradas',
+                'Detalle de los casos'
+            ]
+        },
+        {
+            id: 'fiscalia_ruc',
+            title: 'Casos fiscales de un RUC',
+            icon: 'domain',
+            color: 'bg-emerald-800',
+            desc: 'Historial de casos fiscales vinculados a un RUC',
+            credits: getCost('fiscalia_ruc', 2),
+            placeholder: 'Ej: 10723456781',
+            helpDesc: 'Reporte completo de casos fiscales vinculados a un Registro Único de Contribuyente.',
+            helpDetails: [
+                'Historial de casos de empresa',
+                'Estado de los casos',
+                'Documentos relacionados'
+            ]
+        },
+        {
+            id: 'caso_fiscal',
+            title: 'Información de Caso fiscal',
+            icon: 'gavel',
+            color: 'bg-amber-800',
+            desc: 'Consulta directa de un caso fiscal específico',
+            credits: getCost('caso_fiscal', 2),
+            placeholder: 'Ej: 123456789',
+            helpDesc: 'Búsqueda de detalles de un caso fiscal utilizando su número de expediente.',
+            helpDetails: [
+                'Detalle exhaustivo',
+                'Fechas y resoluciones',
+                'Partes involucradas'
             ]
         }
     ];
@@ -172,6 +163,19 @@ export default function Delitos() {
         const finalTargetId = typeof overrideId === 'string' ? overrideId : targetId;
         if (!finalTargetId) return;
 
+        const isDniValid = selectedOption.id === 'fiscalia_dni' && finalTargetId.length === 8;
+        const isRucValid = selectedOption.id === 'fiscalia_ruc' && finalTargetId.length === 11;
+        
+        if (selectedOption.id === 'fiscalia_dni' && !isDniValid) {
+            setAlert({ isOpen: true, type: 'error', message: 'El DNI debe tener 8 dígitos' });
+            return;
+        }
+        if (selectedOption.id === 'fiscalia_ruc' && !isRucValid) {
+            setAlert({ isOpen: true, type: 'error', message: 'El RUC debe tener 11 dígitos' });
+            return;
+        }
+
+
         const cost = selectedOption.credits;
         const userCredits = user?.credits ?? 0;
         const isPremium = user?.is_premium ?? false;
@@ -191,7 +195,7 @@ export default function Delitos() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/delitos/search', {
+            const res = await fetch('/api/fiscalia/search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -207,7 +211,8 @@ export default function Delitos() {
 
             setGeneratedData({
                 ...data.data,
-                parsedDenuncias: parseDenuncias(data.data.raw_text),
+                archivos: data.data.archivo ? [data.data.archivo] : (data.data.archivos || []),
+                parsedDenuncias: parseFiscalia(data.data.raw_text),
                 queryTarget: finalTargetId,
                 queryType: selectedOption.id
             });
@@ -257,8 +262,8 @@ export default function Delitos() {
         } else {
             setView('selection');
             setGeneratedData(null);
-            sessionStorage.removeItem('delitos_view');
-            sessionStorage.removeItem('delitos_data');
+            sessionStorage.removeItem('fiscalia_view');
+            sessionStorage.removeItem('fiscalia_data');
         }
     };
 
@@ -267,8 +272,8 @@ export default function Delitos() {
         setShowExitModal(false);
         setView('selection');
         setGeneratedData(null);
-        sessionStorage.removeItem('delitos_view');
-        sessionStorage.removeItem('delitos_data');
+        sessionStorage.removeItem('fiscalia_view');
+        sessionStorage.removeItem('fiscalia_data');
     };
 
     return (
@@ -329,9 +334,9 @@ export default function Delitos() {
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className={selectedOption?.id === 'antper' ? "w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800" : "w-full max-w-5xl"}
+                        className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800"
                     >
-                        {selectedOption?.id === 'antper' ? (
+                        {(true) ? (
                             <div className="p-8 flex flex-col items-center relative">
                                 {/* Back button (Arrow) */}
                                 <button
@@ -494,14 +499,14 @@ export default function Delitos() {
                                             {selectedOption.title}
                                         </h3>
                                         <p className="text-xs text-slate-500">
-                                            Ingrese {selectedOption.id === 'placa' ? 'la Placa' : 'el DNI'} a consultar
+                                            Ingrese el dato a consultar
                                         </p>
                                     </div>
                                 </div>
 
                                 <input 
-                                    inputMode={selectedOption.id === 'placa' ? 'text' : 'numeric'}
-                                    maxLength={selectedOption.id === 'placa' ? 6 : 8} 
+                                    inputMode={['fiscalia_dni', 'fiscalia_ruc'].includes(selectedOption.id) ? 'numeric' : 'text'}
+                                    maxLength={selectedOption.id === 'fiscalia_dni' ? 8 : (selectedOption.id === 'fiscalia_ruc' ? 11 : 50)} 
                                     placeholder={selectedOption.placeholder} 
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
                                     type="text" 
@@ -509,17 +514,19 @@ export default function Delitos() {
                                     onChange={(e) => {
                                         const val = e.target.value.toUpperCase();
                                         setTargetId(val);
-                                        const isDniValid = (selectedOption.id === 'dni' || selectedOption.id === 'antper') && val.length === 8;
-                                        const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(val);
-                                        if (isDniValid || isPlacaValid) {
+                                        const isDniValid = selectedOption.id === 'fiscalia_dni' && val.length === 8;
+                                        const isRucValid = selectedOption.id === 'fiscalia_ruc' && val.length === 11;
+                                        if (isDniValid || isRucValid) {
                                             handleGenerate(val);
                                         }
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-                                            const isDniValid = selectedOption.id === 'dni' && targetId.length === 8;
-                                            const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(targetId);
-                                            if (isDniValid || isPlacaValid) handleGenerate();
+                                            const isValid = 
+                                                (selectedOption.id === 'fiscalia_dni' && targetId.length === 8) || 
+                                                (selectedOption.id === 'fiscalia_ruc' && targetId.length === 11) || 
+                                                (!['fiscalia_dni', 'fiscalia_ruc'].includes(selectedOption.id) && targetId.length > 0);
+                                            if (isValid) handleGenerate();
                                         }
                                     }}
                                     autoFocus
@@ -533,9 +540,9 @@ export default function Delitos() {
                                     </button>
                                     <button 
                                         onClick={handleGenerate}
-                                        disabled={!targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))} 
+                                        disabled={!targetId || (selectedOption.id === 'fiscalia_dni' && targetId.length !== 8) || (selectedOption.id === 'fiscalia_ruc' && targetId.length !== 11)} 
                                         className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${
-                                            !targetId || (selectedOption.id === 'dni' && targetId.length !== 8) || (selectedOption.id === 'placa' && !/^[A-Z0-9]{6}$/i.test(targetId))
+                                            !targetId || (selectedOption.id === 'fiscalia_dni' && targetId.length !== 8) || (selectedOption.id === 'fiscalia_ruc' && targetId.length !== 11)
                                             ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
                                             : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
                                         }`}

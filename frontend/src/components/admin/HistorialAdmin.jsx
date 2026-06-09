@@ -18,6 +18,10 @@ const HIST_TYPE_INFO = {
     busqueda_facial:     { icon: 'face',            label: 'Búsq. Facial',    color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' },
     delitos_dni:         { icon: 'gavel',           label: 'Delitos (DNI)',   color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
     delitos_placa:       { icon: 'directions_car',  label: 'Delitos (Placa)', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
+    fiscalia_dni:        { icon: 'badge',           label: 'Fiscalía (DNI)',  color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+    fiscalia_nombre:     { icon: 'person_search',   label: 'Fiscalía (Nom)',  color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
+    fiscalia_ruc:        { icon: 'domain',          label: 'Fiscalía (RUC)',  color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+    caso_fiscal:         { icon: 'gavel',           label: 'Caso Fiscal',     color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
     policiales_antpo:    { icon: 'local_police',    label: 'Antecedentes Pol.',color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
     policiales_antpol:   { icon: 'local_police',    label: 'Antecedentes Pol.',color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
     penales_antpen:      { icon: 'policy',          label: 'Antecedentes Pen.',color: 'bg-stone-100 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300' },
@@ -30,7 +34,8 @@ const HIST_FILTERS = [
     { id: 'Familiares',  label: 'Familiares',   icon: 'group', types: ['familiares_pdf', 'familiares_texto'] },
     { id: 'Telefonos',   label: 'Teléfonos',    icon: 'sensors', types: ['telefono_numeros_dni', 'telefono_info_linea', 'telefono_verificador', 'telefono_titular'] },
     { id: 'Facial',      label: 'Facial',       icon: 'face', types: ['busqueda_facial'] },
-    { id: 'Delitos',     label: 'Delitos',      icon: 'gavel', types: ['delitos_dni', 'delitos_placa'] },
+    { id: 'Delitos',     label: 'Delitos',      icon: 'gavel', types: ['delitos_dni', 'delitos_placa', 'antper'] },
+    { id: 'Fiscalía',    label: 'Fiscalía',     icon: 'balance', types: ['fiscalia_dni', 'fiscalia_nombre', 'fiscalia_ruc', 'caso_fiscal'] },
     { id: 'Policiales',  label: 'Policiales',   icon: 'local_police', types: ['policiales_antpo', 'policiales_antpol', 'penales_antpen'] },
 ];
 

@@ -401,6 +401,54 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Se requieren privilegios de administrador")
     return current_user
 
+
+class FiscaliaSearchRequest(BaseModel):
+    type: str
+    target: str
+
+@app.post("/api/fiscalia/search")
+async def search_fiscalia(req: FiscaliaSearchRequest, request: Request, user: dict = Depends(get_current_user)):
+    user_id = user['id']
+    target = req.target.strip().upper()
+    option_type = req.type
+    
+    valid_types = ['fiscalia_dni', 'fiscalia_nombre', 'fiscalia_ruc', 'caso_fiscal']
+    if option_type not in valid_types:
+        raise HTTPException(400, "Tipo de consulta inválido")
+        
+    check_banned_dni(target)
+    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
+
+    try:
+        # For name search, replace spaces with |
+        bot_target = target
+        if option_type == 'fiscalia_nombre':
+            bot_target = "|".join([p for p in target.split(" ") if p])
+
+        cost = await db.get_cost_for_option(option_type)
+        cost = cost if cost is not None else 2
+        
+        eligible, user_credits = await db.check_credits_for_option(user_id, cost)
+        if not eligible:
+            raise HTTPException(402, detail="Créditos insuficientes")
+
+        result = await bot_client.query_fiscalia_bot(bot_target, option_type)
+        
+        await db.deduct_credits(user_id, cost)
+        await api_log_search(request, user_id, target, option_type)
+
+        return {
+            "status": "success",
+            "message": "Consulta de Fiscalía exitosa",
+            "data": result
+        }
+
+    except SinResultadosError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error Fiscalia API: {e}")
+        raise HTTPException(500, detail=str(e))
+
 # --- Admin Pydantic Models ---
 class UserStatusUpdate(BaseModel):
     status: str # 'active', 'banned'
@@ -764,6 +812,35 @@ async def generate_c4_inscripcion_api(request: Request, dni_data: dict = Body(..
         logger.error(f"Error C4 Inscripcion API: {e}")
         raise HTTPException(500, detail=str(e))
 
+@app.post("/api/reniec/dnie")
+async def generate_dnie_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
+    dni = dni_data.get("dni")
+    if not dni: raise HTTPException(status_code=400, detail="DNI requerido")
+    check_banned_dni(dni)
+    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
+    
+    try:
+        user_id = user['id']
+        cost = await db.get_cost_for_option('virtual_electronico')
+        cost = cost if cost is not None else 1
+        eligible, user_credits = await db.check_credits_for_option(user_id, cost)
+        if not eligible:
+            raise HTTPException(402, detail="Créditos insuficientes")
+
+        result = await bot_client.generate_dni_electronico(dni)
+        await db.deduct_credits(user_id, cost)
+        await api_log_search(request, user_id, dni, 'reniec_dni_electronico')
+        return {
+            "status": "success",
+            "message": "DNI Electrónico Virtual generado correctamente",
+            "data": result
+        }
+    except SinResultadosError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error DNI Electronico API: {e}")
+        raise HTTPException(500, detail=str(e))
+
 @app.post("/api/reniec/dni-azul")
 async def generate_dni_azul_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
     dni = dni_data.get("dni")
@@ -927,7 +1004,7 @@ async def generate_antpen_api(request: Request, dni_data: dict = Body(...), user
 async def search_delitos_api(request: Request, data: dict = Body(...), user: dict = Depends(get_current_user)):
     target = data.get("target")
     query_type = data.get("type") # 'dni' or 'placa'
-    if not target or query_type not in ['dni', 'placa']:
+    if not target or query_type not in ['dni', 'placa', 'antper']:
         raise HTTPException(status_code=400, detail="Target (dni/placa) y tipo requeridos")
     client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
     
@@ -937,7 +1014,7 @@ async def search_delitos_api(request: Request, data: dict = Body(...), user: dic
     try:
         user_id = user['id']
         cost = await db.get_cost_for_option(query_type)
-        cost = cost if cost is not None else 2 # User confirmed 2 credits
+        cost = cost if cost is not None else (1 if query_type == 'antper' else 2)
         eligible, user_credits = await db.check_credits_for_option(user_id, cost)
         if not eligible:
             raise HTTPException(402, detail="Créditos insuficientes")
@@ -1373,6 +1450,12 @@ async def get_titular_numero(request: Request, body: PhoneRequest, Authorization
 
 @app.get("/api/dni/{dni}")
 async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic", user: Optional[dict] = Depends(get_optional_user), x_turnstile_token: Optional[str] = Header(None)):
+    settings = await db.get_all_settings()
+    search_type = request.query_params.get('type', 'basic')
+    if search_type == 'basic' and not settings.get('option_dni_gratis', {}).get('value', True):
+        raise HTTPException(503, 'La búsqueda básica por DNI está deshabilitada temporalmente.')
+    if search_type == 'premium' and not settings.get('option_dni_premium', {}).get('value', True):
+        raise HTTPException(503, 'La búsqueda premium por DNI está deshabilitada temporalmente.')
     check_banned_dni(dni)
     
     if MAINTENANCE_MODE:
@@ -1478,6 +1561,9 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
 
 @app.get("/api/search/name")
 async def search_by_name(request: Request, nombres: str, ap_paterno: str = "", ap_materno: str = "", user: Optional[dict] = Depends(get_optional_user), x_turnstile_token: Optional[str] = Header(None)):
+    settings = await db.get_all_settings()
+    if not settings.get('option_busqueda_nombres', {}).get('value', True):
+        raise HTTPException(503, 'La búsqueda por nombres está deshabilitada temporalmente.')
     if MAINTENANCE_MODE:
         if user and user.get('role') == 'admin':
             pass
@@ -1744,6 +1830,52 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
         res = await bot_client.query_record(target)
         await api_log_search(request, user_id, target, 'record_vehicular')
         
+        return {"data": res, "file_path": res.get("file_path")}
+
+    except SinResultadosError as e:
+        if user.get('role') != 'admin' and not user.get('is_premium'):
+            await db.refund_credits(user_id, cost, f"Reembolso RECORD (Sin resultados) para {target}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        if user.get('role') != 'admin' and not user.get('is_premium'):
+            await db.refund_credits(user_id, cost, f"Reembolso RECORD (Error) para {target}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vehiculos/record")
+async def generate_record_api(request: Request, body_data: dict = Body(...), user: dict = Depends(get_current_user)):
+    target = body_data.get("target")
+    if not target: raise HTTPException(status_code=400, detail="Placa/DNI requerido")
+    check_banned_dni(target)
+    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
+    
+    try:
+        user_id = user['id']
+        cost = await db.get_cost_for_option('record_vehicular')
+        cost = cost if cost is not None else 2
+
+        if user.get('role') != 'admin':
+            if not user.get('is_premium') and user.get('credits', 0) < cost:
+                raise HTTPException(status_code=402, detail="Créditos insuficientes")
+            
+            success = await db.deduct_credits(user_id, cost, f"Búsqueda RECORD para {target}")
+            if not success:
+                raise HTTPException(status_code=402, detail="Error al descontar créditos")
+
+        asyncio.create_task(
+            notify_admins_new_search(user, "RECORD", target, "API", client_ip)
+        )
+
+        res = await bot_client.query_record(target)
+
+        await db.register_search(
+            user_id=user_id,
+            search_type="record",
+            query_target=target,
+            raw_response=res.get("raw_text", ""),
+            credits_used=cost if user.get('role') != 'admin' else 0,
+            ip_address=client_ip
+        )
         return {"data": res, "file_path": res.get("file_path")}
 
     except SinResultadosError as e:
