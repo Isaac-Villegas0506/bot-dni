@@ -479,11 +479,15 @@ class Database:
         await self._ensure_connection()
         try:
             cursor = self.conn.cursor()
-            cursor.execute("UPDATE system_settings SET setting_value = %s, updated_at = CURRENT_TIMESTAMP WHERE setting_key = %s", (value, key))
-            rows = cursor.rowcount
+            cursor.execute("""
+                INSERT INTO system_settings (setting_key, setting_value, label) 
+                VALUES (%s, %s, %s) 
+                ON CONFLICT (setting_key) DO UPDATE 
+                SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP
+            """, (key, value, key))
             self.conn.commit()
             cursor.close()
-            return rows > 0
+            return True
         except Exception as e:
             print(f"Error update_setting: {e}")
             return False
@@ -1380,8 +1384,10 @@ class Database:
         try:
             cursor = self.conn.cursor()
             cursor.execute(
-                "UPDATE credit_costs SET cost = %s WHERE option_id = %s",
-                (cost, option_id)
+                """INSERT INTO credit_costs (option_id, cost, label) 
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (option_id) DO UPDATE SET cost = EXCLUDED.cost""",
+                (option_id, cost, option_id)
             )
             self.conn.commit()
             affected = cursor.rowcount

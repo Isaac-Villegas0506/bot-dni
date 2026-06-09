@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
+import { useSettings } from '../context/SettingsContext';
 
 export default function SearchBar({ searchMode, setSearchMode, searchDni, searchName, loading }) {
+    const { isFeatureEnabled } = useSettings();
     const autoSearchTriggered = useRef(false);
     // Destructure to keep effect deps stable (searchDni is a fresh object each parent render).
     const { value: dniValue, handleSubmit: handleDniSubmit } = searchDni;
@@ -17,6 +19,19 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
             autoSearchTriggered.current = false;
         }
     }, [dniValue, searchMode, loading, handleDniSubmit]);
+
+    // Ensure valid search mode if features are disabled
+    useEffect(() => {
+        if (searchMode === 'name' && !isFeatureEnabled('option_busqueda_nombres')) {
+            setSearchMode('dni');
+        }
+        if (searchMode === 'dni' && searchDni.searchType === 'basic' && !isFeatureEnabled('option_dni_gratis')) {
+            searchDni.setSearchType('premium');
+        }
+        if (searchMode === 'dni' && searchDni.searchType === 'premium' && !isFeatureEnabled('option_dni_premium')) {
+            searchDni.setSearchType('basic');
+        }
+    }, [isFeatureEnabled, searchMode, searchDni.searchType]);
 
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
@@ -40,9 +55,15 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
             {/* ── Mode Tabs ────────────────────────────────────────────────── */}
             <div role="tablist" aria-label="Modo de búsqueda" className="flex gap-1.5 bg-slate-100 dark:bg-slate-800/70 p-1.5 rounded-2xl mb-10 lg:mb-12 border border-slate-200/80 dark:border-slate-700/60 w-full max-w-xs sm:max-w-sm lg:max-w-md shadow-sm">
                 {[
-                    { mode: 'dni', label: 'Por DNI' },
-                    { mode: 'name', label: 'Por Nombre' },
-                ].map(({ mode, label }) => (
+                    { mode: 'dni', label: 'Por DNI', option: 'option_dni_gratis' }, // Fallback to option_dni_premium if this is disabled? 
+                    { mode: 'name', label: 'Por Nombre', option: 'option_busqueda_nombres' },
+                ].filter(tab => {
+                    // Si Por Nombre está desactivado, no lo mostramos.
+                    if (tab.mode === 'name' && !isFeatureEnabled('option_busqueda_nombres')) return false;
+                    // Si ambos dni están desactivados, ocultamos Por DNI (raro, pero bueno)
+                    if (tab.mode === 'dni' && !isFeatureEnabled('option_dni_gratis') && !isFeatureEnabled('option_dni_premium')) return false;
+                    return true;
+                }).map(({ mode, label }) => (
                     <button
                         key={mode}
                         role="tab"
@@ -117,9 +138,9 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
                     className="flex justify-center gap-5 mt-5"
                 >
                     {[
-                        { value: 'basic', label: 'Datos básicos', dotColor: 'bg-blue-500', ringColor: 'border-blue-500', textActive: 'text-slate-800 dark:text-slate-100', textInactive: 'text-slate-500 dark:text-slate-400' },
-                        { value: 'premium', label: 'Datos premium', dotColor: 'bg-amber-500', ringColor: 'border-amber-500', textActive: 'text-amber-600 dark:text-amber-400', textInactive: 'text-slate-500 dark:text-slate-400' },
-                    ].map(({ value, label, dotColor, ringColor, textActive, textInactive }) => {
+                        { value: 'basic', label: 'Datos básicos', dotColor: 'bg-blue-500', ringColor: 'border-blue-500', textActive: 'text-slate-800 dark:text-slate-100', textInactive: 'text-slate-500 dark:text-slate-400', feature: 'option_dni_gratis' },
+                        { value: 'premium', label: 'Datos premium', dotColor: 'bg-amber-500', ringColor: 'border-amber-500', textActive: 'text-amber-600 dark:text-amber-400', textInactive: 'text-slate-500 dark:text-slate-400', feature: 'option_dni_premium' },
+                    ].filter(opt => isFeatureEnabled(opt.feature)).map(({ value, label, dotColor, ringColor, textActive, textInactive }) => {
                         const isActive = searchDni.searchType === value;
                         return (
                             <label

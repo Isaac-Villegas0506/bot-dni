@@ -26,6 +26,7 @@ const FamiliaresPage = lazy(() => import('./pages/Familiares'));
 const TelefonoPage = lazy(() => import('./pages/Telefono'));
 const PolicialesPage = lazy(() => import('./pages/Policiales'));
 const DelitosPage = lazy(() => import('./components/Delitos'));
+const FiscaliaPage = lazy(() => import('./components/Fiscalia'));
 const VehiculosPage = lazy(() => import('./pages/Vehiculos'));
 const AdminPage = lazy(() => import('./pages/Admin'));
 const TermsPage = lazy(() => import('./pages/Terms'));
@@ -47,7 +48,7 @@ const VIEW_ROUTES = {
     home: '/', history: '/historial', shop: '/tienda',
     generator: '/generador', familiares: '/familiares',
     telefono: '/telefono', policiales: '/policiales', delitos: '/delitos', vehiculos: '/vehiculos', admin: '/admin',
-    terms: '/terminos', facial: '/facial', creditos: '/creditos'
+    terms: '/terminos', facial: '/facial', creditos: '/creditos', fiscalia: '/fiscalia'
 };
 
 export default function App() {
@@ -126,6 +127,7 @@ export default function App() {
                         <Route path="/telefono" element={<TelefonoPage />} />
                         <Route path="/policiales" element={<PolicialesPage />} />
                         <Route path="/delitos" element={<DelitosPage />} />
+                        <Route path="/fiscalia" element={<FiscaliaPage />} />
                         <Route path="/vehiculos" element={<VehiculosPage />} />
                         <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
                         <Route path="/terminos" element={<TermsPage />} />

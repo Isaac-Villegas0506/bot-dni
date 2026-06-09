@@ -16,6 +16,98 @@ class SinResultadosError(Exception):
 
 
 class BotClient:
+
+    async def query_fiscalia_bot(self, target: str, option_type: str) -> dict:
+        """Consulta datos de Fiscalía."""
+        await self._ensure_connection()
+
+        target_group = '@Infordata1_bot'
+        try:
+            bot_entity = await self.client.get_entity(target_group)
+            target_bot_id = bot_entity.id
+        except:
+            target_bot_id = 0
+
+        if option_type == 'fiscalia_dni':
+            cmd = f'/fiscalia {target}'
+            pdf_prefix = 'FISCALIA'
+        elif option_type == 'fiscalia_ruc':
+            cmd = f'/fisruc {target}'
+            pdf_prefix = 'FISRUC'
+        elif option_type == 'fiscalia_nombre':
+            # Name formatting handled by the caller (replacing spaces with |)
+            cmd = f'/fisnm {target}'
+            pdf_prefix = 'FISNM'
+        elif option_type == 'caso_fiscal':
+            cmd = f'/fisca {target}'
+            pdf_prefix = 'FISCA'
+        else:
+            raise ValueError(f"Opción de fiscalía no válida: {option_type}")
+
+        print(f"⚖️ Enviando {cmd} al bot...")
+        sent_msg = await self.client.send_message(target_group, cmd)
+        
+        import asyncio
+        await asyncio.sleep(8)
+        
+        found_pdf = None
+        found_text = None
+
+        for attempt in range(12):
+            print(f"🔄 Polling Fiscalía intento {attempt + 1}/12...")
+            async for message in self.client.iter_messages(target_group, limit=100, min_id=sent_msg.id, reverse=True):
+                if message.sender_id != target_bot_id:
+                    continue
+                    
+                text = message.text or ""
+                if "procesando" in text.lower() or "espera" in text.lower():
+                    continue
+                    
+                if self._is_sin_resultados(text):
+                    from backend.utils.errors import SinResultadosError
+                    raise SinResultadosError("「❌️」Sin Resultados. Verifique los datos e intente nuevamente.")
+                    
+                is_our_response = (message.reply_to_msg_id == sent_msg.id)
+                # Fallback text check
+                if not is_our_response:
+                    if option_type == 'fiscalia_dni' and "FISCALIA - PDF" in text:
+                        is_our_response = True
+                    elif option_type == 'fiscalia_ruc' and "FISCALÍA RUC" in text:
+                        is_our_response = True
+                    elif option_type == 'fiscalia_nombre' and "FISCALÍA NOMBRES" in text:
+                        is_our_response = True
+                    elif option_type == 'caso_fiscal' and "FISCALÍA CASO" in text:
+                        is_our_response = True
+                
+                if is_our_response:
+                    if text and not found_text:
+                        found_text = text
+                    if message.file and message.file.name and message.file.name.endswith('.pdf'):
+                        if pdf_prefix in message.file.name.upper() or is_our_response:
+                            found_pdf = message
+                            
+            if found_pdf and found_text:
+                break
+            await asyncio.sleep(3)
+            
+        if not found_pdf or not found_text:
+            raise Exception("No se obtuvo respuesta completa del bot de Fiscalía.")
+            
+        from pathlib import Path
+        import time
+        static_docs_dir = Path(__file__).parent.absolute() / "static" / "docs"
+        static_docs_dir.mkdir(parents=True, exist_ok=True)
+        
+        safe_target = target.replace('|', '_').replace(' ', '_').replace('/', '_')
+        filename = f"{pdf_prefix}_{safe_target}_{int(time.time())}.pdf"
+        file_path = static_docs_dir / filename
+        await found_pdf.download_media(file=file_path)
+        
+        return {
+            "archivo": f"docs/{filename}",
+            "raw_text": found_text
+        }
+
     def __init__(self):
         self.api_id = os.getenv("TELEGRAM_API_ID")
         self.api_hash = os.getenv("TELEGRAM_API_HASH")
@@ -1370,6 +1462,117 @@ class BotClient:
             print(f"❌ Error C4 Inscripción: {e}")
             raise Exception("Ocurrió un error al generar la ficha. Intenta nuevamente en unos segundos.")
 
+    async def generate_dni_electronico(self, dni):
+        """Genera DNI Electrónico Virtual (Premium). Devuelve 2 imágenes PNG: frontal y reverso."""
+        await self._ensure_connection()
+
+        target_group = '@Infordata1_bot'
+        try:
+            bot_entity = await self.client.get_entity(target_group)
+            target_bot_id = bot_entity.id
+        except:
+            target_bot_id = 0
+
+        print(f"💳 Generating DNI Electronico Virtual for {dni}...")
+
+        try:
+            sent_msg = await self.client.send_message(target_group, f'/dnie {dni}')
+            print("⏳ Esperando respuesta DNI Electronico (15s iniciales)...")
+            import asyncio
+            await asyncio.sleep(15)
+
+            found_images = []
+            found_texts = []
+            target_grouped_id = None
+            for attempt in range(12):
+                print(f" Polling DNI Electronico intento {attempt+1}/12...")
+                async for message in self.client.iter_messages(target_group, limit=100, min_id=sent_msg.id, reverse=True):
+                    if message.sender_id != target_bot_id:
+                        continue
+                    text = message.text or ""
+                    if "procesando" in text.lower() or "espera" in text.lower() or "buscando" in text.lower():
+                        continue
+
+                    if self._is_sin_resultados(text) and (str(dni) in text or message.reply_to_msg_id == sent_msg.id):
+                        from backend.utils.errors import SinResultadosError
+                        print("⛔ DNI Electronico: Bot reportó Sin Resultados.")
+                        raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
+
+                    is_our_response = (message.reply_to_msg_id == sent_msg.id) or (str(dni) in text)
+                    is_part_of_album = target_grouped_id and message.grouped_id == target_grouped_id
+                    
+                    if not is_our_response and not is_part_of_album:
+                        continue
+                    
+                    if is_our_response and message.grouped_id:
+                        target_grouped_id = message.grouped_id
+
+                    if text and not message.photo and not message.document:
+                        if not found_texts or len(text) > len(found_texts[0].text):
+                            found_texts.insert(0, message)
+
+                    if message.photo or (message.document and message.document.mime_type and 'image' in message.document.mime_type):
+                        if message.id not in [m.id for m in found_images]:
+                            found_images.append(message)
+
+                if len(found_images) >= 2:
+                    break
+                await asyncio.sleep(2)
+
+            if len(found_images) < 2:
+                raise Exception("No se recibieron todas las imágenes del DNI.")
+
+            from parser import parse_bot_response
+            print(f"✅ DNI Electronico: Imágenes encontradas. Descargando...")
+
+            found_images.sort(key=lambda m: m.id)
+            frontal_msg = next((m for m in found_images if m.file and m.file.name and "FRONT" in m.file.name.upper()), found_images[0])
+            reverso_msg = next((m for m in found_images if m.file and m.file.name and "BACK" in m.file.name.upper()), found_images[1] if len(found_images) > 1 else found_images[0])
+            
+            if frontal_msg.id == reverso_msg.id and len(found_images) >= 2:
+                reverso_msg = found_images[1]
+
+            valid_images = [frontal_msg, reverso_msg]
+            raw_text = ""
+            if found_texts:
+                raw_text = found_texts[0].text
+            else:
+                for m in valid_images:
+                    if m.text:
+                        raw_text = m.text
+                        break
+            
+            parsed_data = parse_bot_response(raw_text)
+            print(f"📝 Texto extraído: {raw_text[:50]}...")
+
+            from pathlib import Path
+            static_images_dir = Path(__file__).parent.absolute() / "static" / "images"
+            static_images_dir.mkdir(parents=True, exist_ok=True)
+
+            image_paths = []
+            labels = ['frontal', 'reverso']
+            for i, msg in enumerate(valid_images):
+                label = labels[i]
+                filename = f"DNI_ELECTRONICO_{label}_{dni}.png"
+                path = static_images_dir / filename
+                await msg.download_media(file=path)
+                image_paths.append(f"images/{filename}")
+
+            return {
+                "frontal": image_paths[0],
+                "reverso": image_paths[1],
+                "image_paths": image_paths,
+                **parsed_data
+            }
+
+        except Exception as e:
+            from backend.utils.errors import SinResultadosError
+            if isinstance(e, SinResultadosError):
+                raise
+            print(f"❌ Error DNI Electronico: {e}")
+            raise Exception("Ocurrió un error al generar el DNI Electronico.")
+
+
     async def generate_dni_azul(self, dni):
         """Genera DNI Azul Virtual (Premium). Devuelve 2 imágenes PNG: frontal y reverso."""
         await self._ensure_connection()
@@ -2170,7 +2373,14 @@ class BotClient:
         """
         await self._ensure_connection()
         bot = '@Infordata1_bot'
-        command = f"/den {target}" if query_type == "dni" else f"/denp {target}"
+        if query_type == "dni":
+            command = f"/den {target}"
+        elif query_type == "placa":
+            command = f"/denp {target}"
+        elif query_type == "antper":
+            command = f"/antper {target}"
+        else:
+            command = f"/den {target}"
         
         acquired_bot = None
         if self.bot_pool:

@@ -11,32 +11,53 @@ import AnnouncementManagement from './AnnouncementManagement';
 import PriceManagement        from './PriceManagement';
 import HistorialAdmin         from './HistorialAdmin';
 import CreditRequests         from './CreditRequests';
-import SpecialOptions         from './SpecialOptions';
 import PromoRequests          from './PromoRequests';
 import SettingsManagement     from './SettingsManagement';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-    { id: 'dashboard',     icon: 'dashboard',             label: 'Dashboard',    mobileLabel: 'Home'     },
-    { id: 'users',         icon: 'people',                label: 'Usuarios',     mobileLabel: 'Usuarios' },
-    { id: 'bots',          icon: 'smart_toy',             label: 'Bots',         mobileLabel: 'Bots'     },
-    { id: 'announcements', icon: 'campaign',              label: 'Anuncios',     mobileLabel: 'Avisos'   },
-    { id: 'precios',       icon: 'sell',                  label: 'Precios',      mobileLabel: 'Precios'  },
-    { id: 'historial',     icon: 'manage_search',         label: 'Historial',    mobileLabel: 'Historial'},
-    { id: 'purchases',     icon: 'point_of_sale',         label: 'Pagos',        mobileLabel: 'Pagos'    },
-    { id: 'promos',        icon: 'smart_display',         label: 'Promos TikTok',mobileLabel: 'Promos'   },
-    { id: 'special',       icon: 'settings_applications', label: 'Op. Especiales',mobileLabel: 'Opcs.' },
-    { id: 'settings',      icon: 'tune',                  label: 'Configuración', mobileLabel: 'Ajustes' },
+const NAV_GROUPS = [
+    {
+        title: "Principal",
+        items: [
+            { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', mobileLabel: 'Home' }
+        ]
+    },
+    {
+        title: "Comunidad",
+        items: [
+            { id: 'users', icon: 'people', label: 'Usuarios', mobileLabel: 'Usuarios' },
+            { id: 'historial', icon: 'manage_search', label: 'Historial', mobileLabel: 'Búsquedas' }
+        ]
+    },
+    {
+        title: "Ventas y Planes",
+        items: [
+            { id: 'purchases', icon: 'point_of_sale', label: 'Pagos', mobileLabel: 'Pagos' },
+            { id: 'promos', icon: 'smart_display', label: 'Promos TikTok', mobileLabel: 'Promos' },
+            { id: 'precios', icon: 'sell', label: 'Precios', mobileLabel: 'Precios' }
+        ]
+    },
+    {
+        title: "Sistema",
+        items: [
+            { id: 'announcements', icon: 'campaign', label: 'Anuncios', mobileLabel: 'Avisos' },
+            { id: 'bots', icon: 'smart_toy', label: 'Bots', mobileLabel: 'Bots' },
+            { id: 'settings', icon: 'tune', label: 'Configuración', mobileLabel: 'Ajustes' }
+        ]
+    }
 ];
+
+// Helper to get all items flat (useful for mobile menu iteration)
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap(g => g.items);
 
 // ─── Sidebar NavButton ────────────────────────────────────────────────────────
 function NavButton({ active, onClick, icon, label }) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-150 text-[11px] font-black uppercase tracking-widest focus-ring
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-[11px] font-black uppercase tracking-widest focus-ring
                 ${active
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
                 }`}
         >
@@ -75,7 +96,6 @@ export default function AdminDashboard({ onBackToHome }) {
             case 'historial':     return <HistorialAdmin />;
             case 'purchases':     return <CreditRequests />;
             case 'promos':        return <PromoRequests />;
-            case 'special':       return <SpecialOptions onBackToHome={onBackToHome} />;
             case 'settings':      return <SettingsManagement />;
             default:              return <DashboardHome stats={stats} />;
         }
@@ -85,27 +105,45 @@ export default function AdminDashboard({ onBackToHome }) {
         <div className="flex h-screen bg-slate-50 dark:bg-slate-900 font-body text-slate-900 dark:text-white overflow-hidden">
 
             {/* ── Desktop Sidebar ─────────────────────────────────────────── */}
-            <aside className="hidden md:flex w-60 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-col shrink-0 z-20">
+            <aside className="hidden md:flex w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-col shrink-0 z-20">
                 <div className="px-5 py-5 border-b border-slate-100 dark:border-slate-700 shrink-0">
                     <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                         Admin Panel
                     </h2>
-                    <p className="text-[11px] text-slate-400 mt-0.5">v1.2.0 · Stable</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">v2.0.2 · Stable</p>
                 </div>
 
-                <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-                    {NAV_ITEMS.map(item => (
-                        <NavButton
-                            key={item.id}
-                            active={activeTab === item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            icon={item.icon}
-                            label={item.label}
-                        />
+                <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+                    {NAV_GROUPS.map((group, i) => (
+                        <div key={i}>
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                                {group.title}
+                            </p>
+                            <div className="space-y-0.5">
+                                {group.items.map(item => (
+                                    <NavButton
+                                        key={item.id}
+                                        active={activeTab === item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        icon={item.icon}
+                                        label={item.label}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </nav>
 
-                <div className="p-3 border-t border-slate-100 dark:border-slate-700 shrink-0">
+                <div className="p-3 border-t border-slate-100 dark:border-slate-700 shrink-0 space-y-1">
+                    {onBackToHome && (
+                        <button
+                            onClick={onBackToHome}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-colors text-sm font-medium"
+                        >
+                            <span className="material-icons-round text-[20px]">home</span>
+                            Volver a la Web
+                        </button>
+                    )}
                     <button
                         onClick={logout}
                         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-sm font-medium"
@@ -162,7 +200,7 @@ export default function AdminDashboard({ onBackToHome }) {
                         {[
                             { id: 'dashboard', icon: 'dashboard', label: 'Inicio' },
                             { id: 'users', icon: 'group', label: 'Usuarios' },
-                            { id: 'historial', icon: 'history', label: 'Historial' },
+                            { id: 'purchases', icon: 'point_of_sale', label: 'Ventas' },
                             { id: 'menu', icon: 'menu', label: 'Menú' }
                         ].map(({ id, icon, label }) => {
                             const isActive = id === 'menu' ? showMobileMenu : activeTab === id;
@@ -211,21 +249,30 @@ export default function AdminDashboard({ onBackToHome }) {
                                         <span className="material-icons-round text-xl">close</span>
                                     </button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
-                                    {NAV_ITEMS.map(item => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => {
-                                                setActiveTab(item.id);
-                                                setShowMobileMenu(false);
-                                            }}
-                                            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors ${activeTab === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
-                                        >
-                                            <span className={`material-icons-round text-[22px] ${activeTab === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
-                                                {item.icon}
-                                            </span>
-                                            <span className="text-sm font-semibold">{item.label}</span>
-                                        </button>
+                                <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
+                                    {NAV_GROUPS.map((group, i) => (
+                                        <div key={i}>
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                                                {group.title}
+                                            </p>
+                                            <div className="space-y-1">
+                                                {group.items.map(item => (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={() => {
+                                                            setActiveTab(item.id);
+                                                            setShowMobileMenu(false);
+                                                        }}
+                                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors ${activeTab === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
+                                                    >
+                                                        <span className={`material-icons-round text-[22px] ${activeTab === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                                                            {item.icon}
+                                                        </span>
+                                                        <span className="text-sm font-semibold">{item.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
                                     
                                     <div className="my-2 border-t border-slate-100 dark:border-slate-800" />
@@ -233,7 +280,7 @@ export default function AdminDashboard({ onBackToHome }) {
                                     <button
                                         onClick={() => {
                                             setShowMobileMenu(false);
-                                            onBackToHome();
+                                            if(onBackToHome) onBackToHome();
                                         }}
                                         className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800"
                                     >

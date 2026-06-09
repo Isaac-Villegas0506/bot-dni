@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSettings } from '../context/SettingsContext';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import HelpModal from './HelpModal';
@@ -24,6 +25,11 @@ function parseDenuncias(rawText) {
         
         if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine)) {
             if (currentDenuncia) denuncias.push(currentDenuncia);
+            currentDenuncia = [];
+        } else if (!currentDenuncia && cleanLine.includes('ANTECEDENTES - ONLINE')) {
+            currentDenuncia = [];
+        } else if (!currentDenuncia && (cleanLine.includes('➣') || cleanLine.includes(':'))) {
+            // Fallback para atrapar data si no detectó la cabecera
             currentDenuncia = [];
         }
         
@@ -54,6 +60,7 @@ function parseDenuncias(rawText) {
 }
 
 export default function Delitos() {
+    const { isFeatureEnabled } = useSettings();
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
     const [view, setView] = useState(() => sessionStorage.getItem('delitos_view') || 'selection'); // 'selection' | 'result'
@@ -85,6 +92,21 @@ export default function Delitos() {
     const { getCost } = useCreditCosts();
 
     const options = [
+        {
+            id: 'antper',
+            title: 'Antecedentes Global',
+            icon: 'gavel',
+            color: 'bg-indigo-800',
+            desc: 'Antecedentes totales de una persona',
+            credits: getCost('antper', 1),
+            placeholder: 'Ej: 10001088',
+            helpDesc: 'Reporte completo de antecedentes de una persona a nivel nacional.',
+            helpDetails: [
+                'Historial de antecedentes',
+                'Documento en formato PDF',
+                'Detalle de tipo de registro'
+            ]
+        },
         {
             id: 'dni',
             title: 'Denuncias por DNI',
@@ -251,13 +273,13 @@ export default function Delitos() {
 
     return (
         <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
-            {view === 'selection' && !loading && (
+            {view === 'selection' && (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"
                     >
-                        {options.map((opt) => (
+                        {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
                             <div
                                 key={opt.id}
                                 onClick={() => handleOptionClick(opt)}
@@ -271,8 +293,17 @@ export default function Delitos() {
                                     <span className="material-icons-round text-slate-400 dark:text-slate-500 text-base">help_outline</span>
                                 </button>
 
-                                <div className={`w-12 h-12 rounded-xl ${opt.color} flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
-                                    <span className="material-icons-round text-2xl">{opt.icon}</span>
+                                <div className="relative">
+                                    <div className={`w-12 h-12 rounded-xl ${opt.color} flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
+                                        <span className="material-icons-round text-2xl">{opt.icon}</span>
+                                    </div>
+                                    {opt.isNew && (
+                                        <div className="absolute -top-2 -right-3 z-20">
+                                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-yellow-300 text-yellow-900 font-black shadow-sm border border-yellow-400 animate-pulse">
+                                                NUEVO
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div>
@@ -298,84 +329,149 @@ export default function Delitos() {
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="w-full max-w-5xl"
+                        className={selectedOption?.id === 'antper' ? "w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800" : "w-full max-w-5xl"}
                     >
-                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200 dark:border-slate-800">
-                            <button
-                                onClick={handleBackClick}
-                                className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white font-semibold h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 transition-all duration-150 flex items-center justify-center gap-2 text-sm shadow-sm"
-                            >
-                                <span className="material-icons-round text-slate-400 text-[18px]">arrow_back</span>
-                                <span>Regresar</span>
-                            </button>
-                            <h2 className="hidden sm:flex text-xl font-black text-slate-800 dark:text-white items-center gap-2">
-                                <span className="material-icons-round text-green-500">check_circle</span>
-                                Resultados de Búsqueda
-                            </h2>
-                        </div>
+                        {selectedOption?.id === 'antper' ? (
+                            <div className="p-8 flex flex-col items-center relative">
+                                {/* Back button (Arrow) */}
+                                <button
+                                    onClick={handleBackClick}
+                                    className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95 shadow-md shadow-black/10 dark:shadow-black/30"
+                                    title="Volver"
+                                >
+                                    <span className="material-icons-round">arrow_back</span>
+                                </button>
 
-                        {/* List of PDFs */}
-                        <div className="mb-8">
-                            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest">
-                                Archivos de Denuncias Generados
-                            </h3>
-                            {generatedData.archivos && generatedData.archivos.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {generatedData.archivos.map((filePath, idx) => (
-                                        <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                                                    <span className="material-icons-round text-red-600 dark:text-red-400">picture_as_pdf</span>
-                                                </div>
-                                                <div className="flex-1 truncate">
-                                                    <span className="text-sm font-bold text-slate-800 dark:text-white block truncate">
-                                                        DENUNCIA_{idx + 1}-{generatedData.queryTarget}.pdf
-                                                    </span>
-                                                </div>
+                                {/* Success Icon */}
+                                <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-emerald-500/30">
+                                    <span className="material-icons-round text-4xl">check</span>
+                                </div>
+
+                                <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 tracking-wide text-center">
+                                    ANTECEDENTES GENERADOS CON ÉXITO
+                                </h3>
+
+                                {/* Display Data Table */}
+                                <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {generatedData.parsedDenuncias && generatedData.parsedDenuncias[0] && generatedData.parsedDenuncias[0].map((item, idx) => (
+                                            <div key={idx} className="flex items-start text-sm">
+                                                <span className="font-bold text-slate-500 dark:text-slate-400 w-24 shrink-0">{item.label}</span>
+                                                <span className="text-slate-400 mx-2">:</span>
+                                                <span className="font-bold text-slate-800 dark:text-white truncate">{item.value}</span>
                                             </div>
-                                            {/* Preview PDF — funciona en desktop y móvil */}
-                                            <PdfViewer
-                                                url={getApiUrl(`/api/static/${filePath}`)}
-                                                height="300px"
-                                                className="mb-3"
-                                            />
-                                            
-                                            {/* Texto parseado */}
-                                            {generatedData.parsedDenuncias && generatedData.parsedDenuncias[idx] && (
-                                                <div className="mb-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 flex-1 overflow-y-auto">
-                                                    <div className="flex flex-col gap-2.5">
-                                                        {generatedData.parsedDenuncias[idx].map((item, i) => (
-                                                            <div key={i} className="flex items-start gap-2">
-                                                                <span className="material-icons-round text-blue-500 dark:text-blue-400 text-[18px] mt-0.5 shrink-0">{item.icon}</span>
-                                                                <div className="flex flex-col w-full min-w-0">
-                                                                    <span className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider leading-tight">{item.label}</span>
-                                                                    <span className="font-semibold text-sm text-slate-800 dark:text-white break-words leading-snug">{item.value}</span>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+                                        ))}
+                                    </div>
+                                </div>
 
-                                            <button
-                                                onClick={() => downloadPdf(filePath, idx)}
-                                                className="mt-auto w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
-                                            >
-                                                <span className="material-icons-round text-base">download</span>
-                                                Descargar PDF
-                                            </button>
+                                {/* Document Preview */}
+                                {generatedData.archivos && generatedData.archivos.length > 0 && (
+                                    <PdfViewer
+                                        url={getApiUrl(`/api/static/${generatedData.archivos[0]}`)}
+                                        height="420px"
+                                        className="mb-8 w-full"
+                                    />
+                                )}
+
+                                {/* Buttons */}
+                                <div className="flex flex-col w-full gap-3">
+                                    {generatedData.archivos && generatedData.archivos.length > 0 && (
+                                        <button
+                                            onClick={() => downloadPdf(generatedData.archivos[0], 0)}
+                                            className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg hover:scale-[1.02]"
+                                        >
+                                            <span className="material-icons-round">download</span>
+                                            Descargar Antecedentes
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={handleBackClick}
+                                        className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                                    >
+                                        Volver
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200 dark:border-slate-800">
+                                    <button
+                                        onClick={handleBackClick}
+                                        className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white font-semibold h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 transition-all duration-150 flex items-center justify-center gap-2 text-sm shadow-sm"
+                                    >
+                                        <span className="material-icons-round text-slate-400 text-[18px]">arrow_back</span>
+                                        <span>Regresar</span>
+                                    </button>
+                                    <h2 className="hidden sm:flex text-xl font-black text-slate-800 dark:text-white items-center gap-2">
+                                        <span className="material-icons-round text-green-500">check_circle</span>
+                                        Resultados de Búsqueda
+                                    </h2>
+                                </div>
+
+                                {/* List of PDFs */}
+                                <div className="mb-8">
+                                    <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest">
+                                        Archivos de Denuncias Generados
+                                    </h3>
+                                    {generatedData.archivos && generatedData.archivos.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {generatedData.archivos.map((filePath, idx) => (
+                                                <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col">
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                                                            <span className="material-icons-round text-red-600 dark:text-red-400">picture_as_pdf</span>
+                                                        </div>
+                                                        <div className="flex-1 truncate">
+                                                            <span className="text-sm font-bold text-slate-800 dark:text-white block truncate">
+                                                                DENUNCIA_{idx + 1}-{generatedData.queryTarget}.pdf
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {/* Preview PDF */}
+                                                    <PdfViewer
+                                                        url={getApiUrl(`/api/static/${filePath}`)}
+                                                        height="300px"
+                                                        className="mb-3"
+                                                    />
+                                                    
+                                                    {/* Texto parseado */}
+                                                    {generatedData.parsedDenuncias && generatedData.parsedDenuncias[idx] && (
+                                                        <div className="mb-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 flex-1 overflow-y-auto">
+                                                            <div className="flex flex-col gap-2.5">
+                                                                {generatedData.parsedDenuncias[idx].map((item, i) => (
+                                                                    <div key={i} className="flex items-start gap-2">
+                                                                        <span className="material-icons-round text-blue-500 dark:text-blue-400 text-[18px] mt-0.5 shrink-0">{item.icon}</span>
+                                                                        <div className="flex flex-col w-full min-w-0">
+                                                                            <span className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider leading-tight">{item.label}</span>
+                                                                            <span className="font-semibold text-sm text-slate-800 dark:text-white break-words leading-snug">{item.value}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => downloadPdf(filePath, idx)}
+                                                        className="mt-auto w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
+                                                    >
+                                                        <span className="material-icons-round text-base">download</span>
+                                                        Descargar PDF
+                                                    </button>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+                                            <span className="material-icons-round text-slate-400 text-3xl mb-2">description</span>
+                                            <p className="text-slate-600 dark:text-slate-400 font-medium text-sm">
+                                                Esta consulta no contiene archivos adjuntos.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
-                                    <span className="material-icons-round text-slate-400 text-3xl mb-2">description</span>
-                                    <p className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-                                        Esta consulta no contiene archivos adjuntos.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                            </>
+                        )}
                     </motion.div>
                 )}
             {/* INPUT MODAL (PORTAL) */}
@@ -398,14 +494,14 @@ export default function Delitos() {
                                             {selectedOption.title}
                                         </h3>
                                         <p className="text-xs text-slate-500">
-                                            Ingrese {selectedOption.id === 'dni' ? 'el DNI' : 'la Placa'} a consultar
+                                            Ingrese {selectedOption.id === 'placa' ? 'la Placa' : 'el DNI'} a consultar
                                         </p>
                                     </div>
                                 </div>
 
                                 <input 
-                                    inputMode={selectedOption.id === 'dni' ? 'numeric' : 'text'}
-                                    maxLength={selectedOption.id === 'dni' ? 8 : 6} 
+                                    inputMode={selectedOption.id === 'placa' ? 'text' : 'numeric'}
+                                    maxLength={selectedOption.id === 'placa' ? 6 : 8} 
                                     placeholder={selectedOption.placeholder} 
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
                                     type="text" 
@@ -413,7 +509,7 @@ export default function Delitos() {
                                     onChange={(e) => {
                                         const val = e.target.value.toUpperCase();
                                         setTargetId(val);
-                                        const isDniValid = selectedOption.id === 'dni' && val.length === 8;
+                                        const isDniValid = (selectedOption.id === 'dni' || selectedOption.id === 'antper') && val.length === 8;
                                         const isPlacaValid = selectedOption.id === 'placa' && /^[A-Z0-9]{6}$/i.test(val);
                                         if (isDniValid || isPlacaValid) {
                                             handleGenerate(val);

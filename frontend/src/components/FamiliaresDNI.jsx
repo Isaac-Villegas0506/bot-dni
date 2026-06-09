@@ -1,3 +1,4 @@
+import { useSettings } from '../context/SettingsContext';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
@@ -362,6 +363,7 @@ function SharedModals({ showInputModal, selectedOption, dni, setDni, onCancel, o
 }
 
 export default function FamiliaresDNI() {
+    const { isFeatureEnabled } = useSettings();
     const { user, openLoginModal } = useAuth();
     const { showLoading, hideLoading } = useLoading();
     const [view, setView] = useState(() => sessionStorage.getItem('familiares_view') || 'selection'); // 'selection' | 'result'
@@ -579,7 +581,7 @@ export default function FamiliaresDNI() {
             {/* Cards — PDF first, Texto second */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                 className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl">
-                {options.map((opt) => (
+                {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
                     <div
                         key={opt.id}
                         onClick={() => handleOptionClick(opt)}

@@ -1,3 +1,4 @@
+import { useSettings } from '../context/SettingsContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +11,7 @@ import { getApiUrl } from '../utils/api';
 import PdfViewer from './PdfViewer';
 
 export default function CertificadosPoliciales() {
+    const { isFeatureEnabled } = useSettings();
     const { user, openLoginModal } = useAuth();
     const { loading, showLoading, hideLoading } = useLoading();
     const [view, setView] = useState(() => sessionStorage.getItem('certificados_view') || 'selection'); // 'selection' | 'result'
@@ -282,7 +284,7 @@ export default function CertificadosPoliciales() {
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"
                 >
-                    {options.map((opt) => (
+                    {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
                         <div
                             key={opt.id}
                             onClick={() => handleOptionClick(opt)}
