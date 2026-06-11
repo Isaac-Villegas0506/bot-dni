@@ -134,7 +134,7 @@ export default function DashboardHome({ stats }) {
                                         </div>
 
                                         <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors uppercase tracking-tighter">
-                                            {new Date(day.date).toLocaleDateString('es-PE', { weekday: 'short' })}
+                                            {new Date(day.date).toLocaleDateString('es-PE', { weekday: 'short', timeZone: 'America/Lima' })}
                                         </span>
                                     </div>
                                 );

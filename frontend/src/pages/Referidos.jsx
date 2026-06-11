@@ -129,9 +129,6 @@ export default function ReferidosPage() {
                 <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent tracking-tight">
                     Ganar Créditos
                 </h1>
-                <p className="text-lg text-slate-500 dark:text-slate-400 font-medium max-w-2xl mx-auto">
-                    Invita a tus amigos a usar la plataforma o crea contenido para obtener créditos y tiempo ilimitado.
-                </p>
             </div>
 
             {/* Referral Card */}
@@ -236,7 +233,7 @@ export default function ReferidosPage() {
                                             +15 Créditos
                                         </div>
                                         <p className="text-xs text-slate-400 font-medium block">
-                                            {refUser.created_at ? new Date(refUser.created_at).toLocaleDateString() : ''}
+                                            {refUser.created_at ? new Date(refUser.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) : ''}
                                         </p>
                                     </div>
                                 </div>

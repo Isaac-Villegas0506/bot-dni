@@ -145,7 +145,7 @@ export default function SettingsManagement() {
                 <div className="p-4 md:p-6 max-h-[60vh] overflow-y-auto bg-white dark:bg-slate-900">
                     {modalTab === 'tabs' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.entries(settingsList).filter(([k]) => k.startsWith('feature_')).map(([key, setting]) => (
+                            {Object.entries(settingsList).filter(([k]) => k.startsWith('feature_') || k === 'promo_pack_active').map(([key, setting]) => (
                                 <div key={key} className="flex flex-col p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-colors group">
                                     <div className="flex items-start justify-between gap-3 mb-4">
                                         <div className="min-w-0">

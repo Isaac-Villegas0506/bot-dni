@@ -1,9 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { toast } from 'sonner';
+
+// ─── Compact Countdown Timer ───────────────────────────────────────────────────
+const CompactCountdown = ({ lastSearch }) => {
+    const [timeLeft, setTimeLeft] = useState(null);
+
+    useEffect(() => {
+        if (!lastSearch) {
+            const resetTimer = setTimeout(() => setTimeLeft(null), 0);
+            return () => clearTimeout(resetTimer);
+        }
+
+        const calculate = () => {
+            try {
+                const safeStr = typeof lastSearch === 'string' ? lastSearch.replace(' ', 'T') : lastSearch;
+                const lastDate = new Date(safeStr);
+                if (isNaN(lastDate.getTime())) { setTimeLeft(null); return; }
+
+                const diff = new Date(lastDate.getTime() + 24 * 60 * 60 * 1000) - new Date();
+                if (diff > 0) {
+                    const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                    const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                    const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                    setTimeLeft(`${h}:${m}:${s}`);
+                } else {
+                    setTimeLeft(null);
+                }
+            } catch { setTimeLeft(null); }
+        };
+
+        calculate();
+        const timer = setInterval(calculate, 1000);
+        return () => clearInterval(timer);
+    }, [lastSearch]);
+
+    if (!timeLeft) return <span className="text-emerald-600 dark:text-emerald-400">Disponible</span>;
+    return (
+        <span className="text-red-500 dark:text-red-400 font-mono tracking-tighter">{timeLeft}</span>
+    );
+};
 
 export default function MobileNav() {
     const navigate = useNavigate();
@@ -104,9 +143,33 @@ export default function MobileNav() {
                             <div className="flex justify-center pt-3 pb-2 shrink-0">
                                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
                             </div>
-                            <div className="px-6 pb-2 shrink-0 flex justify-between items-center">
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Menú Principal</h3>
-                                <button onClick={() => setShowMobileMenu(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
+                            <div className="px-5 pb-3 shrink-0 flex justify-between items-start border-b border-slate-100 dark:border-slate-800 mb-2">
+                                {user ? (
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base shrink-0 overflow-hidden">
+                                            {user.full_name?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                        <div className="min-w-0 flex flex-col justify-center">
+                                            <p className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-[180px] leading-tight">{user.full_name}</p>
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[180px] leading-tight mt-0.5">{user.email}</p>
+                                            <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full w-fit">
+                                                <span className="material-icons-round text-[12px]">monetization_on</span>
+                                                {user.is_premium
+                                                    ? 'Premium'
+                                                    : user.credits > 0
+                                                        ? `${user.credits} crédito${user.credits !== 1 ? 's' : ''}`
+                                                        : <CompactCountdown lastSearch={user.last_premium_search} />
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col">
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Menú Principal</h3>
+                                        <p className="text-xs text-slate-500">Invitado</p>
+                                    </div>
+                                )}
+                                <button onClick={() => setShowMobileMenu(false)} className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                                     <span className="material-icons-round text-xl">close</span>
                                 </button>
                             </div>

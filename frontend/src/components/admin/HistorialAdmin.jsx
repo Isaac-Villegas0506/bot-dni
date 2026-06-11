@@ -105,8 +105,8 @@ function HistoryModal({ h, onClose }) {
                                 <DetailItem label="Tipo de Servicio" value={info.label} />
                                 <DetailItem label="Email de Usuario" value={h.user_email || 'No registrado'} />
                                 <DetailItem label="Nombre de Usuario" value={h.user_name || 'No registrado'} />
-                                <DetailItem label="Fecha de Acceso" value={new Date(h.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })} />
-                                <DetailItem label="Hora de Acceso" value={new Date(h.created_at).toLocaleTimeString('es-PE')} />
+                                <DetailItem label="Fecha de Acceso" value={new Date(h.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Lima' })} />
+                                <DetailItem label="Hora de Acceso" value={new Date(h.created_at).toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })} />
                             </div>
                         </div>
 
@@ -368,10 +368,10 @@ export default function HistorialAdmin() {
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex flex-col items-end">
                                                 <span className="text-[11px] font-black text-slate-600 dark:text-slate-300 tracking-tighter">
-                                                    {new Date(h.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {new Date(h.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Lima' })}
                                                 </span>
                                                 <span className="text-[10px] text-slate-400 font-mono opacity-70">
-                                                    {new Date(h.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                                                    {new Date(h.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' })}
                                                 </span>
                                             </div>
                                         </td>
@@ -421,8 +421,8 @@ export default function HistorialAdmin() {
                                         <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${textCls} ${darkTextCls}`}>{info.label}</p>
                                     </div>
                                     <span className="text-[9px] font-mono text-slate-400 shrink-0 whitespace-nowrap">
-                                        {new Date(h.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
-                                        {' '}{new Date(h.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(h.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', timeZone: 'America/Lima' })}
+                                        {' '}{new Date(h.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' })}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">

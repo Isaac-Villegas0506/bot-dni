@@ -148,6 +148,17 @@ class Database:
                 except Exception as e:
                     print(f"Error adding referral columns: {e}")
 
+            # Migration: promo package tracking
+            try:
+                cursor.execute("SELECT has_bought_promo FROM users LIMIT 1")
+                cursor.fetchall()
+            except:
+                print("⚠️  Adding has_bought_promo column to users...")
+                try:
+                    cursor.execute("ALTER TABLE users ADD COLUMN has_bought_promo BOOLEAN DEFAULT FALSE")
+                except Exception as e:
+                    print(f"Error adding has_bought_promo column: {e}")
+
             # 3. Search History
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS search_history (
@@ -294,6 +305,7 @@ class Database:
                 ('feature_policiales', True, 'Antecedentes Policiales'),
                 ('feature_delitos', True, 'Búsqueda de Delitos'),
                 ('feature_facial', True, 'Búsqueda Facial'),
+                ('promo_pack_active', True, 'Paquete Promo 1 Sol Activo'),
             ]
             cursor.executemany(
                 "INSERT INTO system_settings (setting_key, setting_value, label) VALUES (%s, %s, %s) ON CONFLICT (setting_key) DO NOTHING",
@@ -408,9 +420,10 @@ class Database:
                 except Exception as e:
                     print(f"Error adding unlimited_days to credit_packages: {e}")
 
-            # Seed 10 plans: 6 credit packs + 4 unlimited
+            # Seed 11 plans: 7 credit packs + 4 unlimited
             plan_seeds = [
                 # plan_key, name, price, credits, unlimited_days, is_premium
+                ('cr_promo_1sol', 'Promo 1 Sol', 1.00,  15,  None, False),
                 ('cr_starter', 'Starter',    2.00,  5,   None, False),
                 ('cr_basic',   'Básico',      5.00,  15,  None, False),
                 ('cr_popular', 'Popular',    10.00,  35,  None, False),
@@ -1335,7 +1348,7 @@ class Database:
         try:
             cursor = self.conn.cursor(cursor_factory=RealDictCursor)
             cursor.execute("""
-                SELECT id, email, full_name, role, status, is_premium, credits,
+                SELECT id, email, full_name, role, status, is_premium, credits, has_bought_promo,
                        last_login, last_ip, created_at, unlimited_until, unlimited_started_at
                 FROM users WHERE id = %s
             """, (user_id,))
@@ -1660,6 +1673,11 @@ class Database:
                     "UPDATE users SET credits = credits + %s WHERE id = %s",
                     (credits, user_id)
                 )
+                
+                # If it's the promo pack, mark it as bought
+                if purchase.get('plan_key') == 'cr_promo_1sol':
+                    cursor.execute("UPDATE users SET has_bought_promo = TRUE WHERE id = %s", (user_id,))
+
                 # Log the credit change
                 cursor.execute("""
                     INSERT INTO credit_log (user_id, amount, reason, admin_email)
