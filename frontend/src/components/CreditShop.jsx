@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const STATUS_INFO = {
     pending: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', icon: 'schedule' },
@@ -344,7 +345,7 @@ function PurchaseHistoryModal({ onClose }) {
                                             <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                                                 <div className="flex items-center gap-1 text-[11px] font-bold">
                                                     <span className="material-icons-round text-xs">calendar_today</span>
-                                                    {p.created_at ? new Date(p.created_at).toLocaleDateString() : ''}
+                                                    {p.created_at ? new Date(p.created_at).toLocaleDateString('es-PE', {timeZone: 'America/Lima'}) : ''}
                                                 </div>
                                                 <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></div>
                                                 <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-500">
@@ -379,8 +380,12 @@ function PurchaseHistoryModal({ onClose }) {
     );
 }
 
+import { useSettings } from '../context/SettingsContext';
+
 // ─── Main Component ────────────────────────────────────────────────────────
 export default function CreditShop() {
+    const { user } = useAuth();
+    const { isFeatureEnabled } = useSettings();
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [unlimitedStatus, setUnlimitedStatus] = useState(null);
@@ -481,7 +486,7 @@ export default function CreditShop() {
                                 </div>
                                 <div className="text-center px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
                                     <p className="text-[10px] uppercase font-bold text-indigo-200 mb-1">Vence el</p>
-                                    <p className="font-mono font-bold">{new Date(unlimitedStatus.unlimited_until).toLocaleDateString()}</p>
+                                    <p className="font-mono font-bold">{new Date(unlimitedStatus.unlimited_until).toLocaleDateString('es-PE', {timeZone: 'America/Lima'})}</p>
                                 </div>
                             </div>
                             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
@@ -498,8 +503,17 @@ export default function CreditShop() {
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {creditPlans.map((plan, i) => {
+                                const isPromo = plan.plan_key === 'cr_promo_1sol';
+                                
+                                // Ocultar paquete promo si el usuario ya lo compró o no está activo
+                                if (isPromo) {
+                                    if (!isFeatureEnabled('promo_pack_active')) return null;
+                                    if (user?.has_bought_promo) return null;
+                                }
+
                                 const isBestValue = plan.plan_key === 'cr_pro';
                                 const isPopular = plan.plan_key === 'cr_popular';
+                                
                                 return (
                                     <motion.div
                                         key={plan.plan_key}
@@ -507,18 +521,27 @@ export default function CreditShop() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.05 }}
                                         className={`relative group flex flex-col p-8 rounded-3xl bg-white dark:bg-slate-900 border transition-all hover:shadow-2xl hover:-translate-y-1 ${
-                                            isPopular 
-                                                ? 'border-indigo-500 shadow-xl shadow-indigo-500/5 ring-4 ring-indigo-500/5' 
-                                                : 'border-slate-100 dark:border-slate-800 shadow-sm'
+                                            isPromo 
+                                                ? 'border-fuchsia-500 shadow-xl shadow-fuchsia-500/10 ring-4 ring-fuchsia-500/10 dark:bg-slate-900'
+                                                : isPopular 
+                                                    ? 'border-indigo-500 shadow-xl shadow-indigo-500/5 ring-4 ring-indigo-500/5' 
+                                                    : 'border-slate-100 dark:border-slate-800 shadow-sm'
                                         }`}
                                     >
-                                        {(isPopular || isBestValue) && (
-                                            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg ${isPopular ? 'bg-indigo-500' : 'bg-slate-800 dark:bg-slate-700'}`}>
-                                                {isPopular ? 'Más Popular' : 'Mejor Valor'}
+                                        {isPromo && (
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-fuchsia-500/10 blur-[40px] rounded-full pointer-events-none -mt-10 -mr-10"></div>
+                                        )}
+
+                                        {(isPopular || isBestValue || isPromo) && (
+                                            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg z-10 ${
+                                                isPromo ? 'bg-fuchsia-500' :
+                                                isPopular ? 'bg-indigo-500' : 'bg-slate-800 dark:bg-slate-700'
+                                            }`}>
+                                                {isPromo ? 'Oferta Única' : isPopular ? 'Más Popular' : 'Mejor Valor'}
                                             </div>
                                         )}
                                         
-                                        <div className="mb-6 flex justify-between items-start">
+                                        <div className="mb-6 flex justify-between items-start relative z-10">
                                             <div>
                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{plan.name}</p>
                                                 <div className="flex items-baseline gap-1">
@@ -526,19 +549,24 @@ export default function CreditShop() {
                                                     <span className="text-sm font-bold text-slate-400">créditos</span>
                                                 </div>
                                             </div>
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isPopular ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
-                                                <span className="material-icons-round">{isPopular ? 'star' : 'bolt'}</span>
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center relative z-10 ${
+                                                isPromo ? 'bg-fuchsia-50 dark:bg-fuchsia-500/10 text-fuchsia-500' :
+                                                isPopular ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
+                                            }`}>
+                                                <span className="material-icons-round">{isPromo ? 'redeem' : isPopular ? 'star' : 'bolt'}</span>
                                             </div>
                                         </div>
 
-                                        <div className="mt-auto pt-8 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                                        <div className="mt-auto pt-8 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between relative z-10">
                                             <p className="text-2xl font-bold text-slate-900 dark:text-white">S/ {parseFloat(plan.price_soles).toFixed(2)}</p>
                                             <button
                                                 onClick={() => handlePlanSelect(plan)}
                                                 className={`px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all active:scale-95 ${
-                                                    isPopular 
-                                                        ? 'bg-indigo-500 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-500/20' 
-                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                    isPromo
+                                                        ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-600 shadow-lg shadow-fuchsia-500/20'
+                                                        : isPopular 
+                                                            ? 'bg-indigo-500 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-500/20' 
+                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
                                                 }`}
                                             >
                                                 Comprar

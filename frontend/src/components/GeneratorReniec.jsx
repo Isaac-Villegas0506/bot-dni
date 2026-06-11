@@ -205,7 +205,7 @@ export default function GeneratorReniec() {
             setGeneratedData({
                 dni: dni,
                 type: selectedOption,
-                timestamp: new Date().toLocaleString(),
+                timestamp: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' }),
                 file_path: resultData.file_path || null,
                 frontal: resultData.frontal || null,
                 reverso: resultData.reverso || null,

@@ -14,6 +14,8 @@ import { useLoading } from './context/LoadingContext';
 import { createPortal } from 'react-dom';
 import UserNotificationModal from './components/UserNotificationModal';
 import MobileNav from './components/MobileNav';
+import PromoModal from './components/PromoModal';
+import { useSettings } from './context/SettingsContext';
 
 import { Suspense, lazy } from 'react';
 
@@ -56,7 +58,7 @@ export default function App() {
     const location = useLocation();
 
     const {
-        isLoggedIn,
+        isLoggedIn, user,
         showAuthModal, setShowAuthModal,
         authMode,
         showWelcomeModal, setShowWelcomeModal,
@@ -70,6 +72,8 @@ export default function App() {
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
 
     const isAdminRoute = location.pathname === '/admin';
+    const { isFeatureEnabled } = useSettings();
+    const [showPromoModal, setShowPromoModal] = useState(false);
 
     // Dark mode effect
     useEffect(() => {
@@ -85,6 +89,24 @@ export default function App() {
             localStorage.setItem('referralCode', ref);
         }
     }, [location.search]);
+
+    // Lógica para mostrar la promoción (1 sol = 15 créditos)
+    useEffect(() => {
+        if (isLoggedIn && user && !user.has_bought_promo && isFeatureEnabled('promo_pack_active')) {
+            const lastShownStr = localStorage.getItem('last_promo_shown_time');
+            if (lastShownStr) {
+                const lastShown = parseInt(lastShownStr, 10);
+                const oneHour = 60 * 60 * 1000;
+                if (Date.now() - lastShown < oneHour) {
+                    return;
+                }
+            }
+            setShowPromoModal(true);
+            localStorage.setItem('last_promo_shown_time', Date.now().toString());
+        } else {
+            setShowPromoModal(false);
+        }
+    }, [isLoggedIn, user, isFeatureEnabled]);
 
     // Compatibilidad con Sidebar/Header que aún usan nombres de vista legacy
     const handleViewChange = (newView) => {
@@ -156,6 +178,10 @@ export default function App() {
             <TermsModal />
             
             {/* User Notifications */}
+            {showPromoModal && (
+                <PromoModal onClose={() => setShowPromoModal(false)} />
+            )}
+            
             {notifications.length > 0 && (
                 <UserNotificationModal 
                     notification={notifications[0]} 

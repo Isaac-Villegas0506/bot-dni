@@ -89,7 +89,7 @@ function RequestDetailModal({ purchase, onClose, onAction, onRejectModalOpen }) 
                             </span>
                             <span className="text-[10px] md:text-[11px] font-bold text-slate-400 flex items-center gap-1">
                                 <span className="material-icons-round text-xs md:text-sm">schedule</span>
-                                {new Date(purchase.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                {new Date(purchase.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' })}
                             </span>
                         </div>
 
@@ -140,7 +140,7 @@ function RequestDetailModal({ purchase, onClose, onAction, onRejectModalOpen }) 
                                     <span className="material-icons-round text-xs md:text-sm opacity-50">history</span>
                                     <p className="text-[9px] md:text-[10px] font-bold uppercase opacity-50 tracking-widest">Resolución del Sistema</p>
                                 </div>
-                                <p className="text-[10px] md:text-[11px] font-mono mb-2 opacity-70">Fecha: {new Date(purchase.reviewed_at).toLocaleString('es-PE')}</p>
+                                <p className="text-[10px] md:text-[11px] font-mono mb-2 opacity-70">Fecha: {new Date(purchase.reviewed_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</p>
                                 {purchase.status === 'rejected' && (
                                     <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800/40">
                                         <p className="text-red-600 dark:text-red-400 font-black text-[9px] md:text-[10px] uppercase mb-1">Motivo del rechazo</p>
@@ -318,7 +318,7 @@ export default function CreditRequests() {
                                         </div>
                                         <div className="mt-2 flex items-center justify-between">
                                             <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ${s.color}`}>{s.label}</span>
-                                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-600">{new Date(p.created_at).toLocaleDateString('es-PE')}</span>
+                                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-600">{new Date(p.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })}</span>
                                         </div>
                                     </div>
                                 </motion.div>

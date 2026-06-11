@@ -327,10 +327,6 @@ function SharedModals({ showInputModal, selectedOption, dni, setDni, onCancel, o
                         </div>
                         <div>
                             <p className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{selectedOption.title}</p>
-                            <p className="text-xs text-amber-500 font-bold flex items-center gap-1">
-                                <span className="material-icons-round text-xs">toll</span>
-                                {selectedOption.credits} crédito{selectedOption.credits > 1 ? 's' : ''}
-                            </p>
                         </div>
                     </div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">

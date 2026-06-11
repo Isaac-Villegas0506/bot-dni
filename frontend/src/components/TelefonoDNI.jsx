@@ -446,10 +446,6 @@ function TelefonoModal({ option, onClose, onSubmit, loading }) {
                         </div>
                         <div>
                             <p className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{option.title}</p>
-                            <p className="text-xs text-amber-500 font-bold flex items-center gap-1">
-                                <span className="material-icons-round text-xs">toll</span>
-                                {option.credits === 0 ? 'Gratis' : `${option.credits} crédito${option.credits !== 1 ? 's' : ''}`}
-                            </p>
                         </div>
                     </div>
 
@@ -1445,10 +1441,6 @@ function PlaceholderModal({ option, onClose }) {
                         </div>
                         <div>
                             <p className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{option.title}</p>
-                            <p className="text-xs text-amber-500 font-bold flex items-center gap-1">
-                                <span className="material-icons-round text-xs">toll</span>
-                                {option.credits === 0 ? 'Gratis' : `${option.credits} crédito${option.credits !== 1 ? 's' : ''}`}
-                            </p>
                         </div>
                     </div>
 

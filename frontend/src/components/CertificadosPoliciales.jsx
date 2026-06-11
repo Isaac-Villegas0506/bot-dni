@@ -174,7 +174,7 @@ export default function CertificadosPoliciales() {
             setGeneratedData({
                 dni: dni,
                 type: selectedOption,
-                timestamp: new Date().toLocaleString(),
+                timestamp: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' }),
                 file_path: data.file_path,
                 data: data.data || data
             });

@@ -88,12 +88,7 @@ export default function SearchOptionModal({ isOpen, onClose, onConfirm, user, ta
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-0.5">
                                 <span className="font-bold text-slate-900 dark:text-white">Datos premium</span>
-                                {premiumLabel && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                                        <span className="material-icons-round text-[12px]" aria-hidden="true">toll</span>
-                                        {premiumLabel}
-                                    </span>
-                                )}
+
                             </div>
                             <div className="text-sm text-slate-500">Incluye fotos de rostro, firma y huellas.</div>
                             {!user && <div className="text-xs text-amber-600 mt-1 font-medium">Requiere registro/login.</div>}

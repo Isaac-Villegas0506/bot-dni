@@ -191,7 +191,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
             pdf.rect(0, pageHeight - 30, pageWidth, 30, 'F');
             pdf.setTextColor(255, 255, 255);
             pdf.setFontSize(8);
-            const now = new Date().toLocaleString();
+            const now = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
             pdf.text(`Registro Nacional de Identificación y Estado Civil - RENIEC© 2016 ${now}`, pageWidth/2, pageHeight - 12, { align: 'center' });
 
             pdf.save(`C4_PREMIUM_${result.documento}.pdf`);
