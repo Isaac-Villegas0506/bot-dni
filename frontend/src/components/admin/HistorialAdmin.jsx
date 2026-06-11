@@ -200,6 +200,8 @@ export default function HistorialAdmin() {
     const [loading, setLoading]           = useState(true);
     const [search, setSearch]             = useState('');
     const [activeFilter, setActiveFilter] = useState('todos');
+    const [dateFilter, setDateFilter]     = useState('all');
+    const [userFilter, setUserFilter]     = useState('all');
     const [selectedHistory, setSelectedHistory] = useState(null);
 
     useEffect(() => { loadHistory(); }, []);
@@ -216,13 +218,31 @@ export default function HistorialAdmin() {
     const filtered = useMemo(() => {
         const cat = HIST_FILTERS.find(f => f.id === activeFilter);
         let list = history;
+        
+        // Tipo de búsqueda
         if (cat?.types) list = list.filter(h => cat.types.includes(h.search_type));
+        
+        // Fecha
+        if (dateFilter !== 'all') {
+            const now = new Date();
+            const past = new Date();
+            if (dateFilter === 'today') past.setHours(0,0,0,0);
+            else if (dateFilter === '7d') past.setDate(now.getDate() - 7);
+            else if (dateFilter === '30d') past.setDate(now.getDate() - 30);
+            list = list.filter(h => new Date(h.created_at) >= past);
+        }
+
+        // Usuario
+        if (userFilter === 'registered') list = list.filter(h => h.user_email);
+        if (userFilter === 'guest') list = list.filter(h => !h.user_email);
+
+        // Búsqueda de texto
         if (search.trim()) {
             const q = search.toLowerCase();
             list = list.filter(h => h.search_term?.toLowerCase().includes(q) || h.user_email?.toLowerCase().includes(q) || h.search_type?.toLowerCase().includes(q));
         }
         return list;
-    }, [history, activeFilter, search]);
+    }, [history, activeFilter, dateFilter, userFilter, search]);
 
     return (
         <div className="space-y-6 w-full">
@@ -244,32 +264,53 @@ export default function HistorialAdmin() {
                 </div>
             </div>
 
-            {/* Filter Chips */}
-            <div
-                role="tablist"
-                aria-label="Filtrar historial"
-                className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide -mx-3 px-3 md:mx-0 md:px-0"
-            >
-                {HIST_FILTERS.map(f => {
-                    const isActive = activeFilter === f.id;
-                    return (
-                        <button
-                            key={f.id}
-                            role="tab"
-                            aria-selected={isActive}
-                            onClick={() => setActiveFilter(f.id)}
-                            className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all
-                                ${isActive
-                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-md'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400'}`}
+            {/* Filtros Dropdown */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                <div className="flex-1 w-full flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 relative">
+                        <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">filter_alt</span>
+                        <select 
+                            value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 appearance-none cursor-pointer"
                         >
-                            <span className="material-icons-round text-[18px]" aria-hidden="true">{f.icon}</span>
-                            <span className="whitespace-nowrap">{f.label}</span>
-                        </button>
-                    );
-                })}
-                <div className="ml-auto shrink-0 min-h-[44px] flex items-center px-3 md:px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    {filtered.length}
+                            {HIST_FILTERS.map(f => (
+                                <option key={f.id} value={f.id}>{f.label}</option>
+                            ))}
+                        </select>
+                        <span className="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                    </div>
+
+                    <div className="flex-1 relative">
+                        <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">calendar_today</span>
+                        <select 
+                            value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                        >
+                            <option value="all">Cualquier Fecha</option>
+                            <option value="today">Hoy</option>
+                            <option value="7d">Últimos 7 días</option>
+                            <option value="30d">Últimos 30 días</option>
+                        </select>
+                        <span className="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                    </div>
+
+                    <div className="flex-1 relative">
+                        <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">person</span>
+                        <select 
+                            value={userFilter} onChange={(e) => setUserFilter(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                        >
+                            <option value="all">Todos los usuarios</option>
+                            <option value="registered">Registrados</option>
+                            <option value="guest">Invitados (Sin registro)</option>
+                        </select>
+                        <span className="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                    </div>
+                </div>
+                
+                <div className="shrink-0 flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest min-w-[120px]">
+                    <span className="material-icons-round text-sm mr-1">list_alt</span>
+                    {filtered.length} reg.
                 </div>
             </div>
 

@@ -28,7 +28,8 @@ export const PRICE_LABELS = {
     antecedentes_judiciales: { label: 'Certificado de Antecedentes Judiciales', cat: 'Certificados', icon: 'account_balance' },
     dni:             { label: 'Denuncias por DNI',        cat: 'Denuncias', icon: 'badge' },
     antper:          { label: 'Antecedentes Global',      cat: 'Denuncias', icon: 'gavel' },
-    placa:           { label: 'Denuncias por Placa',      cat: 'Denuncias', icon: 'directions_car' },
+    placa:           { label: 'Denuncias por Placa',      cat: 'Vehículos', icon: 'directions_car' },
+    record_vehicular:{ label: 'Récord Vehicular',         cat: 'Vehículos', icon: 'directions_car' },
     daily_reward:    { label: 'Créditos Gratuitos Diarios',cat: 'Sistema',   icon: 'card_giftcard' },
 };
 
@@ -37,6 +38,7 @@ const CAT_COLORS = {
     Familiares: 'text-emerald-600', 
     Teléfonos: 'text-indigo-600', 
     Denuncias: 'text-rose-600',
+    Vehículos: 'text-sky-600',
     Facial: 'text-purple-600',
     Certificados: 'text-amber-600',
     Sistema: 'text-pink-600'
@@ -46,6 +48,7 @@ const CAT_BG = {
     Familiares: 'bg-emerald-50 dark:bg-emerald-900/20', 
     Teléfonos: 'bg-indigo-50 dark:bg-indigo-900/20', 
     Denuncias: 'bg-rose-50 dark:bg-rose-900/20',
+    Vehículos: 'bg-sky-50 dark:bg-sky-900/20',
     Facial: 'bg-purple-50 dark:bg-purple-900/20',
     Certificados: 'bg-amber-50 dark:bg-amber-900/20',
     Sistema: 'bg-pink-50 dark:bg-pink-900/20'
@@ -55,11 +58,12 @@ const CAT_ICONS  = {
     Familiares: 'group', 
     Teléfonos: 'sensors', 
     Denuncias: 'local_police',
+    Vehículos: 'directions_car',
     Facial: 'portrait',
     Certificados: 'description',
     Sistema: 'settings_applications'
 };
-const CATEGORIES = ['Sistema', 'RENIEC', 'Familiares', 'Teléfonos', 'Denuncias', 'Facial', 'Certificados'];
+const CATEGORIES = ['Sistema', 'RENIEC', 'Familiares', 'Teléfonos', 'Denuncias', 'Vehículos', 'Facial', 'Certificados'];
 
 const PackageCard = ({ pkg, index, onChange, onSave }) => (
     <motion.div 

@@ -73,6 +73,9 @@ export default function DashboardHome({ stats }) {
                 <StatCard title="Total Usuarios" value={mainStats.total_users || 0} icon="group" color="blue" />
                 <StatCard title="Búsquedas" value={mainStats.total_searches || 0} icon="search" color="emerald" />
                 <StatCard title="Usuarios Premium" value={mainStats.premium_users || 0} icon="workspace_premium" color="purple" />
+                <StatCard title="Consultas Hoy" value={mainStats.today_searches || 0} icon="today" color="blue" />
+                <StatCard title="Planes Vendidos" value={mainStats.total_purchases || 0} icon="shopping_cart" color="emerald" />
+                <StatCard title="Ingresos Totales" value={`S/ ${(mainStats.total_revenue || 0).toFixed(2)}`} icon="payments" color="amber" />
             </div>
 
             {/* Activity Chart Section */}
@@ -124,6 +127,15 @@ export default function DashboardHome({ stats }) {
 
                                         {/* Bar Container */}
                                         <div className="w-full h-full relative flex items-end">
+                                            {/* Permanent Label Above Bar */}
+                                            <div 
+                                                className="absolute w-full flex justify-center text-center transition-all duration-300 pointer-events-none"
+                                                style={{ bottom: `${h}%`, paddingBottom: '4px' }}
+                                            >
+                                                <span className="text-[9px] sm:text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-900/40 px-1 rounded">
+                                                    {day.count}
+                                                </span>
+                                            </div>
                                             <div className="w-full bg-slate-50/50 dark:bg-slate-700/20 rounded-t-lg absolute inset-0 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/40 transition-colors" />
                                             <motion.div
                                                 initial={{ height: 0 }}

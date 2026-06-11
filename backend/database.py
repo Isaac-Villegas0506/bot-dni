@@ -330,6 +330,7 @@ class Database:
                 ('dni_premium',    5, 'RENIEC Premium (C4 + Biometría)'),
                 ('dni',            2, 'Denuncias por DNI'),
                 ('placa',          2, 'Denuncias por Placa'),
+                ('record_vehicular',2, 'Récord Vehicular'),
             ]
             cursor.executemany(
                 "INSERT INTO credit_costs (option_id, cost, label) VALUES (%s, %s, %s) ON CONFLICT (option_id) DO NOTHING",
@@ -979,6 +980,19 @@ class Database:
             cursor.execute("SELECT COUNT(*) as count FROM search_history")
             total_searches = cursor.fetchone()['count']
             
+            # Consultas de hoy
+            cursor.execute("SELECT COUNT(*) as count FROM search_history WHERE DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima') = CURRENT_DATE")
+            today_searches = cursor.fetchone()['count']
+            
+            # Ingresos totales
+            cursor.execute("SELECT SUM(amount_soles) as total FROM credit_purchases WHERE status = 'approved'")
+            row = cursor.fetchone()
+            total_revenue = float(row['total']) if row and row['total'] else 0.0
+            
+            # Planes vendidos
+            cursor.execute("SELECT COUNT(*) as count FROM credit_purchases WHERE status = 'approved'")
+            total_purchases = cursor.fetchone()['count']
+            
             # En PostgreSQL se usa TRUE para booleanos
             cursor.execute("SELECT COUNT(*) as count FROM users WHERE is_premium = TRUE")
             premium_users = cursor.fetchone()['count']
@@ -987,11 +1001,14 @@ class Database:
             return {
                 "total_users": total_users,
                 "total_searches": total_searches,
-                "premium_users": premium_users
+                "premium_users": premium_users,
+                "today_searches": today_searches,
+                "total_revenue": total_revenue,
+                "total_purchases": total_purchases
             }
         except Exception as e: 
             print(f"Error get_total_stats: {e}")
-            return {"total_users": 0, "total_searches": 0, "premium_users": 0}
+            return {"total_users": 0, "total_searches": 0, "premium_users": 0, "today_searches": 0, "total_revenue": 0, "total_purchases": 0}
 
     async def get_daily_searches(self, limit=7):
         await self._ensure_connection()
