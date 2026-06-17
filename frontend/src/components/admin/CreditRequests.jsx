@@ -41,7 +41,7 @@ function RequestDetailModal({ purchase, onClose, onAction, onRejectModalOpen }) 
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 onClick={e => e.stopPropagation()}
-                className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col md:flex-row overflow-hidden border-t sm:border border-slate-200 dark:border-slate-700"
+                className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-4xl -[] flex flex-col md:flex-row overflow-hidden border-t sm:border border-slate-200 dark:border-slate-700"
             >
                 {/* Image Section */}
                 <div className="w-full md:w-1/2 h-[25dvh] min-h-[160px] max-h-[220px] md:max-h-none md:h-auto md:min-h-0 bg-slate-50 dark:bg-slate-950/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-3 md:p-6 flex items-center justify-center relative shrink-0 overflow-hidden">

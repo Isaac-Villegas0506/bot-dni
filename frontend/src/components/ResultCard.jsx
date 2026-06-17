@@ -703,7 +703,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 <img
                                     src={getApiUrl(previewData.url)}
                                     alt="Vista Previa"
-                                    className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10"
+                                    className="max-w-full -[] object-contain rounded-xl shadow-2xl border border-white/10"
                                 />
                             </motion.div>
                         </motion.div>

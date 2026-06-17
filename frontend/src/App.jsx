@@ -116,9 +116,9 @@ export default function App() {
 
     return (
         <div className={`
-            min-h-screen flex flex-col transition-colors duration-300 relative overflow-hidden font-body
+            min-h-[100dvh] flex flex-col transition-colors duration-300 relative overflow-hidden font-body
             bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark
-            ${isAdminRoute ? 'p-0 overflow-hidden h-screen items-stretch' : 'justify-start items-center py-6 lg:py-10 px-4 sm:px-8'}
+            ${isAdminRoute ? 'p-0 overflow-hidden h-[100dvh] items-stretch' : 'justify-start items-center py-6 lg:py-10 px-4 sm:px-8'}
         `}>
 
             {/* Background gradient */}

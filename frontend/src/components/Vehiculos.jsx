@@ -259,7 +259,7 @@ export default function Vehiculos() {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
             {view === 'selection' && !loading && (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}

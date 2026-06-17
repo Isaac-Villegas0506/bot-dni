@@ -102,7 +102,7 @@ export default function AdminDashboard({ onBackToHome }) {
     };
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-900 font-body text-slate-900 dark:text-white overflow-hidden">
+        <div className="flex h-[100dvh] bg-slate-50 dark:bg-slate-900 font-body text-slate-900 dark:text-white overflow-hidden">
 
             {/* ── Desktop Sidebar ─────────────────────────────────────────── */}
             <aside className="hidden md:flex w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-col shrink-0 z-20">
@@ -238,7 +238,7 @@ export default function AdminDashboard({ onBackToHome }) {
                                 animate={{ y: 0 }}
                                 exit={{ y: '100%' }}
                                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                                className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl pb-[env(safe-area-inset-bottom)] max-h-[85vh] flex flex-col"
+                                className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl pb-[env(safe-area-inset-bottom)] -[] flex flex-col"
                             >
                                 <div className="flex justify-center pt-3 pb-2 shrink-0">
                                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />

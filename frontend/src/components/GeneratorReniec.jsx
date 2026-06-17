@@ -391,7 +391,7 @@ export default function GeneratorReniec() {
     const parsedData = view === 'result' ? getParsedData() : [];
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
 
             <HelpModal
                 isOpen={helpModal.isOpen}
@@ -687,7 +687,7 @@ export default function GeneratorReniec() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col items-center cursor-default"
+                                className="relative w-full max-w-4xl -[] flex flex-col items-center cursor-default"
                             >
                                 <div className="w-full bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
                                     <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
@@ -696,7 +696,7 @@ export default function GeneratorReniec() {
                                         </h4>
                                         <span className="text-[10px] font-black text-blue-500 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full uppercase">Vista HD</span>
                                     </div>
-                                    <div className="p-2 flex items-center justify-center bg-slate-200 dark:bg-black/40 overflow-auto max-h-[70vh]">
+                                    <div className="p-2 flex items-center justify-center bg-slate-200 dark:bg-black/40 overflow-auto -[]">
                                         <img
                                             src={previewImage.url}
                                             alt="Preview"

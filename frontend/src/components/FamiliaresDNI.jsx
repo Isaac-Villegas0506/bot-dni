@@ -564,7 +564,7 @@ export default function FamiliaresDNI() {
 
     // ── SELECTION VIEW ─────────────────────────────────────────────────────────
     if (view === 'selection') return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
 
             <HelpModal
                 isOpen={helpModal.isOpen}
@@ -632,7 +632,7 @@ export default function FamiliaresDNI() {
     // ── RESULT VIEW ───────────────────────────────────────────────────────────
     const isTextoResult = generatedData?.resultType === 'texto';
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
                 <div className="p-6 sm:p-8 flex flex-col items-center relative">
@@ -710,7 +710,7 @@ export default function FamiliaresDNI() {
                                 </div>
 
                                 {/* Grouped sections (scrollable) */}
-                                <div className="space-y-5 max-h-[55vh] overflow-y-auto pr-1">
+                                <div className="space-y-5 -[] overflow-y-auto pr-1">
                                     {groups.map(g => (
                                         <div key={g.priority}>
                                             {/* Section label */}

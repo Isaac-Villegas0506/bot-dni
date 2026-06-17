@@ -543,7 +543,7 @@ function NumerosResult({ dni, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
                 <div className="p-6 sm:p-8 flex flex-col items-center relative">
@@ -575,7 +575,7 @@ function NumerosResult({ dni, rawText, onBack }) {
                                 <p className="text-sm font-semibold text-slate-400">No se encontraron números para este DNI</p>
                             </div>
                         ) : (
-                            <div className="space-y-5 max-h-[55vh] overflow-y-auto pr-1">
+                            <div className="space-y-5 -[] overflow-y-auto pr-1">
                                 {groups.map((g) => {
                                     const style = getOperatorStyle(g.operator);
                                     return (
@@ -733,7 +733,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}
                 className="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-700/50 relative">
 
@@ -773,7 +773,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
                                 <p className="text-base font-semibold text-slate-500 dark:text-slate-400">No se encontraron datos para este número</p>
                             </div>
                         ) : (
-                            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                            <div className="space-y-6 -[] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                                 {groups.map((g) => {
                                     const style = getOperatorStyle(g.operator);
                                     return (
@@ -1048,7 +1048,7 @@ function VerificadorResult({ data, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1213,7 +1213,7 @@ function TitularResult({ phone, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center min-h-[80vh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}
                 className="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-700/50 relative">
 
@@ -1253,7 +1253,7 @@ function TitularResult({ phone, rawText, onBack }) {
                                 <p className="text-base font-semibold text-slate-500 dark:text-slate-400">No se encontraron datos para este número</p>
                             </div>
                         ) : (
-                            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                            <div className="space-y-4 -[] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                                 {entries.map((e, idx) => {
                                     const style = getOperatorStyle(e.operador);
                                     return (
