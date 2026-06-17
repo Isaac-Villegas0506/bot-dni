@@ -1836,10 +1836,6 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
             if not success:
                 raise HTTPException(status_code=402, detail="Error al descontar créditos")
 
-        asyncio.create_task(
-            notify_admins_new_search(user, "RECORD", target, "API", client_ip)
-        )
-
         res = await bot_client.query_record(target)
 
         await api_log_search(request, user_id, target, 'record_vehicular')
