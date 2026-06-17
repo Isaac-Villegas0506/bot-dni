@@ -125,7 +125,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                     ) : (
                         // DONATION ONLY STATE
                         <div className="flex flex-col">
-                            <div className="overflow-y-auto md:overflow-visible px-1 max-h-[80vh] md:max-h-none">
+                            <div className="overflow-y-auto md:overflow-visible px-1 -[] md:max-h-none">
                                 <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12 pb-2 md:pb-6">
 
                                     {/* Content Section (Mobile: Top, Desktop: Right) */}

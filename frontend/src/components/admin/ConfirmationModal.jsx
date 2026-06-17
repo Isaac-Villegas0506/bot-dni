@@ -17,7 +17,7 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
-                className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl max-w-sm w-full p-4 sm:p-5 border-2 border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto"
+                className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl max-w-sm w-full p-4 sm:p-5 border-2 border-slate-200 dark:border-slate-700 -[] overflow-y-auto"
             >
                 <div className="flex items-start gap-4 mb-5">
                     <div className={`p-2.5 rounded-xl shrink-0 ${bg}`}>

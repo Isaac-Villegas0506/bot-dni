@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 // ─── Spinner mientras se verifica la sesión ──────────────────────────────────
 function AuthLoadingSpinner() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
+        <div className="min-h-[100dvh] flex items-center justify-center bg-background-light dark:bg-background-dark">
             <div className="flex flex-col items-center gap-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
