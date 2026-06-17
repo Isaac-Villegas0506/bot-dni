@@ -25,18 +25,22 @@ const HIST_TYPE_INFO = {
     policiales_antpo:    { icon: 'local_police',    label: 'Antecedentes Pol.',color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
     policiales_antpol:   { icon: 'local_police',    label: 'Antecedentes Pol.',color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
     penales_antpen:      { icon: 'policy',          label: 'Antecedentes Pen.',color: 'bg-stone-100 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300' },
+    judiciales_antjud:   { icon: 'balance',         label: 'Antecedentes Jud.',color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300' },
+    reniec_dni_electronico: { icon: 'credit_card',  label: 'DNI Electrónico', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
+    familiares_arbol_visual:{ icon: 'account_tree', label: 'Árbol Familiar',  color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+    record_vehicular:    { icon: 'directions_car',  label: 'Récord Vehicular',color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
 };
 
 const HIST_FILTERS = [
     { id: 'todos',       label: 'Todos',        icon: 'all_inclusive' },
     { id: 'RENIEC',      label: 'RENIEC',       icon: 'badge', types: ['dni', 'dni_premium', 'name'] },
-    { id: 'Generador',   label: 'Generador',    icon: 'description', types: ['reniec_c4_azul', 'reniec_inscripcion', 'reniec_dni_azul', 'reniec_dni_amarillo'] },
-    { id: 'Familiares',  label: 'Familiares',   icon: 'group', types: ['familiares_pdf', 'familiares_texto'] },
+    { id: 'Generador',   label: 'Generador',    icon: 'description', types: ['reniec_c4_azul', 'reniec_inscripcion', 'reniec_dni_azul', 'reniec_dni_amarillo', 'reniec_dni_electronico'] },
+    { id: 'Familiares',  label: 'Familiares',   icon: 'group', types: ['familiares_pdf', 'familiares_texto', 'familiares_arbol_visual'] },
     { id: 'Telefonos',   label: 'Teléfonos',    icon: 'sensors', types: ['telefono_numeros_dni', 'telefono_info_linea', 'telefono_verificador', 'telefono_titular'] },
     { id: 'Facial',      label: 'Facial',       icon: 'face', types: ['busqueda_facial'] },
-    { id: 'Delitos',     label: 'Delitos',      icon: 'gavel', types: ['delitos_dni', 'delitos_placa', 'antper'] },
+    { id: 'Delitos',     label: 'Delitos',      icon: 'gavel', types: ['delitos_dni', 'delitos_placa', 'antper', 'record_vehicular'] },
     { id: 'Fiscalía',    label: 'Fiscalía',     icon: 'balance', types: ['fiscalia_dni', 'fiscalia_nombre', 'fiscalia_ruc', 'caso_fiscal'] },
-    { id: 'Policiales',  label: 'Policiales',   icon: 'local_police', types: ['policiales_antpo', 'policiales_antpol', 'penales_antpen'] },
+    { id: 'Policiales',  label: 'Policiales',   icon: 'local_police', types: ['policiales_antpo', 'policiales_antpol', 'penales_antpen', 'judiciales_antjud'] },
 ];
 
 // ─── Skeleton Component ───────────────────────────────────────────────────

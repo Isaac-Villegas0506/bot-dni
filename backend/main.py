@@ -259,7 +259,7 @@ async def shutdown_event():
 
 # --- Auth Routes ---
 
-from email_utils import is_disposable_email, send_custom_verification_email, send_purchase_notification_email, send_purchase_approved_email
+from email_utils import is_disposable_email, send_custom_verification_email, send_purchase_notification_email, send_purchase_approved_email, send_purchase_received_email
 from firebase_admin_utils import generate_email_verification_link
 import secrets
 import string
@@ -1674,6 +1674,15 @@ async def create_purchase(
         for email in admin_emails:
             asyncio.create_task(send_purchase_notification_email(email, purchase_details))
 
+    # Send confirmation email to the user
+    user_email = current_user.get('email')
+    if user_email:
+        asyncio.create_task(send_purchase_received_email(
+            to_email=user_email,
+            plan_name=plan['name'],
+            amount_soles=str(plan['price_soles'])
+        ))
+
     return {"ok": True, "purchase_id": purchase_id}
 
 
@@ -1817,41 +1826,6 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
     try:
         user_id = user['id']
         cost = await db.get_cost_for_option('record_vehicular')
-        cost = cost if cost is not None else 7
-
-        if user.get('role') != 'admin':
-            if not user.get('is_premium') and user.get('credits', 0) < cost:
-                raise HTTPException(status_code=402, detail="Créditos insuficientes")
-            
-            success = await db.deduct_credits(user_id, cost, f"Búsqueda RECORD para {target}")
-            if not success:
-                raise HTTPException(status_code=402, detail="Error al descontar créditos")
-
-        res = await bot_client.query_record(target)
-        await api_log_search(request, user_id, target, 'record_vehicular')
-        
-        return {"data": res, "file_path": res.get("file_path")}
-
-    except SinResultadosError as e:
-        if user.get('role') != 'admin' and not user.get('is_premium'):
-            await db.refund_credits(user_id, cost, f"Reembolso RECORD (Sin resultados) para {target}")
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        if user.get('role') != 'admin' and not user.get('is_premium'):
-            await db.refund_credits(user_id, cost, f"Reembolso RECORD (Error) para {target}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/api/vehiculos/record")
-async def generate_record_api(request: Request, body_data: dict = Body(...), user: dict = Depends(get_current_user)):
-    target = body_data.get("target")
-    if not target: raise HTTPException(status_code=400, detail="Placa/DNI requerido")
-    check_banned_dni(target)
-    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
-    
-    try:
-        user_id = user['id']
-        cost = await db.get_cost_for_option('record_vehicular')
         cost = cost if cost is not None else 2
 
         if user.get('role') != 'admin':
@@ -1868,14 +1842,8 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
 
         res = await bot_client.query_record(target)
 
-        await db.register_search(
-            user_id=user_id,
-            search_type="record",
-            query_target=target,
-            raw_response=res.get("raw_text", ""),
-            credits_used=cost if user.get('role') != 'admin' else 0,
-            ip_address=client_ip
-        )
+        await api_log_search(request, user_id, target, 'record_vehicular')
+        
         return {"data": res, "file_path": res.get("file_path")}
 
     except SinResultadosError as e:
@@ -1886,3 +1854,4 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
         if user.get('role') != 'admin' and not user.get('is_premium'):
             await db.refund_credits(user_id, cost, f"Reembolso RECORD (Error) para {target}")
         raise HTTPException(status_code=500, detail=str(e))
+

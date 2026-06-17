@@ -188,3 +188,41 @@ async def send_purchase_approved_email(to_email: str, plan_name: str, is_premium
     except Exception as e:
         logger.error(f"Error sending purchase approved email to {to_email}: {e}")
         return False
+
+async def send_purchase_received_email(to_email: str, plan_name: str, amount_soles: str):
+    """
+    Sends an email to the user acknowledging their purchase request is being reviewed.
+    """
+    subject = "Solicitud de Compra Recibida - Bot DNI"
+    body = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #2563eb;">Hemos recibido tu solicitud de compra</h2>
+            <p>Hola,</p>
+            <p>Queremos confirmarte que hemos recibido tu solicitud de compra para el paquete <strong>{plan_name}</strong> por S/ {amount_soles}.</p>
+            
+            <p>Actualmente, tu comprobante de pago está siendo revisado por nuestro equipo de administradores. Este proceso suele ser rápido, y te notificaremos por correo electrónico en cuanto tu compra sea aprobada y tus beneficios estén activos.</p>
+            
+            <p>Si tienes alguna duda, no dudes en contactarnos.</p>
+            <br>
+            <p>Saludos cordiales,<br><strong>El equipo de Bot DNI</strong></p>
+        </div>
+    </body>
+    </html>
+    """
+
+    msg = MIMEMultipart()
+    msg['From'] = f"Bot DNI <{SMTP_USER}>"
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'html'))
+
+    try:
+        await asyncio.to_thread(_send_email_sync, msg)
+        logger.info(f"Purchase received email sent to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Error sending purchase received email to {to_email}: {e}")
+        return False
+
