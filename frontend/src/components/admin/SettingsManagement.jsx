@@ -142,7 +142,7 @@ export default function SettingsManagement() {
                     </div>
                 )}
 
-                <div className="p-4 md:p-6 -[] overflow-y-auto bg-white dark:bg-slate-900">
+                <div className="p-4 md:p-6 max-h-[85dvh] overflow-y-auto bg-white dark:bg-slate-900">
                     {modalTab === 'tabs' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(settingsList).filter(([k]) => k.startsWith('feature_') || k === 'promo_pack_active').map(([key, setting]) => (

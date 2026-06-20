@@ -22,35 +22,60 @@ function parseDenuncias(rawText) {
         
         if (cleanLine.includes('INFOR DATA') || cleanLine.includes('DENUNCIA POLICIAL')) continue;
         if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
+        if (cleanLine.includes('CRÉDITOS :') || cleanLine.includes('Usuario :') || cleanLine.includes('La consulta se hizo')) continue;
+        if (cleanLine.startsWith('➤ #')) continue;
         
-        if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine)) {
+        if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine) || cleanLine.match(/DENUNCIA #?\d+/) || cleanLine.includes('ANTECEDENTES PERSONALES -') || cleanLine.includes('SIDPLA SIDPOL')) {
             if (currentDenuncia) denuncias.push(currentDenuncia);
             currentDenuncia = [];
+            
+            // Extract number if possible from the header itself
+            if (cleanLine.match(/DENUNCIA #?\d+\s*[-—]\s*(.+)/)) {
+                 const m = cleanLine.match(/DENUNCIA #?\d+\s*[-—]\s*(N°)?\s*(.+)/);
+                 if (m && m[2]) {
+                     let val = m[2].trim();
+                     if (val.match(/^\d+$/)) { // If it's just numbers, it's probably the DNI/Placa/Denuncia No.
+                         currentDenuncia.push({ label: 'REF', value: val, icon: 'tag' });
+                     }
+                 }
+            }
         } else if (!currentDenuncia && cleanLine.includes('ANTECEDENTES - ONLINE')) {
             currentDenuncia = [];
-        } else if (!currentDenuncia && (cleanLine.includes('➣') || cleanLine.includes(':'))) {
-            // Fallback para atrapar data si no detectó la cabecera
+        } else if (!currentDenuncia && (cleanLine.includes('➔') || cleanLine.includes(':'))) {
             currentDenuncia = [];
         }
         
         if (currentDenuncia) {
-            let parts = cleanLine.split('➣');
-            if (parts.length < 2) parts = cleanLine.split(':');
+            let parts = cleanLine.split('➔');
+            let usedColon = false;
+            if (parts.length < 2) {
+                parts = cleanLine.split(':');
+                usedColon = true;
+            }
             
             if (parts.length >= 2) {
-                let label = parts[0].replace(/^[•\d.\s]+/, '').trim();
-                let value = parts.slice(1).join('➣').trim();
+                let label = parts[0].replace(/^[➔▶\d.\s]+/, '').trim();
+                let value = parts.slice(1).join(usedColon ? ':' : '➔').trim();
+                if (value.startsWith('—')) value = value.substring(1).trim();
+                if (value.startsWith('-')) value = value.substring(1).trim();
                 
                 let icon = 'info';
                 const labelUpper = label.toUpperCase();
                 if (labelUpper.includes('TIPO')) icon = 'category';
-                else if (labelUpper.includes('DNI')) icon = 'badge';
+                else if (labelUpper.includes('DNI') || labelUpper.includes('NOMBRE') || labelUpper.includes('PADRE') || labelUpper.includes('MADRE')) icon = 'badge';
                 else if (labelUpper.includes('PLACA')) icon = 'directions_car';
+                else if (labelUpper.includes('LUGAR')) icon = 'location_on';
                 else if (labelUpper.includes('COMISARÍA') || labelUpper.includes('COMISARIA')) icon = 'local_police';
-                else if (labelUpper.includes('HECHO') || labelUpper.includes('FECHA')) icon = 'event';
+                else if (labelUpper.includes('HECHO') || labelUpper.includes('FECHA') || labelUpper.includes('NACIMIENTO')) icon = 'event';
                 else if (labelUpper.includes('CLAVE')) icon = 'key';
                 
                 currentDenuncia.push({ label, value, icon });
+            } else if (!cleanLine.match(/DENUNCIA #?\d+/) && cleanLine.length > 5 && !cleanLine.includes('➤ CONSULTADO POR')) {
+                 // Standalone value line like "INTERVENCION POLICIALES"
+                 if (currentDenuncia.length > 0 && currentDenuncia[0].label === 'REF') {
+                     // Probably the description
+                     currentDenuncia.push({ label: 'TIPO', value: cleanLine, icon: 'category' });
+                 }
             }
         }
     }
@@ -272,7 +297,7 @@ export default function Delitos() {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
             {view === 'selection' && (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}

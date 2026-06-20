@@ -121,25 +121,34 @@ function parseTelpUnified(rawText) {
 
     const lines = rawText.split('\n').map(l => stripMd(l).trim()).filter(Boolean);
 
-    const extract = (line) => {
-        const m = line.match(/[➣➺]\s*(.+)$/);
+    const extract = (line, keyword = '') => {
+        const m = line.match(/[➔▶➣➺]\s*(.+)$/);
         if (m) return m[1].trim();
         const m2 = line.match(/:\s*(.+)$/);
-        return m2 ? m2[1].trim() : '';
+        if (m2) return m2[1].trim();
+        if (keyword) {
+            const regex = new RegExp(`^${keyword}\\s+(.*)$`, 'i');
+            const m3 = line.match(regex);
+            if (m3) return m3[1].trim();
+        }
+        return '';
     };
 
     const norm = (l) => l.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
-    const isEmpty = (v) => !v || v === '—' || v === '-';
+    const isEmpty = (v) => !v || v === '?' || v === '-' || v === '—';
 
     for (const line of lines) {
         const n = norm(line);
 
-        if (n.includes('KING DATA') || n.includes('DATTATOMMY') || n.includes('TELEFONOS PREMIUM') || n.includes('SHIELDGRAM DB') || n.includes('REGISTROS:') || n.includes('ENCONTRADOS:') || n.includes('SITEX DATA') || n.includes('OSIPTEL') || n.includes('DETALLE DE LINEAS') || n.includes('SALDO:') || n.includes('CONSULTOR:') || n.includes('━━━━━━━━━━━━━━━━━━━━') || n.includes('LINEAS ENCONTRADAS') || n.includes('RESULTADOS') || n.includes('CUENTA:') || n.includes('USUARIO:') || n.includes('TELEFONIA')) continue;
+        if (n.includes('KING DATA') || n.includes('DATTATOMMY') || n.includes('TELEFONOS PREMIUM') || n.includes('SHIELDGRAM DB') || n.includes('REGISTROS:') || n.includes('ENCONTRADOS:') || n.includes('SITEX DATA') || n.includes('OSIPTEL') || n.includes('DETALLE DE LINEAS') || n.includes('SALDO:') || n.includes('CONSULTOR:') || n.includes('=================================') || n.includes('LINEAS ENCONTRADAS') || n.includes('RESULTADOS') || n.includes('CUENTA:') || n.includes('USUARIO:') || n.includes('TELEFONIA')) continue;
 
         // Catch global operator if it's on its own line (🟢 ENTEL, 🔵 MOVISTAR, etc)
         if ((n.includes('ENTEL') || n.includes('MOVISTAR') || n.includes('CLARO') || n.includes('BITEL') || n.includes('WIN')) && !line.includes('|') && !line.includes('│')) {
-            globalOperador = line.replace(/[^a-zA-Z\s]/g, '').trim();
-            continue;
+            if (!n.includes('OPERADOR')) {
+                globalOperador = line.replace(/[^a-zA-Z\s]/g, '').trim();
+                if (current) current.operador = globalOperador;
+                continue;
+            }
         }
 
         // Globals for new OSIPTEL/SERUM formats
@@ -164,6 +173,20 @@ function parseTelpUnified(rawText) {
         }
 
         // Start a new entry for OSIPTEL or SERUM format (➟ 968500799 | MOVISTAR) or (❌ 928669585 │ S/N │ 202601)
+        if ((n.includes('TELEFONO') || n.includes('NUMERO')) && (n.includes('➔') || n.includes('▶') || n.includes(':'))) {
+            if (current) entries.push(current);
+            const val = extract(line, n.includes('TELEFONO') ? 'TELEFONO' : 'NUMERO');
+            current = { numero: val, telefono: val, titular: globalTitular, dni: globalDni, operador: globalOperador };
+            continue;
+        }
+
+        if (!current && (n.includes('TELEFONO') || n.includes('NUMERO')) && n.match(/\d{9}/)) {
+            if (current) entries.push(current);
+            const val = extract(line, n.includes('TELEFONO') ? 'TELEFONO' : 'NUMERO') || line.match(/\d{9}/)[0];
+            current = { numero: val, telefono: val, titular: globalTitular, dni: globalDni, operador: globalOperador };
+            continue;
+        }
+
         if (line.includes('|') || line.includes('│')) {
             if (current) entries.push(current);
             const parts = line.replace(/[➟➠➡•❌]/g, '').split(/\||│/).map(x => x.trim());
@@ -188,17 +211,17 @@ function parseTelpUnified(rawText) {
         if (!current) continue;
 
         if (n.includes('OPERADOR') || n.includes('OPERADORA')) {
-            current.operador = extract(line);
+            current.operador = extract(line, n.includes('OPERADORA') ? 'OPERADORA' : 'OPERADOR');
         } else if (n.includes('PLAN')) {
-            const v = extract(line);
+            const v = extract(line, 'PLAN / TIPO') || extract(line, 'PLAN');
             current.plan = isEmpty(v) ? '' : v;
-        } else if (n.includes('PERIODO') || n.includes('PERIDO')) {
-            current.periodo = extract(line);
+        } else if (n.includes('PERIODO') || n.includes('PERIDO') || n.includes('PERÍODO')) {
+            current.periodo = extract(line, n.includes('PERÍODO') ? 'PERÍODO' : 'PERIODO');
         } else if (n.includes('CORREO') || n.includes('EMAIL')) {
-            const v = extract(line);
+            const v = extract(line, n.includes('CORREO') ? 'CORREO' : 'EMAIL');
             current.correo = isEmpty(v) ? '' : v;
         } else if (n.includes('VIGENCIA') || n.includes('F.')) {
-            const v = extract(line);
+            const v = extract(line, 'VIGENCIA');
             current.vigencia = isEmpty(v) ? '' : v;
         } else if (n.includes('ESTADO')) {
             const v = extract(line);
@@ -543,7 +566,7 @@ function NumerosResult({ dni, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
                 <div className="p-6 sm:p-8 flex flex-col items-center relative">
@@ -575,7 +598,7 @@ function NumerosResult({ dni, rawText, onBack }) {
                                 <p className="text-sm font-semibold text-slate-400">No se encontraron números para este DNI</p>
                             </div>
                         ) : (
-                            <div className="space-y-5 -[] overflow-y-auto pr-1">
+                            <div className="space-y-5 max-h-[85dvh] overflow-y-auto pr-1">
                                 {groups.map((g) => {
                                     const style = getOperatorStyle(g.operator);
                                     return (
@@ -733,7 +756,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}
                 className="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-700/50 relative">
 
@@ -773,7 +796,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
                                 <p className="text-base font-semibold text-slate-500 dark:text-slate-400">No se encontraron datos para este número</p>
                             </div>
                         ) : (
-                            <div className="space-y-6 -[] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                            <div className="space-y-6 max-h-[85dvh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                                 {groups.map((g) => {
                                     const style = getOperatorStyle(g.operator);
                                     return (
@@ -1048,7 +1071,7 @@ function VerificadorResult({ data, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1213,7 +1236,7 @@ function TitularResult({ phone, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}
                 className="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-700/50 relative">
 
@@ -1253,7 +1276,7 @@ function TitularResult({ phone, rawText, onBack }) {
                                 <p className="text-base font-semibold text-slate-500 dark:text-slate-400">No se encontraron datos para este número</p>
                             </div>
                         ) : (
-                            <div className="space-y-4 -[] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                            <div className="space-y-4 max-h-[85dvh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                                 {entries.map((e, idx) => {
                                     const style = getOperatorStyle(e.operador);
                                     return (

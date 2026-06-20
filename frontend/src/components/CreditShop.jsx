@@ -102,7 +102,7 @@ function QRPaymentModal({ plan, method, onClose, onSuccess }) {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md" onClick={onClose}>
             {qrZoom && (
                 <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-950/90 p-4" onClick={() => setQrZoom(false)}>
-                    <img src={`/payments/${method}/${method}-qr.png`} alt="QR" className="max-w-full -[] object-contain rounded-xl" />
+                    <img src={`/payments/${method}/${method}-qr.png`} alt="QR" className="max-w-full max-h-[85dvh] object-contain rounded-xl" />
                 </div>
             )}
 
@@ -120,7 +120,7 @@ function QRPaymentModal({ plan, method, onClose, onSuccess }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98, y: 20 }}
                 onClick={e => e.stopPropagation()}
-                className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col -[] border border-slate-200 dark:border-slate-800"
+                className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[85dvh] border border-slate-200 dark:border-slate-800"
             >
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -291,7 +291,7 @@ function PurchaseHistoryModal({ onClose }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 onClick={e => e.stopPropagation()}
-                className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-xl -[] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
+                className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85dvh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
             >
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-800/30">
                     <div className="flex items-center gap-3">

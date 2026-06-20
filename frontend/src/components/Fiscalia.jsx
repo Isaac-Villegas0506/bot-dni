@@ -277,7 +277,7 @@ export default function Fiscalia() {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
             {view === 'selection' && (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}

@@ -76,7 +76,7 @@ function HistoryModal({ h, onClose }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl -[] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800"
+                className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85dvh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800"
             >
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
@@ -320,7 +320,7 @@ export default function HistorialAdmin() {
 
             {/* ── Tabla (desktop) ───────────────────────────────────── */}
             <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto -[] scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                <div className="overflow-x-auto max-h-[85dvh] scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
                     <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
