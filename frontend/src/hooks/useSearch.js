@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import { getApiUrl } from '../utils/api';
@@ -7,15 +7,34 @@ export function useSearch() {
     const { token, setShowWelcomeModal, refreshUser } = useAuth();
     const { loading, showLoading, hideLoading, showDonation, openDonation, closeDonation } = useLoading();
 
-    const [searchMode, setSearchMode] = useState('dni');
-    const [searchType, setSearchType] = useState('basic');
-    const [dni, setDni] = useState('');
-    const [nombres, setNombres] = useState('');
-    const [result, setResult] = useState(null);
-    const [nameResults, setNameResults] = useState(null);
+    const [searchMode, setSearchMode] = useState(() => sessionStorage.getItem('searchMode') || 'dni');
+    const [searchType, setSearchType] = useState(() => sessionStorage.getItem('searchType') || 'basic');
+    const [dni, setDni] = useState(() => sessionStorage.getItem('dni') || '');
+    const [nombres, setNombres] = useState(() => sessionStorage.getItem('nombres') || '');
+    const [result, setResult] = useState(() => {
+        const saved = sessionStorage.getItem('result');
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [nameResults, setNameResults] = useState(() => {
+        const saved = sessionStorage.getItem('nameResults');
+        return saved ? JSON.parse(saved) : null;
+    });
     const [downloadUrl, setDownloadUrl] = useState(null);
     const [totalResults, setTotalResults] = useState(0);
     const [alertMessage, setAlertMessage] = useState(null);
+
+    useEffect(() => { sessionStorage.setItem('searchMode', searchMode); }, [searchMode]);
+    useEffect(() => { sessionStorage.setItem('searchType', searchType); }, [searchType]);
+    useEffect(() => { sessionStorage.setItem('dni', dni); }, [dni]);
+    useEffect(() => { sessionStorage.setItem('nombres', nombres); }, [nombres]);
+    useEffect(() => { 
+        if (result) sessionStorage.setItem('result', JSON.stringify(result));
+        else sessionStorage.removeItem('result');
+    }, [result]);
+    useEffect(() => { 
+        if (nameResults) sessionStorage.setItem('nameResults', JSON.stringify(nameResults));
+        else sessionStorage.removeItem('nameResults');
+    }, [nameResults]);
 
     const searchDirectDni = async (dniVal, type = 'basic', captchaToken = null) => {
         showLoading();

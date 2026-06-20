@@ -193,9 +193,20 @@ export default function Facial() {
 
         lines.forEach(line => {
             const trimmed = line.trim();
-            // Match example: • 1 ➣ 22482972 「38.2%」
+            // Old format match example: • 1 ➣ 22482972 「38.2%」
             const titleMatch = trimmed.match(/•\s*\d+\s*[➣➤>]\s*(\d+)\s*「([\d.]+%?)」/);
-            if (titleMatch) {
+            
+            // New format starts with MEJOR MATCH
+            if (trimmed.startsWith('MEJOR MATCH')) {
+                if (currentMatch) matches.push(currentMatch);
+                currentMatch = {
+                    dni: '',
+                    percentage: '',
+                    nombres: trimmed.split(':')[1]?.trim() || '',
+                    apellidos: '',
+                    edad: ''
+                };
+            } else if (titleMatch) {
                 if (currentMatch) matches.push(currentMatch);
                 currentMatch = {
                     dni: titleMatch[1],
@@ -211,6 +222,10 @@ export default function Facial() {
                     currentMatch.apellidos = trimmed.split(/[➣➤>]/)[1]?.trim() || '';
                 } else if (trimmed.includes('EDAD')) {
                     currentMatch.edad = trimmed.split(/[➣➤>]/)[1]?.trim() || '';
+                } else if (trimmed.startsWith('DNI :')) {
+                    currentMatch.dni = trimmed.split(':')[1]?.trim() || '';
+                } else if (trimmed.startsWith('SIMILITUD :')) {
+                    currentMatch.percentage = trimmed.split(':')[1]?.trim() || '';
                 }
             }
         });

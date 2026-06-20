@@ -84,16 +84,20 @@ def parse_bot_response(text):
         if not line:
             continue
         
-        # Detectar secciones (solo si NO es una línea de datos con separador)
-        is_data_line = any(sep in line for sep in ["➾", "❯", "➺", "→", "➜", ">", "➣", "➟"])
+        # Detectar si es una línea de datos (coincide con el patrón de llave: valor)
+        match = re.search(pattern, line)
+        is_data_line = bool(match)
         
         line_upper = line.upper()
         if not is_data_line:
             if "NACIMIENTO" in line_upper:
                 current_section = "nacimiento"
                 continue
-            if "DOMICILIO" in line_upper or "DIRECCIONES" in line_upper:
+            if "DOMICILIO" in line_upper or "DIRECCIONES" in line_upper or "DIRECCION" in line_upper:
                 current_section = "domicilio"
+                continue
+            if "PADRES" in line_upper or "FILIACION" in line_upper:
+                current_section = "padres"
                 continue
             if "UBIGEO" in line_upper:
                 current_section = "ubigeo"
@@ -110,7 +114,6 @@ def parse_bot_response(text):
         if len(line) < 4:
             continue
             
-        match = re.search(pattern, line)
         if match:
             key = match.group(1).strip().lower()
             value = match.group(2).strip()
@@ -164,7 +167,9 @@ def parse_bot_response(text):
                 "direccion": "direccion",
                 "ubicacion": "direccion",
                 "estado_civil": "estado_civil",
+                "dni_padre": "dni_padre",
                 "padre": "padre",
+                "dni_madre": "dni_madre",
                 "madre": "madre",
                 "fecha_de_emision": "fecha_emision",
                 "fecha_emision": "fecha_emision",
@@ -181,6 +186,7 @@ def parse_bot_response(text):
                 "caducidad": "fecha_caducidad",
                 "emision": "fecha_emision",
                 "inscripcion": "fecha_inscripcion",
+                "fecha_fallecimiento": "fecha_fallecimiento",
                 "fecha": "fecha_nacimiento",
                 "estatura": "estatura",
                 "grado_inst": "grado_instruccion",
