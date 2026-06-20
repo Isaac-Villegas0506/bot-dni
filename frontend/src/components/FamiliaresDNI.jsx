@@ -632,9 +632,9 @@ export default function FamiliaresDNI() {
     // ── RESULT VIEW ───────────────────────────────────────────────────────────
     const isTextoResult = generatedData?.resultType === 'texto';
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-y-auto max-h-[85dvh] border border-slate-200 dark:border-slate-800">
                 <div className="p-6 sm:p-8 flex flex-col items-center relative">
                     {/* Back button (Arrow) */}
                     <button
