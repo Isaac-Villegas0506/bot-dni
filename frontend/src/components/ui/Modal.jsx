@@ -52,12 +52,12 @@ export default function Modal({
             style={{ zIndex }}
         >
             <div
-                className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm"
+                className="fixed top-0 left-0 w-full h-[100dvh] bg-slate-950/50 backdrop-blur-sm"
                 aria-hidden="true"
             />
 
             <div
-                className={`fixed inset-0 overflow-y-auto flex justify-center ${
+                className={`fixed top-0 left-0 w-full h-[100dvh] overflow-y-auto flex justify-center ${
                     isSheet ? 'items-end sm:items-center p-0 sm:p-4' : 'items-center p-4'
                 }`}
             >
@@ -67,7 +67,7 @@ export default function Modal({
                         transition duration-200 ease-out
                         data-[closed]:opacity-0 data-[closed]:scale-95 data-[closed]:translate-y-4
                         ${isSheet
-                            ? 'rounded-t-3xl sm:rounded-3xl -[] border-t sm:border'
+                            ? 'rounded-t-3xl sm:rounded-3xl max-h-[85dvh] border-t sm:border'
                             : 'rounded-3xl my-4 sm:my-0 border'
                         }
                         ${panelClassName}`}

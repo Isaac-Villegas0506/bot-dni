@@ -534,11 +534,33 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest font-bold">Filiación</p>
                                     <div className="grid grid-cols-1 gap-3">
                                         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest font-bold">Padre</p>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Padre</p>
+                                                {result.dni_padre && (
+                                                    <span 
+                                                        onClick={() => handleCopyDNI(result.dni_padre)}
+                                                        className="cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-[10px] font-mono bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md"
+                                                        title="Copiar DNI"
+                                                    >
+                                                        DNI: {result.dni_padre}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base uppercase tracking-wide">{result.padre || 'No registrada'}</p>
                                         </div>
                                         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest font-bold">Madre</p>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Madre</p>
+                                                {result.dni_madre && (
+                                                    <span 
+                                                        onClick={() => handleCopyDNI(result.dni_madre)}
+                                                        className="cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-[10px] font-mono bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md"
+                                                        title="Copiar DNI"
+                                                    >
+                                                        DNI: {result.dni_madre}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base uppercase tracking-wide">{result.madre || 'No registrada'}</p>
                                         </div>
                                     </div>
@@ -703,7 +725,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 <img
                                     src={getApiUrl(previewData.url)}
                                     alt="Vista Previa"
-                                    className="max-w-full -[] object-contain rounded-xl shadow-2xl border border-white/10"
+                                    className="max-w-full max-h-[85dvh] object-contain rounded-xl shadow-2xl border border-white/10"
                                 />
                             </motion.div>
                         </motion.div>

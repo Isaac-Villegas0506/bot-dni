@@ -391,7 +391,7 @@ export default function GeneratorReniec() {
     const parsedData = view === 'result' ? getParsedData() : [];
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center -[]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
 
             <HelpModal
                 isOpen={helpModal.isOpen}
@@ -527,11 +527,17 @@ export default function GeneratorReniec() {
                             <>
                                 {/* Document Preview — funciona en desktop y móvil */}
                                 {generatedData.file_path && (
-                                    <PdfViewer
-                                        url={getApiUrl(`/api/static/${generatedData.file_path}`)}
-                                        height="420px"
-                                        className="mb-8"
-                                    />
+                                    generatedData.file_path.endsWith('.jpg') || generatedData.file_path.endsWith('.png') ? (
+                                        <div className="w-full flex justify-center mt-4 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                                            <img src={getApiUrl(`/api/static/${generatedData.file_path}`)} alt="Documento Generado" className="max-w-full h-auto" />
+                                        </div>
+                                    ) : (
+                                        <PdfViewer
+                                            url={getApiUrl(`/api/static/${generatedData.file_path}`)}
+                                            height="420px"
+                                            className="w-full mt-4 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-slate-800"
+                                        />
+                                    )
                                 )}
                             </>
                         )}
@@ -687,7 +693,7 @@ export default function GeneratorReniec() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="relative w-full max-w-4xl -[] flex flex-col items-center cursor-default"
+                                className="relative w-full max-w-4xl max-h-[85dvh] flex flex-col items-center cursor-default"
                             >
                                 <div className="w-full bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
                                     <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
@@ -696,7 +702,7 @@ export default function GeneratorReniec() {
                                         </h4>
                                         <span className="text-[10px] font-black text-blue-500 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full uppercase">Vista HD</span>
                                     </div>
-                                    <div className="p-2 flex items-center justify-center bg-slate-200 dark:bg-black/40 overflow-auto -[]">
+                                    <div className="p-2 flex items-center justify-center bg-slate-200 dark:bg-black/40 overflow-auto max-h-[85dvh]">
                                         <img
                                             src={previewImage.url}
                                             alt="Preview"
