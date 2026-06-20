@@ -296,7 +296,7 @@ async def firebase_login(login_data: FirebaseLogin, request: Request):
              import firebase_admin
              from firebase_admin import auth
              if firebase_admin._apps:
-                 decoded_token = auth.verify_id_token(login_data.id_token)
+                 decoded_token = auth.verify_id_token(login_data.id_token, clock_skew_seconds=60)
         except Exception as e:
              logger.warning(f"Firebase Admin verify failed (using fallback): {e}")
 
