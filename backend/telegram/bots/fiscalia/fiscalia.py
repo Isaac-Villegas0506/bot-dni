@@ -16,7 +16,7 @@ from telegram.guards import is_sin_resultados
 TARGET_BOT = "@Infordata1_bot"
 
 _OPTION_MAP = {
-    "fiscalia_dni":    ("/fiscalia", "FISCALIA"),
+    "fiscalia_dni":    ("/fiscaliapdf", "FISCALIAPDF"),
     "fiscalia_ruc":    ("/fisruc",   "FISRUC"),
     "fiscalia_nombre": ("/fisnm",    "FISNM"),
     "caso_fiscal":     ("/fisca",    "FISCA"),
@@ -61,9 +61,9 @@ async def query_fiscalia(
 
     # Detectores de texto para cada tipo (fallback cuando reply_to_msg_id no funciona)
     _TEXT_MARKERS = {
-        "fiscalia_dni":    "FISCALIA - PDF",
+        "fiscalia_dni":    "FISCALÍA PDF DNI",
         "fiscalia_ruc":    "FISCALÍA RUC",
-        "fiscalia_nombre": "FISCALÍA NOMBRES",
+        "fiscalia_nombre": "FISCALÍA POR NOMBRES",
         "caso_fiscal":     "FISCALÍA CASO",
     }
 
@@ -103,7 +103,7 @@ async def query_fiscalia(
                 if (
                     message.file
                     and message.file.name
-                    and message.file.name.endswith(".pdf")
+                    and (message.file.name.endswith(".pdf") or message.file.name.endswith(".txt"))
                     and (pdf_prefix in message.file.name.upper() or is_our)
                 ):
                     found_pdf = message
@@ -119,7 +119,12 @@ async def query_fiscalia(
     docs_dir = static_base_dir / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     safe_target = target.replace("|", "_").replace(" ", "_").replace("/", "_")
-    filename = f"{pdf_prefix}_{safe_target}_{int(time.time())}.pdf"
+    
+    ext = ".pdf"
+    if found_pdf.file.name and found_pdf.file.name.endswith(".txt"):
+        ext = ".txt"
+        
+    filename = f"{pdf_prefix}_{safe_target}_{int(time.time())}{ext}"
     file_path = docs_dir / filename
     await found_pdf.download_media(file=file_path)
 
