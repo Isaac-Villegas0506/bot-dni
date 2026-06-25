@@ -180,9 +180,10 @@ export default function App() {
             <TermsModal />
             
             {/* User Notifications */}
-            {showPromoModal && (
-                <PromoModal onClose={() => setShowPromoModal(false)} />
-            )}
+            <PromoModal 
+                isOpen={showPromoModal} 
+                onClose={() => setShowPromoModal(false)} 
+            />
             
             {notifications.length > 0 && (
                 <UserNotificationModal 
