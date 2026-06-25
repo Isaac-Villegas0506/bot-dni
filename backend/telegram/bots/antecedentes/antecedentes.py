@@ -15,9 +15,9 @@ from telegram.guards import is_sin_resultados
 TARGET_BOT = "@Infordata1_bot"
 
 _CONFIG = {
-    "penales":    ("/antpen", "antecedentes_penales_",  "antecedentes_penales_{}.pdf",  "ANTECEDENTES PENALES",   "PENALES"),
-    "judiciales": ("/antjud", "antecedentes_judiciales_", "antecedentes_judiciales_{}.pdf", "ANTECEDENTES JUDICIALES", "JUDICIALES"),
-    "policiales": ("/antpol", "antpoliciales_",          "AntPoliciales_{}.pdf",          "ANTECEDENTES POLICIALES", "POLICIALES"),
+    "penales":    ("/antpen", "antecedentes_penales_",  "antecedentes_penales_{}.jpg",  "ANTECEDENTES PENALES",   "PENALES"),
+    "judiciales": ("/antjud", "antecedentes_judiciales_", "antecedentes_judiciales_{}.jpg", "ANTECEDENTES JUDICIALES", "JUDICIALES"),
+    "policiales": ("/antpol", "antpoliciales_",          "AntPoliciales_{}.jpg",          "ANTECEDENTES POLICIALES", "POLICIALES"),
 }
 
 
@@ -70,12 +70,12 @@ async def generate_antecedentes(
                     continue
                 if is_sin_resultados(text):
                     raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
-                is_valid_pdf = False
-                if message.document:
+                is_valid_doc = False
+                if message.media:
                     fname = message.file.name if message.file and message.file.name else ""
-                    if fname.lower().startswith(file_prefix) and fname.lower().endswith(".pdf"):
-                        is_valid_pdf = True
-                if is_valid_pdf or text_kw in text.upper() or text_kw2 in text.upper():
+                    if fname.lower().startswith(file_prefix):
+                        is_valid_doc = True
+                if is_valid_doc or text_kw in text.upper() or text_kw2 in text.upper():
                     if dni in text or (message.file and message.file.name and dni in message.file.name):
                         found_msg = message
                         break
@@ -90,10 +90,14 @@ async def generate_antecedentes(
 
         print(f"✅ Antecedentes {tipo} encontrado.")
         file_path = None
-        if found_msg.document:
+        if found_msg.media:
             files_dir = static_base_dir / "files"
             files_dir.mkdir(parents=True, exist_ok=True)
-            filename = filename_tpl.format(dni)
+            # Determinar extensión real
+            ext = ".jpg"
+            if found_msg.file and found_msg.file.ext:
+                ext = found_msg.file.ext
+            filename = filename_tpl.format(dni).replace(".jpg", ext)
             path = files_dir / filename
             await found_msg.download_media(file=path)
             file_path = f"files/{filename}"
