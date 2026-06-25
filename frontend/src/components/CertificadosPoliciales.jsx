@@ -2,6 +2,7 @@ import { useSettings } from '../context/settingsContextValue';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import html2canvas from 'html2canvas';
 import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +26,7 @@ export default function CertificadosPoliciales() {
     return saved ? JSON.parse(saved) : null;
   });
   const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
+  const certificateRef = useRef(null);
 
   useEffect(() => {
     sessionStorage.setItem('certificados_view', view);
@@ -246,6 +248,21 @@ export default function CertificadosPoliciales() {
       setHasDownloaded(true);
       const filename = generatedData.file_path.split('/').pop();
       await forceDownload(getApiUrl(generatedData.file_path), filename);
+    } else if (certificateRef.current) {
+      setHasDownloaded(true);
+      try {
+        const canvas = await html2canvas(certificateRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const link = document.createElement('a');
+        link.download = `${generatedData.type.id}_${generatedData.dni}.jpg`;
+        link.href = imgData;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error(err);
+        setAlert({ isOpen: true, type: 'error', message: 'Error al generar la imagen' });
+      }
     }
   };
 
@@ -338,7 +355,7 @@ export default function CertificadosPoliciales() {
             {/* The previous DNI/FECHA/ESTADO table was removed as requested */}
 
             {/* Additional Text Data from bot message */}
-            {Object.keys(textData).length > 0 && (
+            {Object.keys(textData).length > 0 && generatedData.file_path && (
               <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
                 <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">DATOS DEL CERTIFICADO</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
@@ -354,8 +371,8 @@ export default function CertificadosPoliciales() {
               </div>
             )}
 
-            {/* Document Preview — funciona en desktop y móvil */}
-            {generatedData.file_path && (
+            {/* Document Preview or Generated HTML Certificate */}
+            {generatedData.file_path ? (
               <div className="w-full mb-8">
                 {generatedData.file_path.toLowerCase().endsWith('.pdf') ? (
                   <PdfViewer
@@ -372,17 +389,52 @@ export default function CertificadosPoliciales() {
                   </div>
                 )}
               </div>
+            ) : generatedData.data?.raw_text && (
+              <div className="w-full mb-8 overflow-x-auto custom-scrollbar flex justify-center bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+                <div ref={certificateRef} className="w-full min-w-[340px] max-w-[500px] bg-white p-6 sm:p-8 border-4 border-double border-slate-300 relative overflow-hidden text-slate-900 shadow-sm" style={{ fontFamily: 'monospace' }}>
+                  {/* Background watermark icon */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                     <span className="material-icons-round text-[250px]">{generatedData.type.icon}</span>
+                  </div>
+                  
+                  <div className="text-center mb-6 relative z-10 border-b-2 border-slate-200 pb-4">
+                    <h2 className="text-xl sm:text-2xl font-black tracking-widest text-slate-800 uppercase">{generatedData.type.title}</h2>
+                    <p className="text-slate-500 font-mono text-sm mt-2 font-bold tracking-widest">DNI: {generatedData.dni}</p>
+                  </div>
+
+                  <div className="space-y-3 relative z-10 font-mono text-xs sm:text-sm">
+                    {Object.entries(textData).map(([k, v]) => (
+                      k !== 'DNI' && (
+                        <div key={k} className="flex border-b border-dashed border-slate-200 pb-1">
+                          <span className="w-28 sm:w-32 font-bold text-slate-600 truncate mr-2">{k}</span>
+                          <span className="flex-1 font-semibold text-slate-800 uppercase break-words">{v}</span>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                  
+                  <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between items-end relative z-10">
+                     <div className="text-[10px] sm:text-xs text-slate-400 font-mono">
+                       Fecha de emisión:<br/>
+                       <span className="font-bold text-slate-600">{generatedData.timestamp}</span>
+                     </div>
+                     <div className="text-right">
+                       <div className="w-24 sm:w-32 h-12 border-b border-slate-400 mb-2 mx-auto"></div>
+                       <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase">FIRMA AUTORIZADA</p>
+                     </div>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Buttons */}
             <div className="flex flex-row w-full gap-3">
               <button
                 onClick={downloadResult}
-                disabled={!generatedData.file_path}
-                className={`flex-1 py-4 rounded-lg font-bold text-white transition-colors flex items-center justify-center gap-2 text-sm sm:text-lg ${!generatedData.file_path ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-lg"
               >
                 <span className="material-icons-round">download</span>
-                Descargar Certificado
+                {generatedData.file_path ? 'Descargar Certificado' : 'Descargar Imagen'}
               </button>
 
               <button
