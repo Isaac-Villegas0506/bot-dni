@@ -93,8 +93,8 @@ class Settings:
 
     # ── Seguridad ─────────────────────────────────────────────────────────
     @property
-    def jwt_secret_key(self) -> str:
-        return os.getenv("JWT_SECRET_KEY", "CHANGE_ME_IN_PRODUCTION")
+    def jwt_secret_key(self) -> str | None:
+        return os.getenv("JWT_SECRET_KEY") or os.getenv("SECRET_KEY")
 
     @property
     def jwt_algorithm(self) -> str:
@@ -145,7 +145,7 @@ class Settings:
     # ── Email / SMTP ──────────────────────────────────────────────────────
     @property
     def smtp_host(self) -> str:
-        return os.getenv("SMTP_HOST", "smtp.gmail.com")
+        return os.getenv("SMTP_HOST") or os.getenv("SMTP_SERVER", "smtp.gmail.com")
 
     @property
     def smtp_port(self) -> int:
@@ -157,7 +157,11 @@ class Settings:
 
     @property
     def smtp_password(self) -> str | None:
-        return os.getenv("SMTP_PASSWORD")
+        return os.getenv("SMTP_PASSWORD") or os.getenv("SMTP_PASS")
+
+    @property
+    def email_verify_api_key(self) -> str | None:
+        return os.getenv("EMAIL_VERIFY_API_KEY")
 
     # ── Firebase ──────────────────────────────────────────────────────────
     @property

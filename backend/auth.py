@@ -1,18 +1,18 @@
 import bcrypt
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import os
 from dotenv import load_dotenv
+from config.settings import settings
 
 # Autosuficiente: cargar .env aquí evita orden de import frágil con main.py.
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = settings.jwt_secret_key
 if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY no configurado. Define la variable de entorno SECRET_KEY.")
+    raise RuntimeError("SECRET_KEY no configurado. Define SECRET_KEY o JWT_SECRET_KEY.")
 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30 # 30 days session
+ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * settings.jwt_expiry_days
 
 def verify_password(plain_password, hashed_password):
     if not hashed_password: return False

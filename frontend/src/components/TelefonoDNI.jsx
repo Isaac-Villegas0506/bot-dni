@@ -120,7 +120,7 @@ function parseTelpUnified(rawText) {
     let globalDni = '';
     let globalOperador = '';
 
-    const lines = rawText.split('\n').map(l => stripMd(l).trim()).filter(Boolean);
+    const lines = rawText.split('\n').map(l => stripMd(l).replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()).filter(Boolean);
 
     const extract = (line, keyword = '') => {
         const m = line.match(/[➔▶➣➺]\s*(.+)$/);
@@ -213,6 +213,8 @@ function parseTelpUnified(rawText) {
 
         if (n.includes('OPERADOR') || n.includes('OPERADORA')) {
             current.operador = extract(line, n.includes('OPERADORA') ? 'OPERADORA' : 'OPERADOR');
+        } else if (n.includes('EMPRESA')) {
+            current.empresa = extract(line, 'EMPRESA');
         } else if (n.includes('PLAN')) {
             const v = extract(line, 'PLAN / TIPO') || extract(line, 'PLAN');
             current.plan = isEmpty(v) ? '' : v;
@@ -1330,6 +1332,13 @@ function TitularResult({ phone, rawText, onBack }) {
                                                             <span className={`w-2 h-2 rounded-full ${style.dot} shadow-sm`}></span>
                                                             <p className={`font-black uppercase tracking-wide ${style.title} text-xs sm:text-sm leading-none`}>{e.operador}</p>
                                                         </div>
+                                                    </div>
+                                                )}
+
+                                                {e.empresa && (
+                                                    <div className="col-span-2 lg:col-span-4 bg-white/60 dark:bg-slate-900/40 p-2.5 sm:p-3 rounded-xl border border-white/40 dark:border-slate-700/30">
+                                                        <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-0.5">Empresa</span>
+                                                        <p className="font-semibold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">{e.empresa}</p>
                                                     </div>
                                                 )}
 

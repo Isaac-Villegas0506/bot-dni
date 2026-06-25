@@ -92,7 +92,8 @@ async def query_delitos(
                     "no se encontró" in text.lower() or
                     "ningun registro" in text.lower() or
                     "ningún registro" in text.lower() or
-                    "no existe" in text.lower()
+                    "no existe" in text.lower() or
+                    "sin denuncias" in text.lower()
                 )
                 if no_results:
                     raise SinResultadosError("No se encontraron denuncias para esta búsqueda en el sistema.")

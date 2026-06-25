@@ -19,12 +19,14 @@ function parseDenuncias(rawText) {
     let currentDenuncia = null;
 
     for (const line of lines) {
-        const cleanLine = line.replace(/[*_`]/g, '').trim();
+        // Remove emojis and formatting
+        let cleanLine = line.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
+        cleanLine = cleanLine.replace(/[*_`]/g, '').trim();
 
         if (cleanLine.includes('INFOR DATA') || cleanLine.includes('DENUNCIA POLICIAL')) continue;
         if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
         if (cleanLine.includes('CRÉDITOS :') || cleanLine.includes('Usuario :') || cleanLine.includes('La consulta se hizo')) continue;
-        if (cleanLine.startsWith('➤ #')) continue;
+        if (cleanLine.startsWith('➤ #') || cleanLine.startsWith('#')) continue;
 
         if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine) || cleanLine.match(/DENUNCIA #?\d+/) || cleanLine.includes('ANTECEDENTES PERSONALES -') || cleanLine.includes('SIDPLA SIDPOL')) {
             if (currentDenuncia) denuncias.push(currentDenuncia);

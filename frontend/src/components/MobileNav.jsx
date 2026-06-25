@@ -214,7 +214,7 @@ export default function MobileNav() {
                                                 <span className="material-icons-round text-emerald-500 text-2xl">history</span>
                                                 <span className="text-[11px] font-bold">Historial</span>
                                             </button>
-                                            <button onClick={() => { setShowMobileMenu(false); navigate('/referidos'); }} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100/50 dark:border-purple-800/30 text-slate-700 dark:text-slate-300 active:scale-95 transition-transform">
+                                            <button onClick={() => { setShowMobileMenu(false); navigate('/creditos'); }} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100/50 dark:border-purple-800/30 text-slate-700 dark:text-slate-300 active:scale-95 transition-transform">
                                                 <span className="material-icons-round text-purple-500 text-2xl">group_add</span>
                                                 <span className="text-[11px] font-bold">Referidos</span>
                                             </button>

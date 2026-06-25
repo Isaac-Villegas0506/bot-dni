@@ -185,8 +185,8 @@ async def query_cel(client, phone: str) -> dict:
     except Exception:
         target_bot_id = 0
 
-    print(f"📡 Enviando /cel {phone} a {TARGET_BOT}...")
-    sent_msg = await client.send_message(TARGET_BOT, f"/cel {phone}")
+    print(f"📡 Enviando /telx {phone} a {TARGET_BOT}...")
+    sent_msg = await client.send_message(TARGET_BOT, f"/telx {phone}")
     await asyncio.sleep(5)
 
     received_parts: dict[int, str] = {}
@@ -212,7 +212,8 @@ async def query_cel(client, phone: str) -> dict:
             is_valid = (
                 "KING DATA" in text_upper or "SHIELDGRAM DB" in text_upper or
                 "DETALLE DE LINEAS" in text_upper or "TITULAR" in text_upper or
-                "TELEFONÍA" in text_upper or "OSIPTEL" in text_upper
+                "TELEFONÍA" in text_upper or "OSIPTEL" in text_upper or
+                "TELX" in text_upper or "NÚMERO" in text_upper
             )
             if not is_valid:
                 continue

@@ -38,3 +38,6 @@ python-multipart
 python-dotenv
 pytz
 emoji
+
+# Testing
+pytest
