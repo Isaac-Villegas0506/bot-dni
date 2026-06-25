@@ -268,7 +268,8 @@ export default function Delitos() {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `DENUNCIA_${index + 1}_${generatedData.queryTarget}.pdf`;
+      const ext = filePath.split('.').pop() || 'pdf';
+      a.download = `DOCUMENTO_${index + 1}.${ext}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -364,11 +365,11 @@ export default function Delitos() {
               )}
 
               {/* Buttons */}
-              <div className="flex flex-col w-full gap-3">
+              <div className="flex flex-row w-full gap-3">
                 {generatedData.archivos && generatedData.archivos.length > 0 && (
                   <button
                     onClick={() => downloadPdf(generatedData.archivos[0], 0)}
-                    className="w-full py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
+                    className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
                   >
                     <span className="material-icons-round">download</span>
                     Descargar Antecedentes
@@ -376,7 +377,7 @@ export default function Delitos() {
                 )}
                 <button
                   onClick={handleBackClick}
-                  className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
                 >
                   Volver
                 </button>

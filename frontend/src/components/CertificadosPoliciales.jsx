@@ -356,10 +356,10 @@ export default function CertificadosPoliciales() {
             )}
 
             {/* Buttons */}
-            <div className="flex flex-col w-full gap-3">
+            <div className="flex flex-row w-full gap-3">
               <button
                 onClick={downloadPdf}
-                className="w-full py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
+                className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
               >
                 <span className="material-icons-round">download</span>
                 Descargar Certificado
@@ -367,7 +367,7 @@ export default function CertificadosPoliciales() {
 
               <button
                 onClick={handleBackClick}
-                className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
               >
                 Volver
               </button>
