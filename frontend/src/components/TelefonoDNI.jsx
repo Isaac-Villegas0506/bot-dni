@@ -759,28 +759,19 @@ function InfoLineaResult({ phone, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}
-                className="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-700/50 relative">
+                className="w-full max-w-4xl relative">
 
-                {/* Decorative background glow */}
-                <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[80%] h-60 bg-emerald-500/20 dark:bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none"></div>
-
-                <div className="p-5 sm:p-8 flex flex-col items-center relative z-10">
+                <div className="p-1 sm:p-2 flex flex-col items-center relative z-10">
                     {/* Back button (Arrow) */}
                     <button
                         onClick={handleBackClick}
-                        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
+                        className="self-start mb-4 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                         title="Volver"
                     >
                         <span className="material-icons-round text-[20px]">arrow_back</span>
                     </button>
-
-                    {/* Icon + title */}
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white mb-4 shadow-lg shadow-emerald-500/40 ring-4 ring-white dark:ring-slate-900 relative mt-2 sm:mt-0">
-                        <div className="absolute inset-0 bg-white/20 rounded-full blur-sm"></div>
-                        <span className="material-icons-round text-2xl sm:text-3xl relative z-10">sim_card</span>
-                    </div>
 
                     <h3 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-400 dark:from-emerald-400 dark:to-teal-300 mb-1 tracking-tight text-center">
                         Línea {phone}
@@ -1074,31 +1065,21 @@ function VerificadorResult({ data, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800"
+                className="w-full max-w-2xl relative"
             >
-                <div className="p-6 sm:p-8 flex flex-col items-center">
-
-                    {/* Operator Logo or fallback icon */}
-                    <div className="mb-4 flex items-center justify-center">
-                        {logoSrc ? (
-                            <img
-                                src={logoSrc}
-                                alt={data.operador}
-                                className="h-20 object-contain drop-shadow-md"
-                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                            />
-                        ) : null}
-                        <div
-                            className={`w-20 h-20 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center ${logoSrc ? 'hidden' : 'flex'}`}
-                            style={logoSrc ? { display: 'none' } : {}}
-                        >
-                            <span className="material-icons-round text-4xl text-slate-500">cell_tower</span>
-                        </div>
-                    </div>
+                <div className="p-1 sm:p-2 flex flex-col items-center">
+                    {/* Back button (Arrow) */}
+                    <button
+                        onClick={handleBackClick}
+                        className="self-start mb-4 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
+                        title="Volver"
+                    >
+                        <span className="material-icons-round text-[20px]">arrow_back</span>
+                    </button>
 
                     {/* Data card */}
                     <div className={`w-full rounded-2xl border p-5 mb-6 ${style.bg} ${style.border}`}>
@@ -1239,28 +1220,19 @@ function TitularResult({ phone, rawText, onBack }) {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center max-h-[85dvh]">
+        <div className="w-full max-w-5xl mx-auto p-4 flex flex-col items-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}
-                className="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-700/50 relative">
+                className="w-full max-w-4xl relative">
 
-                {/* Decorative background glow */}
-                <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[80%] h-60 bg-violet-500/20 dark:bg-violet-500/10 blur-[80px] rounded-full pointer-events-none"></div>
-
-                <div className="p-5 sm:p-8 flex flex-col items-center relative z-10">
+                <div className="p-1 sm:p-2 flex flex-col items-center relative z-10">
                     {/* Back button (Arrow) */}
                     <button
                         onClick={handleBackClick}
-                        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
+                        className="self-start mb-4 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                         title="Volver"
                     >
                         <span className="material-icons-round text-[20px]">arrow_back</span>
                     </button>
-
-                    {/* Icon + title */}
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-violet-500/40 ring-4 ring-white dark:ring-slate-900 relative mt-2 sm:mt-0">
-                        <div className="absolute inset-0 bg-white/20 rounded-full blur-sm"></div>
-                        <span className="material-icons-round text-2xl sm:text-3xl relative z-10">contact_phone</span>
-                    </div>
 
                     <h3 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500 dark:from-violet-400 dark:to-fuchsia-300 mb-1 tracking-tight text-center">
                         Titular del {phone}
