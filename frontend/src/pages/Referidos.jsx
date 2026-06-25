@@ -122,10 +122,10 @@ export default function ReferidosPage() {
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
+        <div className="w-full max-w-4xl mx-auto space-y-8 animate-fade-in pb-12 px-4 sm:px-6">
             
             {/* Header / Intro */}
-            <div className="text-center space-y-4 mb-10 pt-4 px-4">
+            <div className="text-center space-y-4 mb-10 pt-4">
                 <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent tracking-tight">
                     Ganar Créditos
                 </h1>
@@ -134,17 +134,10 @@ export default function ReferidosPage() {
             {/* Referral Card */}
             <motion.div 
                 whileHover={{ y: -2 }}
-                className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-10 shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group mx-4 md:mx-0"
+                className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2rem] p-5 sm:p-8 md:p-10 shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group"
             >
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-                    <span className="material-icons-round text-8xl text-blue-600">group_add</span>
-                </div>
-
                 <div className="relative z-10 space-y-6">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center shrink-0">
-                            <span className="material-icons-round text-blue-600 dark:text-blue-400 text-2xl md:text-3xl">redeem</span>
-                        </div>
                         <div>
                             <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Programa de Referidos</h2>
                             <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base">Gana 15 créditos por cada amigo que invites</p>
@@ -167,15 +160,14 @@ export default function ReferidosPage() {
                                         value={referralLink}
                                         className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-slate-700 dark:text-slate-200 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-ellipsis overflow-hidden whitespace-nowrap"
                                     />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                                        <span className="material-icons-round text-[18px]">link</span>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px] pointer-events-none">
+                                        LINK
                                     </div>
                                 </div>
                                 <button 
                                     onClick={handleCopy}
                                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto focus-ring"
                                 >
-                                    <span className="material-icons-round text-sm">content_copy</span>
                                     Copiar
                                 </button>
                             </div>
@@ -189,75 +181,66 @@ export default function ReferidosPage() {
             </motion.div>
 
             {/* Referrals List Card */}
-            <motion.div 
-                whileHover={{ y: -2 }}
-                className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden mx-4 md:mx-0"
-            >
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/40 rounded-xl flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-blue-600 dark:text-blue-400">group</span>
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Amigos Referidos</h2>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm">Usuarios que se registraron con tu enlace</p>
-                    </div>
+            <div className="space-y-4">
+                <div className="px-1">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Amigos Referidos</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Usuarios que se registraron con tu enlace</p>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
                     {loading ? (
                         <div className="text-center py-10 text-slate-400">Cargando...</div>
                     ) : referralsHistory.length === 0 ? (
                         <div className="flex flex-col items-center justify-center text-center py-10 text-slate-500 dark:text-slate-400">
-                            <span className="material-icons-round text-4xl mb-2 opacity-50">person_add_disabled</span>
-                            <p className="text-sm">Aún no has invitado a ningún amigo.</p>
+                            <p className="text-sm font-semibold">Aún no has invitado a ningún amigo.</p>
                         </div>
                     ) : (
-                        <div className="divide-y divide-slate-200 dark:divide-slate-700 max-h-[300px] overflow-y-auto custom-scrollbar">
-                            {referralsHistory.map(refUser => (
-                                <div key={refUser.id} className="p-4 flex items-center justify-between hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold rounded-full flex items-center justify-center shrink-0 uppercase">
-                                            {refUser.full_name ? refUser.full_name.charAt(0) : refUser.email.charAt(0)}
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[350px] overflow-y-auto custom-scrollbar">
+                            {referralsHistory.map(refUser => {
+                                const emailParts = refUser.email?.split('@') || [];
+                                const maskedEmail = emailParts.length === 2 
+                                    ? `${emailParts[0].charAt(0)}${'*'.repeat(8)}@${emailParts[1]}` 
+                                    : refUser.email;
+                                
+                                return (
+                                    <div key={refUser.id} className="p-4 sm:px-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-full flex items-center justify-center shrink-0 uppercase text-lg">
+                                                {refUser.full_name ? refUser.full_name.charAt(0) : refUser.email.charAt(0)}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                                                    {refUser.full_name || 'Usuario'}
+                                                </p>
+                                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                                    {maskedEmail}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-semibold text-slate-900 dark:text-white text-sm">
-                                                {refUser.full_name || 'Usuario'}
-                                            </p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                {refUser.email}
+                                        <div className="text-right shrink-0 ml-3">
+                                            <div className="text-xs font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">
+                                                +15 Créditos
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 font-medium block">
+                                                {refUser.created_at ? new Date(refUser.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) : ''}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full inline-block mb-1">
-                                            +15 Créditos
-                                        </div>
-                                        <p className="text-xs text-slate-400 font-medium block">
-                                            {refUser.created_at ? new Date(refUser.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) : ''}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
-            </motion.div>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mx-4 md:mx-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* TikTok Promo Card */}
                 <motion.div 
                     whileHover={{ y: -2 }}
-                    className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group h-full"
+                    className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2rem] p-5 sm:p-6 md:p-8 shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group h-full"
                 >
-                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-                        <span className="material-icons-round text-8xl text-purple-600">movie</span>
-                    </div>
-
                     <div className="relative z-10 space-y-6 flex flex-col h-full">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 md:w-14 md:h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center shrink-0">
-                                <span className="material-icons-round text-purple-600 dark:text-purple-400 text-2xl md:text-3xl">smart_display</span>
-                            </div>
                             <div>
                                 <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Promoción Comunidad</h2>
                                 <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Sube un video a TikTok y gana</p>
@@ -302,11 +285,6 @@ export default function ReferidosPage() {
                                     disabled={submittingPromo}
                                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 focus-ring"
                                 >
-                                    {submittingPromo ? (
-                                        <span className="material-icons-round animate-spin text-[18px]">refresh</span>
-                                    ) : (
-                                        <span className="material-icons-round text-[18px]">send</span>
-                                    )}
                                     {submittingPromo ? 'Enviando...' : 'Enviar Solicitud'}
                                 </button>
                             </form>
@@ -317,12 +295,9 @@ export default function ReferidosPage() {
                 {/* History Card */}
                 <motion.div 
                     whileHover={{ y: -2 }}
-                    className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col h-full"
+                    className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2rem] p-5 sm:p-6 md:p-8 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col h-full"
                 >
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0">
-                            <span className="material-icons-round text-slate-600 dark:text-slate-400">history</span>
-                        </div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Historial de Solicitudes</h2>
                     </div>
 
@@ -331,8 +306,7 @@ export default function ReferidosPage() {
                             <div className="text-center py-10 text-slate-400">Cargando...</div>
                         ) : promoHistory.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center py-10 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-                                <span className="material-icons-round text-4xl mb-2 opacity-50">inbox</span>
-                                <p className="text-sm">Aún no has enviado solicitudes de promoción.</p>
+                                <p className="text-sm font-semibold">Aún no has enviado solicitudes de promoción.</p>
                             </div>
                         ) : (
                             promoHistory.map(req => (
@@ -352,7 +326,7 @@ export default function ReferidosPage() {
                                     <div className="flex justify-between items-center mt-1">
                                         <span className="text-xs text-slate-500 font-medium">{req.created_at.split(' ')[0]}</span>
                                         <a href={req.video_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 font-medium">
-                                            Ver Link <span className="material-icons-round text-[12px]">open_in_new</span>
+                                            Ver Link
                                         </a>
                                     </div>
                                 </div>

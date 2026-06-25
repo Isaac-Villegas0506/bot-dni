@@ -43,7 +43,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                 {/* Left: User Avatar (Mobile Only) */}
                 <div className="flex md:hidden items-center justify-center shrink-0">
                     {user ? (
-                        <button onClick={() => navigate('/tienda')} className="min-h-[44px] min-w-[44px] rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
+                        <button onClick={() => navigate('/tienda')} className="w-11 h-11 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-colors shrink-0">
                             {user.avatar_url ? (
                                 <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (

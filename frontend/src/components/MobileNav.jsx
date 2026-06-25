@@ -138,21 +138,25 @@ export default function MobileNav() {
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-lg shadow-xl pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col"
+                            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl pb-[env(safe-area-inset-bottom)] h-[90dvh] flex flex-col"
                         >
-                            <div className="flex justify-center pt-3 pb-2 shrink-0">
-                                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                            <div className="flex justify-center pt-4 pb-2 shrink-0">
+                                <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
                             </div>
-                            <div className="px-5 pb-3 shrink-0 flex justify-between items-start border-b border-slate-100 dark:border-slate-800 mb-2">
+                            <div className="px-5 pb-4 shrink-0 flex justify-between items-center border-b border-slate-100 dark:border-slate-800 mb-2">
                                 {user ? (
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base shrink-0 overflow-hidden">
-                                            {user.full_name?.charAt(0).toUpperCase() || 'U'}
+                                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shrink-0 overflow-hidden">
+                                            {user.avatar_url ? (
+                                                <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                                            ) : (
+                                                user.full_name?.charAt(0).toUpperCase() || 'U'
+                                            )}
                                         </div>
                                         <div className="min-w-0 flex flex-col justify-center">
-                                            <p className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-[180px] leading-tight">{user.full_name}</p>
-                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[180px] leading-tight mt-0.5">{user.email}</p>
-                                            <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full w-fit">
+                                            <p className="font-bold text-slate-900 dark:text-white text-[15px] truncate max-w-[200px] leading-tight">{user.full_name}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px] leading-tight mt-0.5">{user.email}</p>
+                                            <div className="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md w-fit">
                                                 <span className="material-icons-round text-[12px]">monetization_on</span>
                                                 {user.is_premium
                                                     ? 'Premium'
@@ -166,8 +170,8 @@ export default function MobileNav() {
                                 ) : (
                                     <div className="flex min-w-0 flex-1 flex-col gap-3 pr-3">
                                         <div>
-                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Menu principal</h3>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Ingresa para ver historial, creditos y compras.</p>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Menú principal</h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Ingresa para ver historial, créditos y compras.</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <button
@@ -193,39 +197,63 @@ export default function MobileNav() {
                                         </div>
                                     </div>
                                 )}
-                                <button onClick={() => setShowMobileMenu(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="Cerrar menu">
+                                <button onClick={() => setShowMobileMenu(false)} className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="Cerrar menu">
                                     <span className="material-icons-round text-xl">close</span>
                                 </button>
                             </div>
-                            <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
-                                <p className="px-4 mt-2 mb-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Servicios</p>
-                                {menuItems.map(item => (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleMenuClick(item.id, item.featureKey)}
-                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-colors ${path === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
-                                    >
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <span className={`material-icons-round text-[22px] ${path === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
-                                                {item.icon}
-                                            </span>
-                                            <span className="text-sm font-semibold">{item.label}</span>
+                            <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-4 custom-scrollbar">
+                                {user && (
+                                    <div className="mt-2">
+                                        <p className="px-2 mb-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Mi Cuenta</p>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <button onClick={() => { setShowMobileMenu(false); navigate('/tienda'); }} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 text-slate-700 dark:text-slate-300 active:scale-95 transition-transform">
+                                                <span className="material-icons-round text-blue-500 text-2xl">shopping_cart</span>
+                                                <span className="text-[11px] font-bold">Créditos</span>
+                                            </button>
+                                            <button onClick={() => { setShowMobileMenu(false); navigate('/historial'); }} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30 text-slate-700 dark:text-slate-300 active:scale-95 transition-transform">
+                                                <span className="material-icons-round text-emerald-500 text-2xl">history</span>
+                                                <span className="text-[11px] font-bold">Historial</span>
+                                            </button>
+                                            <button onClick={() => { setShowMobileMenu(false); navigate('/referidos'); }} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100/50 dark:border-purple-800/30 text-slate-700 dark:text-slate-300 active:scale-95 transition-transform">
+                                                <span className="material-icons-round text-purple-500 text-2xl">group_add</span>
+                                                <span className="text-[11px] font-bold">Referidos</span>
+                                            </button>
                                         </div>
-                                        {item.isNew && (
-                                            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-200/50 dark:bg-yellow-800/50 text-yellow-800 dark:text-yellow-300 font-black shrink-0">NUEVO</span>
-                                        )}
-                                    </button>
-                                ))}
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <p className="px-2 mb-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Servicios</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {menuItems.map(item => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => handleMenuClick(item.id, item.featureKey)}
+                                                className={`flex flex-col items-start gap-2 p-3.5 rounded-2xl border transition-all ${path === item.id ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800/60 active:scale-95'}`}
+                                            >
+                                                <div className="flex justify-between items-start w-full">
+                                                    <span className={`material-icons-round text-[22px] ${path === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                        {item.icon}
+                                                    </span>
+                                                    {item.isNew && (
+                                                        <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-yellow-400 text-yellow-900 font-black">NUEVO</span>
+                                                    )}
+                                                </div>
+                                                <span className={`text-[13px] font-bold text-left leading-tight ${path === item.id ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{item.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                                 
                                 {user?.role === 'admin' && (
                                     <>
                                         <div className="my-2 border-t border-slate-100 dark:border-slate-800" />
                                         <button
                                             onClick={() => { setShowMobileMenu(false); navigate('/admin'); }}
-                                            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800"
+                                            className="w-full flex items-center gap-4 p-4 rounded-2xl text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 active:scale-95 transition-transform"
                                         >
-                                            <span className="material-icons-round text-[22px] text-slate-400">admin_panel_settings</span>
-                                            <span className="text-sm font-semibold">Panel de Administración</span>
+                                            <span className="material-icons-round text-[22px] text-slate-500">admin_panel_settings</span>
+                                            <span className="text-sm font-bold">Panel de Administración</span>
                                         </button>
                                     </>
                                 )}
