@@ -11,7 +11,6 @@ from bot_pool import BotPool
 from database import Database
 from parser import parse_bot_response
 import asyncio
-import shutil
 import uuid
 from pathlib import Path
 import logging
@@ -108,9 +107,32 @@ async def api_log_search(request: Request, user_id, term, search_type):
     except: pass
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token", auto_error=False)
+AUTH_ERROR_HEADERS = {"WWW-Authenticate": "Bearer"}
 
 # --- Security: Blacklist ---
 BANNED_DNIS = ["72928277"]
+MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024
+ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png"}
+
+async def read_limited_image_upload(upload: UploadFile, field_label: str) -> tuple[bytes, str]:
+    content_type = (upload.content_type or "").lower()
+    if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+        raise HTTPException(400, detail=f"{field_label} debe ser una imagen JPG o PNG valida.")
+
+    content = await upload.read(MAX_IMAGE_UPLOAD_BYTES + 1)
+    if not content:
+        raise HTTPException(400, detail=f"{field_label} esta vacio.")
+    if len(content) > MAX_IMAGE_UPLOAD_BYTES:
+        raise HTTPException(413, detail=f"{field_label} supera el limite de 5 MB.")
+
+    if content_type == "image/png":
+        if not content.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise HTTPException(400, detail=f"{field_label} no parece ser un PNG valido.")
+        return content, "png"
+
+    if not content.startswith(b"\xff\xd8\xff"):
+        raise HTTPException(400, detail=f"{field_label} no parece ser un JPG valido.")
+    return content, "jpg"
 
 def check_banned_dni(dni: str):
     if dni in BANNED_DNIS:
@@ -138,29 +160,47 @@ class Token(BaseModel):
     user: dict
 
 # --- Dependencies ---
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    if not token: return None
-    
+def internal_server_error(detail: str = "Error interno del servidor."):
+    return HTTPException(status_code=500, detail=detail)
+
+async def _get_user_from_token(token: Optional[str]):
+    if not token:
+        return None
+
     payload = decode_access_token(token)
     if not payload:
-        # Check if it's a "guest" or invalid token logic?
-        # For protected routes, raise 401. 
-        # But for search logging (optional user), we return None.
         return None
     user_email = payload.get("sub")
-    if not user_email: return None
-    
-    # We could query DB, but for performance, trust token (as it's singed) or simple cache
-    # To log search history, we need ID. So let's fetch minimal info if needed or embed ID in token.
-    # We will fetch full user from DB to be safe
+    if not user_email:
+        return None
+
     return await db.get_user_by_email(user_email)
 
-async def get_optional_user(token: str = Depends(oauth2_scheme)): 
-    # This dependency doesn't raise 401, just returns user or None
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    user = await _get_user_from_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No autenticado",
+            headers=AUTH_ERROR_HEADERS,
+        )
+    if str(user.get("status", "")).lower() == "banned":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu cuenta ha sido suspendida.",
+        )
+    return user
+
+async def get_optional_user(token: str = Depends(oauth2_scheme)):
     try:
-        if not token: return None
-        return await get_current_user(token)
-    except: return None
+        user = await _get_user_from_token(token)
+    except Exception:
+        logger.warning("No se pudo resolver usuario opcional", exc_info=True)
+        return None
+
+    if not user or str(user.get("status", "")).lower() == "banned":
+        return None
+    return user
 
 async def verify_turnstile(token: Optional[str]):
     secret = os.getenv("TURNSTILE_SECRET_KEY")
@@ -314,7 +354,7 @@ async def firebase_login(login_data: FirebaseLogin, request: Request):
 
         email = decoded_token.get('email')
         uid = decoded_token.get('user_id') or decoded_token.get('sub')
-        name = decoded_token.get('name') or email.split('@')[0]
+        name = decoded_token.get('name') or (email.split('@')[0] if email else "Usuario")
         picture = decoded_token.get('picture') or decoded_token.get('avatar_url')
         email_verified = decoded_token.get('email_verified', False)
         
@@ -358,8 +398,8 @@ async def firebase_login(login_data: FirebaseLogin, request: Request):
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Firebase Login Error: {e}")
-        raise HTTPException(401, f"Error de autenticación: {e}")
+        logger.error("Firebase Login Error", exc_info=True)
+        raise HTTPException(401, "No se pudo autenticar el usuario.")
 
 class DevLogin(BaseModel):
     email: str
@@ -447,7 +487,7 @@ async def search_fiscalia(req: FiscaliaSearchRequest, request: Request, user: di
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Fiscalia API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 # --- Admin Pydantic Models ---
 class UserStatusUpdate(BaseModel):
@@ -611,7 +651,7 @@ async def admin_grant_unlimited(user_id: int, body: dict, admin: dict = Depends(
         raise HTTPException(400, "Días debe ser un número válido")
     except Exception as e:
         logger.error(f"Error grant_unlimited: {e}")
-        raise HTTPException(500, str(e))
+        raise internal_server_error()
 
 @app.post("/api/admin/users/{user_id}/unlimited/revoke")
 async def admin_revoke_unlimited(user_id: int, admin: dict = Depends(get_current_admin)):
@@ -626,7 +666,7 @@ async def admin_revoke_unlimited(user_id: int, admin: dict = Depends(get_current
         return {"ok": True}
     except Exception as e:
         logger.error(f"Error revoke_unlimited: {e}")
-        raise HTTPException(500, str(e))
+        raise internal_server_error()
 
 @app.delete("/api/admin/clean-files")
 async def admin_clean_files(admin: dict = Depends(get_current_admin)):
@@ -776,7 +816,7 @@ async def generate_c4_blue_api(request: Request, dni_data: dict = Body(...), use
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error C4 Blue API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/reniec/c4-inscripcion")
 async def generate_c4_inscripcion_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -810,7 +850,7 @@ async def generate_c4_inscripcion_api(request: Request, dni_data: dict = Body(..
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error C4 Inscripcion API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/reniec/dnie")
 async def generate_dnie_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -839,7 +879,7 @@ async def generate_dnie_api(request: Request, dni_data: dict = Body(...), user: 
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error DNI Electronico API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/reniec/dni-azul")
 async def generate_dni_azul_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -867,7 +907,7 @@ async def generate_dni_azul_api(request: Request, dni_data: dict = Body(...), us
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error DNI Azul API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/reniec/dni-amarillo")
 async def generate_dni_amarillo_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -895,7 +935,7 @@ async def generate_dni_amarillo_api(request: Request, dni_data: dict = Body(...)
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error DNI Amarillo API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.get("/api/user/history")
 async def get_history(user: dict = Depends(get_current_user)):
@@ -998,7 +1038,7 @@ async def generate_antpen_api(request: Request, dni_data: dict = Body(...), user
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Penales API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/delitos/search")
 async def search_delitos_api(request: Request, data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -1031,7 +1071,7 @@ async def search_delitos_api(request: Request, data: dict = Body(...), user: dic
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Delitos API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/judiciales/antjud")
 async def generate_antjud_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -1061,7 +1101,7 @@ async def generate_antjud_api(request: Request, dni_data: dict = Body(...), user
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Judiciales API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/policiales/antpol")
 async def generate_antpol_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -1091,7 +1131,7 @@ async def generate_antpol_api(request: Request, dni_data: dict = Body(...), user
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Policiales API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/facial/search")
 async def search_facial_api(
@@ -1110,6 +1150,8 @@ async def search_facial_api(
         if not eligible:
             raise HTTPException(402, detail="Créditos insuficientes")
 
+        content, file_extension = await read_limited_image_upload(image, "La imagen")
+
         if image.content_type not in ["image/jpeg", "image/png"]:
             raise HTTPException(400, detail="El archivo debe ser una imagen JPG o PNG válida")
 
@@ -1119,11 +1161,9 @@ async def search_facial_api(
         temp_dir = Path(__file__).parent / "static" / "files"
         temp_dir.mkdir(parents=True, exist_ok=True)
         # Forzar extensión basada en el MIME type para evitar .jfif o cosas raras en Telegram
-        file_extension = "png" if image.content_type == "image/png" else "jpg"
         import uuid
         temp_path = temp_dir / f"temp_facial_{uuid.uuid4().hex}.{file_extension}"
         
-        content = await image.read()
         with open(temp_path, 'wb') as out_file:
             out_file.write(content)
 
@@ -1150,7 +1190,7 @@ async def search_facial_api(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Búsqueda Facial API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/reniec/arbol")
 @app.post("/api/familiares/pdf")
@@ -1190,7 +1230,7 @@ async def get_familiares_pdf(request: Request, body: DniRequest, Authorization: 
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Familiares PDF API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 
 @app.post("/api/familiares/texto")
@@ -1232,7 +1272,7 @@ async def get_familiares_texto(request: Request, body: DniRequest, Authorization
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Familiares Texto API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 @app.post("/api/familiares/arbol_visual")
 async def get_familiares_arbol_visual(request: Request, body: DniRequest, Authorization: Optional[str] = Header(None)):
@@ -1273,7 +1313,7 @@ async def get_familiares_arbol_visual(request: Request, body: DniRequest, Author
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error Familiares Arbol Visual API: {e}")
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 
 
@@ -1320,7 +1360,7 @@ async def get_numeros_por_dni(request: Request, body: DniRequest, Authorization:
         err_msg = str(e)
         if "POR FAVOR ESPERA" in err_msg:
             raise HTTPException(429, detail=err_msg)
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 
 class PhoneRequest(BaseModel):
@@ -1367,7 +1407,7 @@ async def get_info_linea(request: Request, body: PhoneRequest, Authorization: Op
             raise HTTPException(422, detail="No se encontraron datos. Intente nuevamente en 10 segundos.")
         if "POR FAVOR ESPERA" in err_msg:
             raise HTTPException(429, detail=err_msg)
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 
 @app.post("/api/telefono/verificador-operadora")
@@ -1400,7 +1440,7 @@ async def get_verificador_operadora(request: Request, body: PhoneRequest, Author
         err_msg = str(e)
         if "POR FAVOR ESPERA" in err_msg:
             raise HTTPException(429, detail=err_msg)
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 
 @app.post("/api/telefono/titular")
@@ -1445,7 +1485,7 @@ async def get_titular_numero(request: Request, body: PhoneRequest, Authorization
             raise HTTPException(422, detail="No se encontraron datos. Verifique el número e intente nuevamente en 10 o 15 segundos.")
         if "POR FAVOR ESPERA" in err_msg:
             raise HTTPException(429, detail=err_msg)
-        raise HTTPException(500, detail=str(e))
+        raise internal_server_error()
 
 
 @app.get("/api/dni/{dni}")
@@ -1506,8 +1546,8 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
             if "NO_FOUND_404" in err_msg:
                 raise HTTPException(404, detail="No se encontraron datos, vuelve a intentar.")
             
-            logger.error(f"Error Premium Search: {e}")
-            raise HTTPException(500, f"Error en búsqueda premium: {err_msg}")
+            logger.error("Error Premium Search", exc_info=True)
+            raise internal_server_error()
 
     # BASIC SEARCH LOGIC
     # Log search for both registered and unregistered users
@@ -1554,10 +1594,10 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
         if "POR FAVOR ESPERA" in err_msg: raise HTTPException(429, detail=err_msg)
         if "No results" in err_msg or "no encontrado" in err_msg.lower():
              raise HTTPException(404, detail="No se encontraron datos.")
-        raise HTTPException(500, detail=err_msg)
+        raise internal_server_error()
         if "No results" in err_msg or "no encontrado" in err_msg.lower():
              raise HTTPException(404, detail="No se encontró información.")
-        raise HTTPException(500, detail=err_msg)
+        raise internal_server_error()
 
 @app.get("/api/search/name")
 async def search_by_name(request: Request, nombres: str, ap_paterno: str = "", ap_materno: str = "", user: Optional[dict] = Depends(get_optional_user), x_turnstile_token: Optional[str] = Header(None)):
@@ -1607,7 +1647,7 @@ async def search_by_name(request: Request, nombres: str, ap_paterno: str = "", a
              raise HTTPException(404, detail=clean_msg)
 
         if "POR FAVOR ESPERA" in err_msg: raise HTTPException(429, detail=err_msg)
-        raise HTTPException(500, detail=err_msg)
+        raise internal_server_error()
 
 
 # ===================================================================== #
@@ -1637,11 +1677,11 @@ async def create_purchase(
         raise HTTPException(400, "Plan inválido o inactivo")
 
     # Save receipt image
-    ext = Path(receipt.filename).suffix or '.jpg'
-    filename = f"{uuid.uuid4().hex}{ext}"
+    content, file_extension = await read_limited_image_upload(receipt, "El comprobante")
+    filename = f"{uuid.uuid4().hex}.{file_extension}"
     dest = RECEIPTS_DIR / filename
     with dest.open('wb') as f:
-        shutil.copyfileobj(receipt.file, f)
+        f.write(content)
     receipt_url = f"/api/static/receipts/{filename}"
 
     purchase_id = await db.create_credit_purchase(
@@ -1660,8 +1700,14 @@ async def create_purchase(
 
     # Send notification email to admins
     admin_emails = await db.get_admin_emails()
-    if "isaacvillegas922@gmail.com" not in admin_emails:
-        admin_emails.append("isaacvillegas922@gmail.com")
+    configured_admin_emails = [
+        email.strip()
+        for email in os.getenv("ADMIN_NOTIFICATION_EMAILS", "").split(",")
+        if email.strip()
+    ]
+    for email in configured_admin_emails:
+        if email not in admin_emails:
+            admin_emails.append(email)
         
     if admin_emails:
         purchase_details = {
@@ -1849,5 +1895,5 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
     except Exception as e:
         if user.get('role') != 'admin' and not user.get('is_premium'):
             await db.refund_credits(user_id, cost, f"Reembolso RECORD (Error) para {target}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_server_error()
 

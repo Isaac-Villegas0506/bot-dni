@@ -5,16 +5,18 @@ import requests
 import asyncio
 import logging
 
-import os
+from dotenv import load_dotenv
+from config.settings import settings
+
+load_dotenv()
 
 # Configuration
 # Las credenciales ahora se leen de las variables de entorno por seguridad.
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USER = os.getenv("SMTP_USER", "isaacvillegas922@gmail.com")
-SMTP_PASS = os.getenv("SMTP_PASS", "jyccwxixlhvglocc")
-
-EMAIL_VERIFY_API_KEY = "uoTDoZI0uTtZa2k43RlgZn2AOJxr0Etx"
+SMTP_SERVER = settings.smtp_host
+SMTP_PORT = settings.smtp_port
+SMTP_USER = settings.smtp_user
+SMTP_PASS = settings.smtp_password
+EMAIL_VERIFY_API_KEY = settings.email_verify_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +25,18 @@ async def is_disposable_email(email: str) -> bool:
     Checks if an email is disposable using EmailListVerify API.
     Returns True if disposable or invalid, False if safe.
     """
-    url = f"https://apps.emaillistverify.com/api/verifyEmail?secret={EMAIL_VERIFY_API_KEY}&email={email}&timeout=15"
+    if not EMAIL_VERIFY_API_KEY:
+        logger.warning("EMAIL_VERIFY_API_KEY no configurado; se omite verificacion de email temporal.")
+        return False
     
     try:
         # Run blocking request in thread
-        response = await asyncio.to_thread(requests.get, url)
+        response = await asyncio.to_thread(
+            requests.get,
+            "https://apps.emaillistverify.com/api/verifyEmail",
+            params={"secret": EMAIL_VERIFY_API_KEY, "email": email, "timeout": 15},
+            timeout=20,
+        )
         result = response.text.strip()
         
         # API returns "ok" for valid, distinct codes for invalid/disposable
@@ -92,13 +101,15 @@ async def send_custom_verification_email(to_email: str, link: str):
         return False
 
 def _send_email_sync(msg):
+    if not SMTP_USER or not SMTP_PASS:
+        raise RuntimeError("Credenciales SMTP no configuradas")
     try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
     except Exception as e:
-        print(f"SMTP Sync Error: {e}")
+        logger.error("SMTP Sync Error", exc_info=True)
         raise e
 
 async def send_purchase_notification_email(admin_email: str, purchase_details: dict):

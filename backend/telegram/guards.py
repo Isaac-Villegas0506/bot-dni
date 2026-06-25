@@ -90,6 +90,9 @@ def is_sin_resultados(text: str) -> bool:
     if "SIN RESULTADOS" in text_upper:
         return True
 
+    if "\u0280\u1d07\u0262\u026as\u1d1b\u0280\u1d0f \u1d20\u1d00\u1d04\u026a\u1d0f" in text:
+        return True
+
     return any(term in text_upper for term in _SIN_RESULTADOS_TERMS)
 
 

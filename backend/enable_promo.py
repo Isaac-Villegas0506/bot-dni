@@ -1,10 +1,12 @@
 import psycopg2
 import os
 
-DATABASE_URL = "postgresql://postgres.jjuirhmhibskjulmkfyp:Sanjuan1%40%40%40ew@aws-1-us-east-2.pooler.supabase.com:6543/postgres"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def enable_promo():
     try:
+        if not DATABASE_URL:
+            raise RuntimeError("DATABASE_URL no configurado.")
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
         cur.execute("UPDATE system_settings SET setting_value = TRUE WHERE setting_key = 'promo_pack_active';")

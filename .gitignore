@@ -18,6 +18,21 @@ backend/.env
 frontend/.env.local
 backend/serviceAccountKey.json
 
+# Sensitive local quarantine / generated private artifacts
+_quarantine_sensitive/
+backend/backend.log
+backend/bot.db
+backend/static/docs/
+backend/static/images/
+backend/static/receipts/*
+!backend/static/receipts/placeholder.jpg
+frontend/public/guidelines/*
+!frontend/public/guidelines/primera-imagen-incorrecta.png
+!frontend/public/guidelines/segunda-imagen-incorrecta.png
+!frontend/public/guidelines/tercera-imagen-correcta.png
+frontend/public/payments/receipts/*
+!frontend/public/payments/receipts/placeholder.jpg
+
 # Otros
 .DS_Store
 Thumbs.db

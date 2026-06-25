@@ -1,6 +1,8 @@
 import asyncio
 from database import Database
 
+__test__ = False
+
 async def main():
     db = Database()
     await db.connect()
@@ -12,4 +14,5 @@ async def main():
     cursor.close()
     await db.disconnect()
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
