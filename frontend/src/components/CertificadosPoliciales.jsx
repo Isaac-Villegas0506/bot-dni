@@ -255,34 +255,28 @@ export default function CertificadosPoliciales() {
       .catch(() => setAlert({ isOpen: true, type: 'error', message: 'Error al copiar' }));
   };
 
-  const getParsedData = () => {
-    if (!generatedData) return [];
-
-    return [
-      { label: 'DNI', value: generatedData.dni },
-      { label: 'CERTIFICADO', value: generatedData.type.title },
-      { label: 'FECHA', value: generatedData.timestamp },
-      { label: 'ESTADO', value: 'Generado con Éxito' }
-    ];
-  };
-
   const parseAntecedentesText = (text) => {
     if (!text) return {};
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
     const data = {};
     lines.forEach(line => {
       if (line.includes(':')) {
-        const [k, ...v] = line.split(':');
-        const key = k.trim().toUpperCase();
-        if (!['USUARIO', 'CRÉDITOS', 'USUARIO :'].includes(key) && !key.startsWith('TOTAL')) {
-          data[key] = v.join(':').trim();
+        let [k, ...v] = line.split(':');
+        k = k.replace(/\*/g, '').replace(/_/g, '').trim();
+        let val = v.join(':').replace(/\*/g, '').replace(/_/g, '').trim();
+        
+        // Remove markdown links like [Ivi](tg://user?id=...)
+        val = val.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+
+        const key = k.toUpperCase();
+        if (!key.includes('USUARIO') && !key.includes('CRÉDITOS') && !key.includes('CREDITOS') && !key.startsWith('TOTAL')) {
+          data[key] = val;
         }
       }
     });
     return data;
   };
 
-  const parsedData = view === 'result' ? getParsedData() : [];
   const textData = generatedData?.data?.raw_text ? parseAntecedentesText(generatedData.data.raw_text) : {};
 
   return (
@@ -341,28 +335,7 @@ export default function CertificadosPoliciales() {
               CERTIFICADO GENERADO CON ÉXITO
             </h3>
 
-            {/* Data Table */}
-            <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
-              <div className="grid grid-cols-1 gap-2">
-                {parsedData.map((item, idx) => (
-                  <div key={idx} className="flex items-start text-sm">
-                    <span className="font-bold text-slate-500 dark:text-slate-400 w-24 shrink-0">{item.label}</span>
-                    <span className="text-slate-400 mx-2">:</span>
-                    <span className="font-bold text-slate-800 dark:text-white truncate flex items-center gap-2">
-                      {item.value}
-                      {item.label === 'DNI' && (
-                        <button
-                          onClick={() => handleCopy(item.value)}
-                          className="text-slate-400 hover:text-blue-500 transition-colors active:scale-90 p-0.5"
-                        >
-                          <span className="material-icons-round text-sm">content_copy</span>
-                        </button>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* The previous DNI/FECHA/ESTADO table was removed as requested */}
 
             {/* Additional Text Data from bot message */}
             {Object.keys(textData).length > 0 && (
