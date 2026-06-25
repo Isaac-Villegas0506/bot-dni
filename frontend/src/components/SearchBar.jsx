@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 
 export default function SearchBar({ searchMode, setSearchMode, searchDni, searchName, loading }) {
     const { isFeatureEnabled } = useSettings();
@@ -31,7 +31,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
         if (searchMode === 'dni' && searchDni.searchType === 'premium' && !isFeatureEnabled('option_dni_premium')) {
             searchDni.setSearchType('basic');
         }
-    }, [isFeatureEnabled, searchMode, searchDni.searchType]);
+    }, [isFeatureEnabled, searchMode, searchDni, setSearchMode]);
 
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
@@ -85,16 +85,13 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
 
             {/* ── Search Input ─────────────────────────────────────────────── */}
             <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl relative group">
-                {/* Ambient glow — subtle, only on hover/focus */}
-                <div className="absolute -inset-px bg-gradient-to-r from-blue-400/40 to-indigo-400/40 rounded-full blur-md opacity-0 group-hover:opacity-60 group-focus-within:opacity-80 transition-opacity duration-300 pointer-events-none" />
-
                 <form
                     onSubmit={handleSubmit}
-                    className="relative flex items-center bg-white dark:bg-card-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-md group-focus-within:border-blue-400 dark:group-focus-within:border-blue-500 group-focus-within:shadow-glow transition-all duration-200"
+                    className="relative flex items-center bg-white dark:bg-card-dark rounded-lg border border-slate-200 dark:border-slate-700 group-focus-within:border-blue-400 dark:group-focus-within:border-blue-500 transition-colors duration-150"
                 >
                     {searchMode === 'dni' ? (
                         <input
-                            className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 text-lg sm:text-xl lg:text-2xl px-6 sm:px-8 py-4 sm:py-5 lg:py-6 rounded-full focus:outline-none font-mono tracking-wider"
+                            className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 text-lg sm:text-xl lg:text-2xl px-6 sm:px-8 py-4 sm:py-5 lg:py-6 rounded-lg focus:outline-none font-mono tracking-wider"
                             inputMode="numeric"
                             maxLength={8}
                             placeholder="Ingresa un DNI..."
@@ -105,7 +102,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
                         />
                     ) : (
                         <input
-                            className="w-full bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-lg sm:text-xl lg:text-2xl px-6 sm:px-8 py-4 sm:py-5 lg:py-6 rounded-full focus:outline-none"
+                            className="w-full bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-lg sm:text-xl lg:text-2xl px-6 sm:px-8 py-4 sm:py-5 lg:py-6 rounded-lg focus:outline-none"
                             placeholder="Nombres y apellidos..."
                             aria-label="Nombres y apellidos"
                             value={searchName.nombres}
@@ -116,7 +113,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
                     <button
                         type="submit"
                         disabled={loading}
-                        className="absolute right-2 sm:right-2.5 p-3 sm:p-3.5 lg:p-4 rounded-full bg-slate-900 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 active:scale-95 text-white transition-all duration-150 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center focus-ring"
+                        className="absolute right-2 sm:right-2.5 min-h-[44px] min-w-[44px] rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center focus-ring"
                         aria-label="Buscar"
                     >
                         {loading ? (

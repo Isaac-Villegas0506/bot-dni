@@ -30,7 +30,7 @@ export function formatDateLima(dateInput, includeTime = true) {
         const formatter = new Intl.DateTimeFormat('es-PE', options);
         // es-PE formats like dd/mm/yyyy
         return formatter.format(date);
-    } catch (e) {
+    } catch {
         return String(dateInput);
     }
 }

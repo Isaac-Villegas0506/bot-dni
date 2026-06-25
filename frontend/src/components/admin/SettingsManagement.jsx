@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getApiUrl } from '../../utils/api';
 import { toast } from 'sonner';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings } from '../../context/settingsContextValue';
 import ConfirmationModal from './ConfirmationModal';
-import { PRICE_LABELS } from './PriceManagement';
+import { PRICE_LABELS } from './priceLabels';
 import Modal from '../ui/Modal';
 
 
@@ -87,7 +87,7 @@ export default function SettingsManagement() {
             if (!res.ok) throw new Error("Error updating setting");
             toast.success(`Configuración actualizada`);
             refreshSettings(); // Actualiza el contexto global
-        } catch (err) {
+        } catch {
             // Revert on failure
             setSettingsList(prev => ({
                 ...prev,

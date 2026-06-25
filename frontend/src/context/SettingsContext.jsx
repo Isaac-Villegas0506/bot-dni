@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/api';
-
-const SettingsContext = createContext({});
+import { SettingsContext } from './settingsContextValue';
 
 export function SettingsProvider({ children }) {
     const [settings, setSettings] = useState({});
@@ -43,6 +42,3 @@ export function SettingsProvider({ children }) {
     );
 }
 
-export function useSettings() {
-    return useContext(SettingsContext);
-}

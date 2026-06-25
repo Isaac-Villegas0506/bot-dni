@@ -1,4 +1,4 @@
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
 import { getApiUrl } from '../utils/api';
 import PdfViewer from './PdfViewer';
+import { OptionCard } from './ui/ConsultSurface';
 
 export default function CertificadosPoliciales() {
     const { isFeatureEnabled } = useSettings();
@@ -185,7 +186,7 @@ export default function CertificadosPoliciales() {
         } finally {
             hideLoading();
         }
-    }, [dni, selectedOption, user, showLoading, hideLoading]);
+    }, [dni, selectedOption, user, openLoginModal, showLoading, hideLoading]);
 
     // Auto-search when DNI reaches 8 digits in the input modal.
     // Declared AFTER handleGenerate to avoid TDZ on the dep array.
@@ -285,39 +286,13 @@ export default function CertificadosPoliciales() {
                     className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"
                 >
                     {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
-                        <div
+                        <OptionCard
                             key={opt.id}
-                            onClick={() => handleOptionClick(opt)}
-                            className="group relative bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all text-left flex flex-col gap-3 hover:-translate-y-1 min-h-[140px] cursor-pointer"
-                        >
-                            <button
-                                onClick={(e) => openHelp(e, opt)}
-                                className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors z-10 border border-slate-100 dark:border-slate-700"
-                                aria-label="Información"
-                            >
-                                <span className="material-icons-round text-slate-400 dark:text-slate-500 text-base">help_outline</span>
-                            </button>
-
-                            <div className={`w-12 h-12 rounded-xl ${opt.color} flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
-                                <span className="material-icons-round text-2xl">{opt.icon}</span>
-                            </div>
-
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-0.5 leading-tight">{opt.title}</h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{opt.desc}</p>
-                            </div>
-
-                            <div className="mt-auto pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-sm">
-                                    <span className="material-icons-round text-sm">toll</span>
-                                    {opt.credits} créditos
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-400 group-hover:text-blue-500 transition-colors font-black">
-                                    Consultar
-                                    <span className="material-icons-round text-xs">arrow_forward</span>
-                                </div>
-                            </div>
-                        </div>
+                            option={opt}
+                            onSelect={handleOptionClick}
+                            onHelp={openHelp}
+                            creditsLabel={`${opt.credits} Creditos`}
+                        />
                     ))}
                 </motion.div>
             )}
@@ -333,7 +308,7 @@ export default function CertificadosPoliciales() {
                         {/* Back button (Arrow) */}
                         <button
                             onClick={handleBackClick}
-                            className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95 shadow-md shadow-black/10 dark:shadow-black/30"
+                            className="absolute top-6 left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                             title="Volver"
                         >
                             <span className="material-icons-round">arrow_back</span>
@@ -384,7 +359,7 @@ export default function CertificadosPoliciales() {
                         <div className="flex flex-col w-full gap-3">
                             <button
                                 onClick={downloadPdf}
-                                className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg hover:scale-[1.02]"
+                                className="w-full py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
                             >
                                 <span className="material-icons-round">download</span>
                                 Descargar Certificado
@@ -405,17 +380,14 @@ export default function CertificadosPoliciales() {
             {createPortal(
                 <AnimatePresence>
                     {showInputModal && selectedOption && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/50 backdrop-blur-sm">
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
+                                className="bg-white dark:bg-slate-900 p-5 rounded-lg shadow-xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
                             >
                                 <div className="flex items-center gap-3 mb-6">
-                                    <div className={`w-10 h-10 rounded-lg ${selectedOption.color} flex items-center justify-center text-white shrink-0`}>
-                                        <span className="material-icons-round">{selectedOption.icon}</span>
-                                    </div>
                                     <div>
                                         <h3 className="font-bold text-slate-900 dark:text-white leading-tight">
                                             {selectedOption.title}
@@ -430,21 +402,21 @@ export default function CertificadosPoliciales() {
                                     onChange={(e) => setDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
                                     onKeyDown={(e) => e.key === 'Enter' && dni.length === 8 && handleGenerate()}
                                     placeholder="DNI (8 dígitos)"
-                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
+                                    className="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
                                     autoFocus
                                 />
 
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setShowInputModal(false)}
-                                        className="flex-1 py-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                                        className="flex-1 min-h-[44px] rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 font-medium transition-colors"
                                     >
                                         Cancelar
                                     </button>
                                     <button
                                         onClick={handleGenerate}
                                         disabled={!dni || dni.length !== 8}
-                                        className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg ${!dni || dni.length !== 8 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+                                        className={`flex-1 min-h-[44px] rounded-lg font-bold text-white transition-colors ${!dni || dni.length !== 8 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                                             }`}
                                     >
                                         Consultar
@@ -461,17 +433,14 @@ export default function CertificadosPoliciales() {
             {createPortal(
                 <AnimatePresence>
                     {showExitModal && (
-                        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <div className="fixed inset-0 z-[150] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-md">
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
+                                className="bg-white dark:bg-slate-900 p-5 rounded-lg shadow-xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
                             >
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                        <span className="material-icons-round text-amber-600 dark:text-amber-400">warning</span>
-                                    </div>
                                     <h3 className="font-bold text-slate-900 dark:text-white text-base">¿Salir sin descargar?</h3>
                                 </div>
                                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
@@ -480,14 +449,14 @@ export default function CertificadosPoliciales() {
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setShowExitModal(false)}
-                                        className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                                        className="flex-1 min-h-[44px] rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
                                     >
                                         Quedarse
                                     </button>
                                     <button
                                         onClick={confirmExit}
                                         disabled={exitCountDown > 0}
-                                        className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+                                        className={`flex-1 min-h-[44px] rounded-lg font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
                                     >
                                         {exitCountDown > 0 ? (
                                             <>

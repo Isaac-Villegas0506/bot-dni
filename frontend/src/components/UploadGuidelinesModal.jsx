@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import Modal from './ui/Modal';
+import { ModalButton, ModalCloseButton } from './ui/ModalElements';
+import { Z_INDEX } from '../lib/zIndex';
 
 const slides = [
     {
@@ -7,6 +10,8 @@ const slides = [
         image: '/guidelines/primera-imagen-incorrecta.png',
         title: 'Incorrecto',
         description: 'No subas fotos donde se vea todo tu cuerpo o estés muy lejos de la cámara.',
+        icon: 'cancel',
+        tone: 'danger',
         isCorrect: false
     },
     {
@@ -14,6 +19,8 @@ const slides = [
         image: '/guidelines/segunda-imagen-incorrecta.png',
         title: 'Incorrecto',
         description: 'No subas fotos borrosas, movidas o capturas de baja calidad.',
+        icon: 'cancel',
+        tone: 'danger',
         isCorrect: false
     },
     {
@@ -21,6 +28,8 @@ const slides = [
         image: '/guidelines/tercera-imagen-correcta.png',
         title: 'Correcto',
         description: 'Sube una foto clara, de frente, con tu rostro centrado y completamente visible.',
+        icon: 'check_circle',
+        tone: 'success',
         isCorrect: true
     }
 ];
@@ -28,121 +37,114 @@ const slides = [
 export default function UploadGuidelinesModal({ isOpen, onComplete }) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [timeLeft, setTimeLeft] = useState(3);
-    const hasCalledComplete = React.useRef(false);
+    const hasCalledComplete = useRef(false);
+
+    const completeOnce = useCallback(() => {
+        if (hasCalledComplete.current) return;
+        hasCalledComplete.current = true;
+        onComplete();
+    }, [onComplete]);
 
     useEffect(() => {
+        let syncTimer;
         if (!isOpen) {
-            setCurrentSlide(0);
-            setTimeLeft(3);
+            syncTimer = setTimeout(() => {
+                setCurrentSlide(0);
+                setTimeLeft(3);
+            }, 0);
             hasCalledComplete.current = false;
-            return;
+            return () => clearTimeout(syncTimer);
         }
 
-        // Carousel timer
         const slideInterval = setInterval(() => {
             setCurrentSlide(prev => (prev + 1) % slides.length);
         }, 1000);
 
-        // Countdown timer
         const countdownInterval = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    return 0;
-                }
-                return prev - 1;
-            });
+            setTimeLeft(prev => (prev <= 1 ? 0 : prev - 1));
         }, 1000);
 
         return () => {
             clearInterval(slideInterval);
             clearInterval(countdownInterval);
+            clearTimeout(syncTimer);
         };
     }, [isOpen]);
 
-    // Trigger onComplete when timeLeft reaches 0
     useEffect(() => {
-        if (isOpen && timeLeft === 0 && !hasCalledComplete.current) {
-            hasCalledComplete.current = true;
-            onComplete();
+        if (isOpen && timeLeft === 0) {
+            completeOnce();
         }
-    }, [isOpen, timeLeft, onComplete]);
-
-    if (!isOpen) return null;
+    }, [completeOnce, isOpen, timeLeft]);
 
     const slide = slides[currentSlide];
 
     return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            >
-                <motion.div
-                    initial={{ scale: 0.95, y: 20 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.95, y: 20 }}
-                    className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col"
-                >
-                    {/* Image Area */}
-                    <div className="relative w-full aspect-square bg-slate-100 dark:bg-slate-800 p-6 flex items-center justify-center">
-                        <AnimatePresence mode="wait">
-                            <motion.img
-                                key={slide.id}
-                                src={slide.image}
-                                alt={slide.title}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 1.05 }}
-                                transition={{ duration: 0.3 }}
-                                className="w-full h-full object-contain rounded-xl drop-shadow-md"
-                            />
-                        </AnimatePresence>
-                    </div>
+        <Modal
+            isOpen={isOpen}
+            onClose={completeOnce}
+            size="sm"
+            closeOnOverlay={false}
+            panelClassName="overflow-hidden"
+            zIndex={Z_INDEX.modalAbove}
+        >
+            <ModalCloseButton onClick={completeOnce} label="Cerrar guía" />
 
-                    {/* Content Area */}
-                    <div className="p-6 flex flex-col items-center text-center">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={slide.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.3 }}
-                                className="flex flex-col items-center"
-                            >
-                                <div className={`flex items-center gap-2 mb-2 font-bold text-lg ${slide.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    <span className="material-icons-round">
-                                        {slide.isCorrect ? 'check_circle' : 'cancel'}
-                                    </span>
-                                    {slide.title}
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-300 text-sm h-12 flex items-center justify-center">
-                                    {slide.description}
-                                </p>
-                            </motion.div>
-                        </AnimatePresence>
+            <div className="relative aspect-square bg-slate-100 p-6 dark:bg-slate-800">
+                <AnimatePresence mode="wait">
+                    <motion.img
+                        key={slide.id}
+                        src={slide.image}
+                        alt={`${slide.title}: ${slide.description}`}
+                        initial={{ opacity: 0, scale: 0.97 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.03 }}
+                        transition={{ duration: 0.2 }}
+                        className="h-full w-full rounded-lg object-contain"
+                    />
+                </AnimatePresence>
+            </div>
 
-                        {/* Indicators */}
-                        <div className="flex gap-2 mt-6 mb-4">
-                            {slides.map((_, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                                        idx === currentSlide ? 'bg-slate-800 dark:bg-white w-4' : 'bg-slate-300 dark:bg-slate-700'
-                                    }`}
-                                />
-                            ))}
+            <div className="space-y-5 p-5 text-center">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={slide.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-2"
+                    >
+                        <div className={`flex items-center justify-center gap-2 text-lg font-bold ${
+                            slide.isCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'
+                        }`}>
+                            <span className="material-icons-round" aria-hidden="true">{slide.icon}</span>
+                            {slide.title}
                         </div>
+                        <p className="min-h-[44px] text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                            {slide.description}
+                        </p>
+                    </motion.div>
+                </AnimatePresence>
 
-                        {/* Countdown */}
-                        <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 animate-pulse">
-                            Esta ventana se cerrará en {timeLeft} segundo{timeLeft !== 1 ? 's' : ''}...
-                        </div>
-                    </div>
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+                <div className="flex justify-center gap-2" aria-label="Progreso de la guía">
+                    {slides.map((item, idx) => (
+                        <span
+                            key={item.id}
+                            className={`h-2 rounded-full transition-all duration-200 ${
+                                idx === currentSlide ? 'w-6 bg-slate-900 dark:bg-white' : 'w-2 bg-slate-300 dark:bg-slate-700'
+                            }`}
+                        />
+                    ))}
+                </div>
+
+                <ModalButton onClick={completeOnce} className="w-full">
+                    Continuar
+                    <span className="text-xs font-medium opacity-70">
+                        ({timeLeft}s)
+                    </span>
+                </ModalButton>
+            </div>
+        </Modal>
     );
 }

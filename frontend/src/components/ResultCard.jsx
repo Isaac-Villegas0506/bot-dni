@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import AlertModal from './AlertModal';
+import { BackButton } from './ui/ConsultSurface';
 import { getApiUrl } from '../utils/api';
 
 export default function ResultCard({ result: incomingResult, searchType, onOpenDonation, onBack }) {
@@ -306,43 +307,19 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 <div className="w-full mb-3 px-1 flex items-center justify-between gap-2 no-print">
                     <div className="flex items-center gap-2">
                         {onBack && (
-                            <button
-                                onClick={onBack}
-                                className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white font-semibold h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 transition-all duration-150 flex items-center justify-center gap-2 text-sm focus-ring min-w-[44px]"
-                            >
-                                <span className="material-icons-round text-slate-400 text-[18px]">arrow_back</span>
-                                <span>Regresar</span>
-                            </button>
+                            <BackButton onClick={onBack} />
                         )}
 
                         {searchType === 'premium' && (
                             <button
                                 onClick={handleDownloadC4}
                                 disabled={c4Loading}
-                                className="relative overflow-hidden group font-bold h-10 px-3 md:px-5 rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg min-w-[44px]"
-                                style={{
-                                    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-                                    boxShadow: '0 0 0 1.5px #c9a227, 0 8px 24px rgba(201,162,39,0.25)',
-                                    color: '#f5d87e'
-                                }}
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-800 dark:bg-amber-950/25 dark:text-amber-300 dark:hover:bg-amber-950/40 md:px-5"
                             >
-                                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                                    style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(255,215,0,0.15) 50%, transparent 60%)' }}
-                                />
                                 {c4Loading ? (
-                                    <>
-                                        <span className="material-icons-round animate-spin text-base" style={{ color: '#f5d87e' }}>refresh</span>
-                                        <span className="hidden md:inline">Generando...</span>
-                                    </>
+                                    <span>Generando...</span>
                                 ) : (
-                                    <>
-                                        <span className="material-icons-round text-base group-hover:scale-110 transition-transform" style={{ color: '#f5d87e' }}>workspace_premium</span>
-                                        <span className="hidden md:inline">Descargar C4</span>
-                                        <span className="hidden md:inline text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1"
-                                            style={{ background: 'rgba(201,162,39,0.2)', color: '#f5d87e', border: '1px solid rgba(201,162,39,0.4)' }}>
-                                            PDF
-                                        </span>
-                                    </>
+                                    <span>Descargar C4</span>
                                 )}
                             </button>
                         )}
@@ -365,32 +342,30 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                         console.error('Error al descargar archivo:', err);
                                     }
                                 }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-3 md:px-5 rounded-xl shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 group text-sm min-w-[44px]"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 md:px-5"
                             >
-                                <span className="material-icons-round group-hover:animate-bounce">file_download</span>
                                 <span className="hidden md:inline">Descargar Archivo</span>
+                                <span className="md:hidden">Archivo</span>
                             </button>
                         )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button onClick={handleDownloadPDF} className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold h-10 px-3 md:px-5 rounded-xl shadow-md shadow-blue-500/20 transition-all duration-150 flex items-center justify-center gap-2 group text-sm focus-ring min-w-[44px]">
-                            <span className="material-icons-round group-hover:-translate-y-0.5 transition-transform duration-150">download</span>
+                        <button onClick={handleDownloadPDF} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-ring md:px-5">
                             <span className="hidden md:inline">Descargar PDF</span>
+                            <span className="md:hidden">PDF</span>
                         </button>
 
-                        <button onClick={handleShare} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white font-semibold h-10 px-3 md:px-5 rounded-xl border border-slate-200 dark:border-slate-700 transition-all duration-150 flex items-center justify-center gap-2 text-sm focus-ring min-w-[44px]">
-                            <span className="material-icons-round text-slate-400">share</span>
+                        <button onClick={handleShare} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-ring dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 md:px-5">
                             <span className="hidden md:inline">Compartir</span>
+                            <span className="md:hidden">Share</span>
                         </button>
 
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-md border border-slate-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-300">
-                    <div className="absolute top-0 right-0 w-32 h-32 md:w-64 md:h-64 bg-blue-500/8 dark:bg-blue-500/5 rounded-full -mr-10 -mt-10 md:-mr-20 md:-mt-20 blur-3xl pointer-events-none" />
-
-                    <div className="flex flex-col md:flex-row md:items-start md:gap-8 relative z-10">
+                <div className="bg-white dark:bg-slate-900 rounded-lg p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-300">
+                    <div className="flex flex-col md:flex-row md:items-start md:gap-8">
                         <div className="flex justify-center md:justify-start mb-6 md:mb-0">
                         <div
                                 onClick={() => result.imagen_url && setPreviewData({ url: result.imagen_url, filename: `foto_${result.documento}.jpg` })}
@@ -398,7 +373,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 role={result.imagen_url ? 'button' : undefined}
                                 tabIndex={result.imagen_url ? 0 : undefined}
                                 aria-label={result.imagen_url ? 'Ver foto ampliada' : undefined}
-                                className={`relative group rounded-2xl overflow-hidden shadow-md border-2 border-slate-100 dark:border-slate-700/60 h-32 w-32 md:h-48 md:w-48 shrink-0 bg-slate-100 dark:bg-slate-800 ${result.imagen_url ? 'cursor-pointer hover:shadow-xl hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-300' : ''}`}
+                                className={`relative group rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 h-32 w-32 md:h-48 md:w-48 shrink-0 bg-slate-100 dark:bg-slate-800 ${result.imagen_url ? 'cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300' : ''}`}
                             >
                                 {result.imagen_url ? (
                                     <>
@@ -407,15 +382,10 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                             alt="Foto"
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         />
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-zoom-in">
-                                            <span className="material-icons-round text-white text-4xl drop-shadow-md">zoom_in</span>
-                                        </div>
-                                        <div className="absolute bottom-2 right-2 w-10 h-10 flex items-center justify-center shrink-0 bg-blue-600 text-white rounded-full shadow-lg transition-all duration-200 group-hover:scale-105">
-                                            <span className="material-icons-round text-base">search</span>
-                                        </div>
+                                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
                                     </>
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 text-white text-5xl font-bold">
+                                    <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-5xl font-bold">
                                         {initials}
                                     </div>
                                 )}
@@ -447,8 +417,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 </div>
                                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                                     <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mb-1">Género</p>
-                                    <div className="flex items-center justify-center md:justify-start space-x-2">
-                                        <span className="material-icons-round text-lg text-blue-600 dark:text-blue-400">male</span>
+                                    <div className="flex items-center justify-center md:justify-start">
                                         <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{result.genero}</p>
                                     </div>
                                 </div>
@@ -458,13 +427,9 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 </div>
 
                 {searchType === 'premium' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                         <div className="md:col-span-2 flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30">
-                                    <span className="material-icons-round text-amber-600 dark:text-amber-400 text-2xl">fingerprint</span>
-                                </div>
                                 <div>
                                     <h3 className="font-bold text-slate-900 dark:text-white text-lg">Biometría y Firmas</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Registros biométricos oficiales de RENIEC</p>
@@ -496,7 +461,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
                             <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
                                 <span className="material-icons-round text-blue-600 dark:text-blue-400 text-2xl">face</span>
@@ -569,7 +534,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full flex flex-col">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full flex flex-col">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
                             <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
                                 <span className="material-icons-round text-blue-600 dark:text-blue-400 text-2xl">home</span>
@@ -595,7 +560,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                     </div>
 
                     {searchType === 'premium' && (
-                        <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                        <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                             <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
                                 <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
                                     <span className="material-icons-round text-indigo-600 dark:text-indigo-400 text-2xl">description</span>
@@ -625,7 +590,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 </div>
 
                 {(result.ubigeo_reniec || result.ubigeo_sunat || result.ubigeo_inei) && (
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
                             <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30">
                                 <span className="material-icons-round text-emerald-600 dark:text-emerald-400 text-2xl">map</span>
@@ -659,7 +624,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                     <button
                         type="button"
                         onClick={onOpenDonation}
-                        className="group flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-full transition-all duration-200 bg-white dark:bg-slate-800 hover:bg-pink-50 dark:hover:bg-slate-700 shadow-sm hover:shadow-md"
+                        className="group flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg transition-all duration-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm hover:shadow-md"
                         style={{ border: '1.5px solid transparent', backgroundClip: 'padding-box', boxShadow: '0 0 0 1.5px #d946ef40, 0 2px 8px rgba(168,85,247,0.12)' }}
                     >
                         <span className="material-icons-round text-purple-500 text-lg group-hover:scale-110 transition-transform" aria-hidden="true">favorite</span>
@@ -685,7 +650,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 no-print"
+                            className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/70 backdrop-blur-md px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] no-print"
                             onClick={() => setPreviewData(null)}
                         >
                             <motion.div

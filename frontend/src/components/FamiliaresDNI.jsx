@@ -1,4 +1,4 @@
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
@@ -10,6 +10,7 @@ import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
 import { getApiUrl } from '../utils/api';
 import PdfViewer from './PdfViewer';
+import { OptionCard } from './ui/ConsultSurface';
 
 // ─── option definitions (PDF first, Texto second) ───────────────────────────
 const options = [
@@ -316,7 +317,7 @@ function SharedModals({ showInputModal, selectedOption, dni, setDni, onCancel, o
     if (!showInputModal || !selectedOption) return null;
     return createPortal(
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/50 backdrop-blur-sm">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                     className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
@@ -581,7 +582,7 @@ export default function FamiliaresDNI() {
                     <div
                         key={opt.id}
                         onClick={() => handleOptionClick(opt)}
-                        className="group relative bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl hover:border-violet-400 dark:hover:border-violet-500 transition-all text-left flex flex-col gap-3 hover:-translate-y-1 min-h-[140px] cursor-pointer">
+                        className="group relative bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-violet-400 dark:hover:border-violet-500 transition-colors text-left flex flex-col gap-3 min-h-[140px] cursor-pointer">
 
                         <button
                             onClick={(e) => openHelp(e, opt)}
@@ -592,7 +593,7 @@ export default function FamiliaresDNI() {
                         </button>
 
                         <div className="flex items-start justify-between">
-                            <div className={`w-12 h-12 rounded-xl ${opt.color} flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
+                            <div className={`w-12 h-12 rounded-lg ${opt.color} flex items-center justify-center text-white shrink-0`}>
                                 <span className="material-icons-round text-2xl">{opt.icon}</span>
                             </div>
                         </div>
@@ -639,7 +640,7 @@ export default function FamiliaresDNI() {
                     {/* Back button (Arrow) */}
                     <button
                         onClick={handleBackClick}
-                        className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95 shadow-md shadow-black/10 dark:shadow-black/30"
+                        className="absolute top-6 left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                         title="Volver"
                     >
                         <span className="material-icons-round">arrow_back</span>
@@ -810,7 +811,7 @@ export default function FamiliaresDNI() {
 
                             <button
                                 onClick={handleDownloadPdf}
-                                className="w-full py-4 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 text-lg hover:scale-[1.02] mb-3"
+                                className="w-full py-4 rounded-lg bg-rose-600 text-white font-bold hover:bg-rose-700 transition-colors flex items-center justify-center gap-2 text-lg mb-3"
                             >
                                 <span className="material-icons-round">picture_as_pdf</span>
                                 Descargar PDF
@@ -834,7 +835,7 @@ export default function FamiliaresDNI() {
             {createPortal(
                 <AnimatePresence>
                     {showExitModal && (
-                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-sm">
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                                 className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"

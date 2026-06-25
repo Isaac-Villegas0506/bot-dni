@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 import { toast } from 'sonner';
 
 // ─── Compact Countdown Timer ───────────────────────────────────────────────────
@@ -47,7 +47,7 @@ const CompactCountdown = ({ lastSearch }) => {
 export default function MobileNav() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuth();
+    const { user, openLoginModal, openRegisterModal } = useAuth();
     const { isFeatureEnabled } = useSettings();
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -77,7 +77,7 @@ export default function MobileNav() {
             return;
         }
         if (requireAuth && !user) {
-            toast.error('Debes iniciar sesión para acceder a esta sección.');
+            openLoginModal();
             return;
         }
         setShowMobileMenu(false);
@@ -138,7 +138,7 @@ export default function MobileNav() {
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col"
+                            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-lg shadow-xl pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col"
                         >
                             <div className="flex justify-center pt-3 pb-2 shrink-0">
                                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
@@ -164,12 +164,36 @@ export default function MobileNav() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col">
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Menú Principal</h3>
-                                        <p className="text-xs text-slate-500">Invitado</p>
+                                    <div className="flex min-w-0 flex-1 flex-col gap-3 pr-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Menu principal</h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Ingresa para ver historial, creditos y compras.</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowMobileMenu(false);
+                                                    openLoginModal();
+                                                }}
+                                                className="min-h-[44px] rounded-lg bg-blue-600 px-3 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+                                            >
+                                                Ingresar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowMobileMenu(false);
+                                                    openRegisterModal();
+                                                }}
+                                                className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                            >
+                                                Crear cuenta
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
-                                <button onClick={() => setShowMobileMenu(false)} className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                <button onClick={() => setShowMobileMenu(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="Cerrar menu">
                                     <span className="material-icons-round text-xl">close</span>
                                 </button>
                             </div>
@@ -179,7 +203,7 @@ export default function MobileNav() {
                                     <button
                                         key={item.id}
                                         onClick={() => handleMenuClick(item.id, item.featureKey)}
-                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors ${path === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
+                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-colors ${path === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
                                     >
                                         <div className="flex items-center gap-4 flex-1">
                                             <span className={`material-icons-round text-[22px] ${path === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
@@ -198,7 +222,7 @@ export default function MobileNav() {
                                         <div className="my-2 border-t border-slate-100 dark:border-slate-800" />
                                         <button
                                             onClick={() => { setShowMobileMenu(false); navigate('/admin'); }}
-                                            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800"
+                                            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800"
                                         >
                                             <span className="material-icons-round text-[22px] text-slate-400">admin_panel_settings</span>
                                             <span className="text-sm font-semibold">Panel de Administración</span>
@@ -213,3 +237,4 @@ export default function MobileNav() {
         </>
     );
 }
+
