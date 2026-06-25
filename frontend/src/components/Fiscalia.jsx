@@ -14,7 +14,8 @@ import { OptionCard } from './ui/ConsultSurface';
 function parseFiscalia(rawText) {
   if (!rawText) return [];
 
-  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  const cleanText = rawText.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
+  const lines = cleanText.split('\n').map(l => l.trim()).filter(Boolean);
   const data = [];
 
   for (const line of lines) {
@@ -22,15 +23,34 @@ function parseFiscalia(rawText) {
 
     if (cleanLine.includes('INFOR DATA') || cleanLine.includes('FISCALIA - PDF') || cleanLine.includes('FISCALÍA RUC') || cleanLine.includes('FISCALÍA NOMBRES') || cleanLine.includes('FISCALÍA CASO')) continue;
     if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
+    if (cleanLine.toLowerCase().includes('usuario :') || cleanLine.includes('CRÉDITOS')) continue;
+    if (cleanLine.includes('La consulta se hizo')) continue;
+    if (cleanLine.match(/\.pdf$/i) || cleanLine.match(/\.txt$/i) || cleanLine.match(/^[0-9.]+MB$/i) || cleanLine.match(/^[0-9.]+KB$/i)) continue;
+    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_')) continue;
+    if (cleanLine.startsWith('➤') && cleanLine.includes('#')) continue;
 
     let parts = cleanLine.split('➣');
     if (parts.length < 2) parts = cleanLine.split(':');
 
     if (parts.length >= 2) {
-      let label = parts[0].replace(/^[•\d.\s]+/, '').trim();
-      let value = parts.slice(1).join('➣').trim();
+      let label = parts[0].replace(/^[•\d.\s#➤]+/, '').trim();
+      let value = parts.slice(1).join(':').trim(); // Join with colon if it was split by colon
+      
+      // If it was split by ➣, value might be in parts[1] joined by ➣
+      if (cleanLine.includes('➣')) {
+          value = parts.slice(1).join('➣').trim();
+      }
 
-      data.push({ label, value });
+      if (label && value) {
+         data.push({ label, value });
+      }
+    } else if (cleanLine.includes('-')) {
+      let p = cleanLine.split('-');
+      let label = p[0].replace(/^[•\d.\s#➤]+/, '').trim();
+      let value = p.slice(1).join('-').trim();
+      if (label && value) {
+         data.push({ label, value });
+      }
     }
   }
   return [data];
