@@ -69,13 +69,13 @@ async def query_fiscalia(
 
     print(f"⚖️ Enviando {cmd} al bot...")
     sent_msg = await client.send_message(TARGET_BOT, cmd)
-    await asyncio.sleep(8)
+    await asyncio.sleep(3)
 
     found_pdf = None
     found_text = None
 
-    for attempt in range(12):
-        print(f"🔄 Polling Fiscalía intento {attempt + 1}/12...")
+    for attempt in range(15):
+        print(f"🔄 Polling Fiscalía intento {attempt + 1}/15...")
         async for message in client.iter_messages(
             TARGET_BOT, limit=100, min_id=sent_msg.id, reverse=True
         ):
