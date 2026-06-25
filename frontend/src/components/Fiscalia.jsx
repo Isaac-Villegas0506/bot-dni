@@ -26,7 +26,7 @@ function parseFiscalia(rawText) {
     if (cleanLine.toLowerCase().includes('usuario :') || cleanLine.includes('CRÉDITOS')) continue;
     if (cleanLine.includes('La consulta se hizo')) continue;
     if (cleanLine.match(/\.pdf$/i) || cleanLine.match(/\.txt$/i) || cleanLine.match(/^[0-9.]+MB$/i) || cleanLine.match(/^[0-9.]+KB$/i)) continue;
-    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_')) continue;
+    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_') || cleanLine.includes('FISCALIA_')) continue;
     if (cleanLine.startsWith('➤') && cleanLine.includes('#')) continue;
 
     let parts = cleanLine.split('➣');
@@ -54,6 +54,44 @@ function parseFiscalia(rawText) {
     }
   }
   return [data];
+}
+
+function TxtViewer({ url, className }) {
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(url)
+      .then(r => r.text())
+      .then(text => {
+        setContent(text);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setContent('Error al cargar el archivo de texto.');
+        setLoading(false);
+      });
+  }, [url]);
+
+  return (
+    <div className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden flex flex-col shadow-sm ${className || ''}`}>
+       <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+          <span className="material-icons-round text-blue-500 text-[20px]">description</span>
+          <span className="font-bold text-sm text-slate-700 dark:text-slate-300 tracking-wide">Documento de Texto</span>
+       </div>
+       <div className="p-4 overflow-y-auto" style={{ maxHeight: '420px' }}>
+          {loading ? (
+             <div className="flex items-center justify-center py-10">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+             </div>
+          ) : (
+             <pre className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap break-words">{content}</pre>
+          )}
+       </div>
+    </div>
+  );
 }
 
 export default function Fiscalia() {
@@ -357,6 +395,14 @@ export default function Fiscalia() {
                 <PdfViewer
                   url={getApiUrl(`/api/static/${generatedData.archivos[0]}`)}
                   height="420px"
+                  className="mb-8 w-full"
+                />
+              )}
+
+              {/* TXT Preview */}
+              {generatedData.archivos && generatedData.archivos.length > 0 && generatedData.archivos[0].endsWith('.txt') && (
+                <TxtViewer
+                  url={getApiUrl(`/api/static/${generatedData.archivos[0]}`)}
                   className="mb-8 w-full"
                 />
               )}
