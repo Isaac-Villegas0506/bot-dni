@@ -18,7 +18,7 @@ TARGET_BOT = "@Infordata1_bot"
 _OPTION_MAP = {
     "fiscalia_dni":    ("/fiscaliapdf", "FISCALIAPDF"),
     "fiscalia_ruc":    ("/fisruc",   "FISRUC"),
-    "fiscalia_nombre": ("/fisnm",    "FISNM"),
+    "fiscalia_nombre": ("/fisnmpdf", "FISNMPDF"),
     "caso_fiscal":     ("/fisca",    "FISCA"),
 }
 

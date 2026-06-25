@@ -26,7 +26,7 @@ function parseFiscalia(rawText) {
     if (cleanLine.toLowerCase().includes('usuario :') || cleanLine.includes('CRÉDITOS')) continue;
     if (cleanLine.includes('La consulta se hizo')) continue;
     if (cleanLine.match(/\.pdf$/i) || cleanLine.match(/\.txt$/i) || cleanLine.match(/^[0-9.]+MB$/i) || cleanLine.match(/^[0-9.]+KB$/i)) continue;
-    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_') || cleanLine.includes('FISCALIA_')) continue;
+    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_') || cleanLine.includes('FISNMPDF_') || cleanLine.includes('FISCALIA_')) continue;
     if (cleanLine.startsWith('➤') && cleanLine.includes('#')) continue;
 
     let parts = cleanLine.split('➣');
