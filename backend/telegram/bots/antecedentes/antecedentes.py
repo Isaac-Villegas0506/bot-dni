@@ -88,15 +88,18 @@ async def generate_antecedentes(
         if not found_msg:
             raise Exception("⚠️ No se encontraron resultados para el DNI ingresado.")
 
-        print(f"✅ Antecedentes {tipo} encontrado. Descargando...")
-        files_dir = static_base_dir / "files"
-        files_dir.mkdir(parents=True, exist_ok=True)
-        filename = filename_tpl.format(dni)
-        path = files_dir / filename
-        await found_msg.download_media(file=path)
+        print(f"✅ Antecedentes {tipo} encontrado.")
+        file_path = None
+        if found_msg.document:
+            files_dir = static_base_dir / "files"
+            files_dir.mkdir(parents=True, exist_ok=True)
+            filename = filename_tpl.format(dni)
+            path = files_dir / filename
+            await found_msg.download_media(file=path)
+            file_path = f"files/{filename}"
 
         return {
-            "file_path": f"files/{filename}",
+            "file_path": file_path,
             "raw_text": (found_msg.text or "").strip(),
         }
 
