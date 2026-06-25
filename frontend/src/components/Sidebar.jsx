@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 import { toast } from 'sonner';
 
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                         animate="open"
                         exit="closed"
                         variants={sidebarVariants}
-                        className="hidden md:flex fixed top-0 left-0 h-full w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl z-[70] flex-col overflow-hidden"
+                        className="hidden md:flex fixed top-0 left-0 h-full w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-xl z-[70] flex-col overflow-hidden"
                     >
                         {/* Header */}
                         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-slate-800/40 shrink-0">
@@ -247,7 +247,7 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                                                 <div className="h-px bg-slate-100 dark:bg-slate-800 mb-3" />
                                                 <button
                                                     onClick={() => { openLoginModal(); onClose(); }}
-                                                    className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold text-sm transition-all duration-150 focus-ring"
+                                                    className="w-full min-h-[44px] py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors duration-150 focus-ring"
                                                 >
                                                     Ingresar
                                                 </button>

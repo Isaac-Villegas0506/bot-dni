@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import Modal from './ui/Modal';
+import { ModalButton, ModalCloseButton, ModalHeader, ModalSection } from './ui/ModalElements';
+import { Z_INDEX } from '../lib/zIndex';
 
 const STATUS_INFO = {
     pending: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', icon: 'schedule' },
@@ -12,7 +15,46 @@ const STATUS_INFO = {
 // ─── Payment Method Modal ──────────────────────────────────────────────────
 function PaymentMethodModal({ plan, onSelect, onClose }) {
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md" onClick={onClose}>
+        <Modal isOpen onClose={onClose} size="sm" panelClassName="overflow-hidden" zIndex={Z_INDEX.modalAbove}>
+            <ModalCloseButton onClick={onClose} />
+            <div className="space-y-5 p-5 pt-6">
+                <ModalHeader
+                    title="Metodo de pago"
+                    description="Confirma el plan y elige como realizaras el pago."
+                    align="center"
+                />
+                <ModalSection className="text-center">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Plan a comprar</p>
+                    <p className="mt-1 text-base font-bold text-slate-900 dark:text-white">{plan.name}</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">S/ {parseFloat(plan.price_soles).toFixed(2)}</p>
+                </ModalSection>
+                <div className="grid grid-cols-1 gap-3">
+                    {['yape'].map(method => (
+                        <button
+                            key={method}
+                            type="button"
+                            onClick={() => onSelect(method)}
+                            className="flex min-h-[44px] items-center justify-center gap-3 rounded-lg border border-slate-200 p-4 font-bold uppercase tracking-wide text-slate-700 transition-colors hover:border-blue-400 hover:bg-blue-50 dark:border-slate-700 dark:text-slate-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/20"
+                        >
+                            <img
+                                src={`/payments/${method}/${method}-logo.png`}
+                                alt={method}
+                                className="h-8 object-contain"
+                                onError={e => { e.target.style.display = 'none'; }}
+                            />
+                            <span className="text-sm">{method}</span>
+                        </button>
+                    ))}
+                </div>
+                <ModalButton onClick={onClose} variant="secondary" className="w-full">Cerrar</ModalButton>
+            </div>
+        </Modal>
+    );
+}
+
+function _PaymentMethodModalLegacy({ plan, onSelect, onClose }) {
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-slate-950/40 backdrop-blur-md" onClick={onClose}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -99,9 +141,9 @@ function QRPaymentModal({ plan, method, onClose, onSuccess }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md" onClick={onClose}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-slate-950/40 backdrop-blur-md" onClick={onClose}>
             {qrZoom && (
-                <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-950/90 p-4" onClick={() => setQrZoom(false)}>
+                <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-950/90 px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))]" onClick={() => setQrZoom(false)}>
                     <img src={`/payments/${method}/${method}-qr.png`} alt="QR" className="max-w-full max-h-[85dvh] object-contain rounded-xl" />
                 </div>
             )}
@@ -197,7 +239,30 @@ function QRPaymentModal({ plan, method, onClose, onSuccess }) {
 // ─── Warning Modal ──────────────────────────────────────────────────────────
 function WarningModal({ onConfirm, onClose }) {
     return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <Modal isOpen onClose={onClose} size="sm" panelClassName="overflow-hidden" zIndex={Z_INDEX.modalAbove + 1}>
+            <ModalCloseButton onClick={onClose} />
+            <div className="space-y-5 p-5 pt-6">
+                <ModalHeader
+                    title="Aviso de seguridad"
+                    description="Confirma que el comprobante corresponde al pago real y al monto indicado."
+                    tone="danger"
+                    align="center"
+                />
+                <ModalSection className="border-red-200 bg-red-50 text-sm leading-relaxed text-red-700 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300">
+                    Los comprobantes falsos o bromas pueden causar expulsion permanente del sistema.
+                </ModalSection>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <ModalButton onClick={onClose} variant="secondary" className="w-full">Cancelar</ModalButton>
+                    <ModalButton onClick={onConfirm} variant="danger" className="w-full">Entendido, enviar</ModalButton>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
+function _WarningModalLegacy({ onConfirm, onClose }) {
+    return (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-slate-950/60 backdrop-blur-sm">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -242,7 +307,24 @@ function WarningModal({ onConfirm, onClose }) {
 // ─── Success Modal ─────────────────────────────────────────────────────────
 function SuccessModal({ onClose }) {
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
+        <Modal isOpen onClose={onClose} size="sm" panelClassName="overflow-hidden" zIndex={Z_INDEX.modalAbove}>
+            <div className="space-y-5 p-5 pt-6">
+                <ModalHeader
+                    title="Envio exitoso"
+                    description="Tu pago esta siendo revisado. Recibiras una notificacion cuando sea aprobado."
+                    tone="success"
+                    align="center"
+                    reserveCloseSpace={false}
+                />
+                <ModalButton onClick={onClose} variant="success" className="w-full">Entendido</ModalButton>
+            </div>
+        </Modal>
+    );
+}
+
+function _SuccessModalLegacy({ onClose }) {
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-slate-950/40 backdrop-blur-md">
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -285,7 +367,7 @@ function PurchaseHistoryModal({ onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-slate-950/60 backdrop-blur-sm" onClick={onClose}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -380,7 +462,7 @@ function PurchaseHistoryModal({ onClose }) {
     );
 }
 
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export default function CreditShop() {

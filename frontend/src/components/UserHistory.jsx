@@ -102,7 +102,7 @@ function HistoryList() {
                 </p>
                 <button
                     onClick={openLoginModal}
-                    className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+                    className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-colors"
                 >
                     <span className="material-icons-round text-base" aria-hidden="true">login</span>
                     Iniciar sesión
@@ -124,13 +124,13 @@ function HistoryList() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Busca por DNI, nombre o tipo de consulta..."
-                    className="w-full pl-12 pr-12 py-3.5 sm:py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-inner text-sm sm:text-base"
+                    className="w-full pl-12 pr-12 py-3.5 sm:py-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white dark:focus:bg-slate-800 transition-colors text-sm sm:text-base"
                 />
                 {search && (
                     <button
                         onClick={() => setSearch('')}
                         aria-label="Limpiar búsqueda"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-all"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-colors"
                     >
                         <span className="material-icons-round text-lg" aria-hidden="true">close</span>
                     </button>
@@ -153,7 +153,7 @@ function HistoryList() {
                                 role="tab"
                                 aria-selected={isActive}
                                 onClick={() => setActiveFilter(f.id)}
-                                className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 sm:px-5 rounded-full text-xs font-black uppercase tracking-wide sm:tracking-widest border transition-all whitespace-nowrap ${isActive
+                                className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 sm:px-5 rounded-lg text-xs font-black uppercase tracking-wide sm:tracking-widest border transition-colors whitespace-nowrap ${isActive
                                         ? activeClass
                                         : 'bg-white dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400'
                                     }`}
@@ -194,7 +194,7 @@ function HistoryList() {
                                 </p>
                                 <button
                                     onClick={clearFilters}
-                                    className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-600 transition-all"
+                                    className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
                                 >
                                     <span className="material-icons-round text-base" aria-hidden="true">refresh</span>
                                     Limpiar filtros
@@ -226,10 +226,10 @@ function HistoryList() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.98 }}
                                         transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.2) }}
-                                        className={`group relative bg-white dark:bg-slate-900 rounded-2xl border-l-4 ${info.border} border-t border-r border-b border-slate-100 dark:border-slate-800/50 hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none hover:-translate-y-0.5 transition-all duration-300 p-3 sm:p-4`}
+                                        className={`group relative bg-white dark:bg-slate-900 rounded-lg border-l-4 ${info.border} border-t border-r border-b border-slate-100 dark:border-slate-800/50 transition-colors duration-150 p-3 sm:p-4`}
                                     >
                                         <div className="flex items-center gap-3 sm:gap-4">
-                                            <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl shrink-0 flex items-center justify-center ${info.bg} ${info.color} shadow-inner`}>
+                                            <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-lg shrink-0 flex items-center justify-center ${info.bg} ${info.color}`}>
                                                 <span className="material-icons-round text-xl sm:text-2xl" aria-hidden="true">{info.icon}</span>
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -263,7 +263,7 @@ function HistoryList() {
                                                     navigate(path, { state: searchState });
                                                 }}
                                                 aria-label={`Repetir consulta ${item.search_term}`}
-                                                className="shrink-0 inline-flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] sm:px-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-600 hover:text-white active:scale-95 transition-all"
+                                                className="shrink-0 inline-flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] sm:px-4 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-600 hover:text-white transition-colors"
                                             >
                                                 <span className="hidden sm:inline text-xs font-black uppercase tracking-wide">Ver de nuevo</span>
                                                 <span className="material-icons-round text-lg" aria-hidden="true">arrow_forward</span>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import AlertModal from '../AlertModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const PRICE_LABELS = {
+const PRICE_LABELS = {
     c4_azul:         { label: 'Ficha C4 Azul',           cat: 'RENIEC',    icon: 'article' },
     inscripcion:     { label: 'Ficha de Inscripción',     cat: 'RENIEC',    icon: 'assignment' },
     virtual_azul:    { label: 'DNI Azul Virtual',         cat: 'RENIEC',    icon: 'credit_card' },

@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { auth, provider, signInWithPopup } from '../firebaseConfig';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { toast } from 'sonner';
 import Modal from './ui/Modal';
+import { ModalButton, ModalCloseButton, ModalHeader } from './ui/ModalElements';
+
+const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100';
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLoginSuccess }) {
     const [mode, setMode] = useState(initialMode);
@@ -32,7 +35,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
         try {
             const result = await signInWithPopup(auth, provider);
             const idToken = await result.user.getIdToken();
-
             const refCode = localStorage.getItem('referralCode');
             const response = await fetch('/api/auth/firebase-login', {
                 method: 'POST',
@@ -57,19 +59,19 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
 
     const handlePasswordReset = async () => {
         if (!email) {
-            toast.error("Por favor, ingresa tu correo electrónico en el campo superior.");
-            setError("Ingresa tu correo antes de solicitar el cambio de contraseña.");
+            toast.error('Por favor, ingresa tu correo electrónico en el campo superior.');
+            setError('Ingresa tu correo antes de solicitar el cambio de contraseña.');
             return;
         }
         try {
             setLoading(true);
             await sendPasswordResetEmail(auth, email);
-            toast.success("Correo de recuperación enviado. Revisa tu bandeja de entrada.");
+            toast.success('Correo de recuperación enviado. Revisa tu bandeja de entrada.');
             setError(null);
         } catch (err) {
             console.error(err);
-            toast.error("Error al enviar el correo de recuperación.");
-            setError("Error al enviar el correo. Verifica que esté bien escrito.");
+            toast.error('Error al enviar el correo de recuperación.');
+            setError('Error al enviar el correo. Verifica que esté bien escrito.');
         } finally {
             setLoading(false);
         }
@@ -82,7 +84,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
 
         try {
             if (!isLogin) {
-                // Register
                 const checkRes = await fetch(`/api/auth/check-disposable?email=${email}`);
                 if (!checkRes.ok) {
                     const checkData = await checkRes.json();
@@ -90,47 +91,42 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
                 }
 
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-                // Use standard Firebase SDK email verification (in English/default template)
                 await sendEmailVerification(userCredential.user);
-
-                await signOut(auth); // Force Re-login to update emailVerified status
+                await signOut(auth);
                 setVerificationSent(true);
                 return;
-            } else {
-                // Login
-                try {
-                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                    if (!userCredential.user.emailVerified) {
-                        await signOut(auth);
-                        throw new Error("Debes verificar tu correo. Revisa tu bandeja de entrada.");
-                    }
-                    const token = await userCredential.user.getIdToken();
-                    const refCode = localStorage.getItem('referralCode');
+            }
 
-                    const response = await fetch('/api/auth/firebase-login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id_token: token, referral_code: refCode })
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.detail || 'Error en login');
-
-                    if (onLoginSuccess) onLoginSuccess(data.user, data.access_token);
-                    onClose();
-                } catch (loginErr) {
-                    if (loginErr.code === 'auth/wrong-password' || loginErr.code === 'auth/user-not-found' || loginErr.code === 'auth/invalid-credential') {
-                        throw new Error("Correo o contraseña incorrectos.");
-                    }
-                    throw loginErr;
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                if (!userCredential.user.emailVerified) {
+                    await signOut(auth);
+                    throw new Error('Debes verificar tu correo. Revisa tu bandeja de entrada.');
                 }
+                const token = await userCredential.user.getIdToken();
+                const refCode = localStorage.getItem('referralCode');
+                const response = await fetch('/api/auth/firebase-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_token: token, referral_code: refCode })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Error en login');
+
+                if (onLoginSuccess) onLoginSuccess(data.user, data.access_token);
+                onClose();
+            } catch (loginErr) {
+                if (loginErr.code === 'auth/wrong-password' || loginErr.code === 'auth/user-not-found' || loginErr.code === 'auth/invalid-credential') {
+                    throw new Error('Correo o contraseña incorrectos.');
+                }
+                throw loginErr;
             }
         } catch (err) {
             console.error(err);
             let msg = err.message;
-            if (msg.includes("auth/email-already-in-use")) msg = "El correo ya está registrado";
-            if (msg.includes("auth/weak-password")) msg = "La contraseña es muy débil (mínimo 6 caracteres)";
+            if (msg.includes('auth/email-already-in-use')) msg = 'El correo ya está registrado';
+            if (msg.includes('auth/weak-password')) msg = 'La contraseña es muy débil (mínimo 6 caracteres)';
             setError(msg);
         } finally {
             setLoading(false);
@@ -138,152 +134,128 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="sm" panelClassName="p-8">
-            {/* Close Button */}
-            <button
-                onClick={onClose}
-                aria-label="Cerrar"
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-                <span className="material-icons-round" aria-hidden="true">close</span>
-            </button>
+        <Modal isOpen={isOpen} onClose={onClose} size="sm" panelClassName="overflow-hidden">
+            <ModalCloseButton onClick={onClose} />
 
-            {/* Title */}
-            <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-2">
-                {verificationSent ? 'Verifica tu correo' : (isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta')}
-            </h2>
+            <div className="space-y-5 p-5 pt-6">
+                {verificationSent ? (
+                    <>
+                        <ModalHeader
+                            title="Verifica tu correo"
+                            description="Hemos enviado un enlace de verificación. Abre tu correo para activar tu cuenta y luego inicia sesión."
+                            tone="info"
+                            align="center"
+                        />
+                        <p className="break-words rounded-lg border border-slate-200 bg-slate-50 p-3 text-center text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            {email}
+                        </p>
+                        <ModalButton
+                            onClick={() => {
+                                setVerificationSent(false);
+                                setMode('login');
+                            }}
+                            variant="info"
+                            className="w-full"
+                        >
+                            Entendido, ir a iniciar sesión
+                        </ModalButton>
+                    </>
+                ) : (
+                    <>
+                        <ModalHeader
+                            title={isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}
+                            description={isLogin ? 'Ingresa con tu correo o Google.' : 'Regístrate para acceder a tus consultas.'}
+                            tone="info"
+                            align="center"
+                        />
 
-            {verificationSent && (
-                <div className="text-center mt-6">
-                    <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-                        <span className="material-icons-round text-blue-600 dark:text-blue-300 text-3xl" aria-hidden="true">mark_email_read</span>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
-                        Hemos enviado un enlace de verificación a: <br /><strong>{email}</strong>
-                        <br /><br />
-                        Por favor, abre el enlace en tu correo para activar tu cuenta y luego inicia sesión.
-                    </p>
-                    <button
-                        onClick={() => {
-                            setVerificationSent(false);
-                            setMode('login');
-                        }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-full shadow-lg transition-all"
-                    >
-                        Entendido, ir a Iniciar Sesión
-                    </button>
-                </div>
-            )}
-
-            {!verificationSent && (
-                <>
-                    <div className="h-4"></div>
-
-                    {/* Error Message */}
-                    {error && (
-                        <div role="alert" className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg text-center">
-                            {error}
-                        </div>
-                    )}
-
-                    {/* Form Fields */}
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-
-                        {!isLogin && (
-                            <div className="space-y-1">
-                                <div className="relative">
-                                    <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" aria-hidden="true">person</span>
-                                    <input
-                                        type="text"
-                                        aria-label="Nombre completo"
-                                        placeholder="Nombre Completo"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        required={!isLogin}
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                                    />
-                                </div>
+                        {error && (
+                            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-300">
+                                {error}
                             </div>
                         )}
 
-                        <div className="space-y-1">
+                        <form className="space-y-4" onSubmit={handleSubmit}>
+                            {!isLogin && (
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        aria-label="Nombre completo"
+                                        autoComplete="name"
+                                        placeholder="Nombre completo"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        required
+                                        className={inputClass}
+                                    />
+                                </div>
+                            )}
+
                             <div className="relative">
-                                <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" aria-hidden="true">email</span>
                                 <input
                                     type="email"
                                     aria-label="Correo electrónico"
-                                    placeholder="Correo Electrónico"
+                                    autoComplete="email"
+                                    placeholder="Correo electrónico"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                    className={inputClass}
                                 />
                             </div>
-                        </div>
 
-                        <div className="space-y-1">
                             <div className="relative">
-                                <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" aria-hidden="true">lock</span>
                                 <input
                                     type="password"
                                     aria-label="Contraseña"
+                                    autoComplete={isLogin ? 'current-password' : 'new-password'}
                                     placeholder="Contraseña"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg py-3 pl-10 pr-10 text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                    className={inputClass}
                                 />
                             </div>
+
+                            <ModalButton type="submit" disabled={loading} variant="info" className="w-full">
+                                {loading && <span className="material-icons-round animate-spin text-[18px]" aria-hidden="true">refresh</span>}
+                                {isLogin ? 'Ingresar' : 'Registrarse'}
+                            </ModalButton>
+                        </form>
+
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                            O continúa con
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                         </div>
 
-                        {/* Action Button */}
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 rounded-full shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] mt-6 flex justify-center items-center gap-2"
-                        >
-                            {loading && <span className="material-icons-round animate-spin text-sm" aria-hidden="true">refresh</span>}
-                            {isLogin ? 'Ingresar' : 'Registrarse'}
-                        </button>
-                    </form>
-
-                    <div className="mt-4">
-                        <div className="relative flex py-2 items-center">
-                            <div className="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
-                            <span className="flex-shrink-0 mx-4 text-gray-400 text-xs">O continúa con</span>
-                            <div className="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
-                        </div>
-
-                        <button
-                            onClick={handleGoogleLogin}
-                            disabled={loading}
-                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-3 rounded-full transition-colors flex items-center justify-center gap-3 mt-2"
-                        >
-                            <img src="/logos/Google__G__logo.svg (1).png" alt="" className="w-5 h-5" />
+                        <ModalButton onClick={handleGoogleLogin} disabled={loading} variant="secondary" className="w-full">
+                            <img src="/logos/Google__G__logo.svg (1).png" alt="" className="h-5 w-5" />
                             {isLogin ? 'Iniciar sesión con Google' : 'Registrarse con Google'}
-                        </button>
-                    </div>
+                        </ModalButton>
 
-                    {/* Links */}
-                    <div className="mt-6 flex flex-col items-center gap-4">
-                        {isLogin && (
+                        <div className="flex flex-col items-center gap-3">
+                            {isLogin && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.preventDefault(); handlePasswordReset(); }}
+                                    className="min-h-[44px] rounded-lg px-3 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-blue-300 dark:hover:bg-blue-950/30 dark:focus:ring-offset-slate-900"
+                                >
+                                    Olvidé mi contraseña
+                                </button>
+                            )}
+
                             <button
-                                onClick={(e) => { e.preventDefault(); handlePasswordReset(); }}
-                                className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
+                                type="button"
+                                onClick={() => setMode(isLogin ? 'register' : 'login')}
+                                className="min-h-[44px] rounded-lg px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-900"
                             >
-                                Olvidé mi contraseña
+                                {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
                             </button>
-                        )}
-
-                        <button
-                            onClick={() => setMode(isLogin ? 'register' : 'login')}
-                            className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                        >
-                            {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia Sesión'}
-                        </button>
-                    </div>
-                </>
-            )}
+                        </div>
+                    </>
+                )}
+            </div>
         </Modal>
     );
 }

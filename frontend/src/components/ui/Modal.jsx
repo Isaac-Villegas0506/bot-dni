@@ -52,23 +52,26 @@ export default function Modal({
             style={{ zIndex }}
         >
             <div
-                className="fixed top-0 left-0 w-full h-[100dvh] bg-slate-950/50 backdrop-blur-sm"
+                className="fixed inset-0 min-h-[100dvh] bg-slate-950/55 backdrop-blur-sm"
                 aria-hidden="true"
             />
 
             <div
-                className={`fixed top-0 left-0 w-full h-[100dvh] overflow-y-auto flex justify-center ${
-                    isSheet ? 'items-end sm:items-center p-0 sm:p-4' : 'items-center p-4'
+                className={`fixed inset-0 min-h-[100dvh] overflow-y-auto overscroll-contain flex justify-center ${
+                    isSheet
+                        ? 'items-end sm:items-center px-[var(--safe-left)] pr-[var(--safe-right)] pt-[var(--safe-top)] pb-[var(--safe-bottom)] sm:p-4'
+                        : 'items-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))]'
                 }`}
             >
                 <DialogPanel
                     transition
-                    className={`relative w-full ${sizeCls} bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-700
+                    className={`relative w-full ${sizeCls} bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-700
+                        max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-2rem)] overflow-y-auto outline-none
                         transition duration-200 ease-out
                         data-[closed]:opacity-0 data-[closed]:scale-95 data-[closed]:translate-y-4
                         ${isSheet
-                            ? 'rounded-t-3xl sm:rounded-3xl max-h-[85dvh] border-t sm:border'
-                            : 'rounded-3xl my-4 sm:my-0 border'
+                            ? 'rounded-t-lg sm:rounded-lg max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom))]'
+                            : 'rounded-lg my-4 sm:my-0'
                         }
                         ${panelClassName}`}
                 >

@@ -15,7 +15,7 @@ import { createPortal } from 'react-dom';
 import UserNotificationModal from './components/UserNotificationModal';
 import MobileNav from './components/MobileNav';
 import PromoModal from './components/PromoModal';
-import { useSettings } from './context/SettingsContext';
+import { useSettings } from './context/settingsContextValue';
 
 import { Suspense, lazy } from 'react';
 
@@ -92,6 +92,7 @@ export default function App() {
 
     // Lógica para mostrar la promoción (1 sol = 15 créditos)
     useEffect(() => {
+        let syncTimer;
         if (isLoggedIn && user && !user.has_bought_promo && isFeatureEnabled('promo_pack_active')) {
             const lastShownStr = localStorage.getItem('last_promo_shown_time');
             if (lastShownStr) {
@@ -101,11 +102,12 @@ export default function App() {
                     return;
                 }
             }
-            setShowPromoModal(true);
+            syncTimer = setTimeout(() => setShowPromoModal(true), 0);
             localStorage.setItem('last_promo_shown_time', Date.now().toString());
         } else {
-            setShowPromoModal(false);
+            syncTimer = setTimeout(() => setShowPromoModal(false), 0);
         }
+        return () => clearTimeout(syncTimer);
     }, [isLoggedIn, user, isFeatureEnabled]);
 
     // Compatibilidad con Sidebar/Header que aún usan nombres de vista legacy
@@ -116,9 +118,9 @@ export default function App() {
 
     return (
         <div className={`
-            min-h-[100dvh] flex flex-col transition-colors duration-300 relative overflow-hidden font-body
+            min-h-[100dvh] flex flex-col transition-colors duration-300 relative overflow-x-hidden font-body
             bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark
-            ${isAdminRoute ? 'p-0 overflow-hidden h-[100dvh] items-stretch' : 'justify-start items-center py-6 lg:py-10 px-4 sm:px-8'}
+            ${isAdminRoute ? 'p-0 overflow-hidden h-[100dvh] items-stretch' : 'justify-start items-center px-4 sm:px-8 pt-[max(1rem,var(--safe-top))] pb-[max(6rem,var(--safe-bottom))] lg:pt-10 lg:pb-10'}
         `}>
 
             {/* Background gradient */}
@@ -138,7 +140,7 @@ export default function App() {
             )}
 
             {/* Main content */}
-            <main className={`flex-grow flex flex-col w-full pb-20 md:pb-0 ${isAdminRoute ? 'w-full h-full' : 'items-center justify-start max-w-6xl'}`}>
+            <main className={`flex-grow flex flex-col w-full ${isAdminRoute ? 'w-full h-full' : 'items-center justify-start max-w-6xl pb-[calc(5rem+var(--safe-bottom))] md:pb-0'}`}>
                 <Suspense fallback={<div className="flex items-center justify-center w-full h-64"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
                     <Routes>
                         <Route path="/" element={<Home darkMode={darkMode} />} />

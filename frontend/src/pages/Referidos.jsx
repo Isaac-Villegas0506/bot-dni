@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 export default function ReferidosPage() {
-    const { user } = useAuth();
+    useAuth();
     const [referralCode, setReferralCode] = useState('');
     const [loading, setLoading] = useState(true);
     
@@ -365,26 +365,14 @@ export default function ReferidosPage() {
             {/* Alert Modal for Updates */}
             <AnimatePresence>
                 {alertModal.isOpen && alertModal.data && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-slate-950/55 backdrop-blur-sm">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 md:p-8 max-w-md w-full border border-slate-200 dark:border-slate-800 text-center relative overflow-hidden"
+                            className="bg-white dark:bg-slate-900 rounded-lg shadow-xl p-5 md:p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 text-center relative overflow-hidden"
                         >
-                            {/* Decorative background circle */}
-                            <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-20 pointer-events-none ${alertModal.data.status === 'approved' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-
-                            <div className="mb-6 relative z-10">
-                                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-lg mb-4 ${
-                                    alertModal.data.status === 'approved' 
-                                    ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white' 
-                                    : 'bg-gradient-to-br from-red-400 to-red-600 text-white'
-                                }`}>
-                                    <span className="material-icons-round text-4xl">
-                                        {alertModal.data.status === 'approved' ? 'celebration' : 'sentiment_dissatisfied'}
-                                    </span>
-                                </div>
+                            <div className="mb-5 relative z-10">
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
                                     {alertModal.data.status === 'approved' ? '¡Promoción Aprobada!' : 'Promoción Rechazada'}
                                 </h3>
@@ -393,7 +381,7 @@ export default function ReferidosPage() {
                                 </p>
                             </div>
                             
-                            <div className={`p-4 rounded-2xl mb-6 text-sm font-medium border ${
+                            <div className={`p-4 rounded-lg mb-5 text-sm font-medium border ${
                                 alertModal.data.status === 'approved' 
                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' 
                                 : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800/50'
@@ -405,7 +393,7 @@ export default function ReferidosPage() {
 
                             <button
                                 onClick={handleAcknowledgeAlert}
-                                className={`w-full py-3.5 rounded-xl font-bold text-white shadow-md transition-all active:scale-95 text-lg ${
+                                className={`w-full min-h-[44px] rounded-lg font-bold text-white transition-colors text-base ${
                                     alertModal.data.status === 'approved' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600'
                                 }`}
                             >

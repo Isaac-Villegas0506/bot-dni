@@ -1,4 +1,4 @@
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../context/settingsContextValue';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { getApiUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import PdfViewer from './PdfViewer';
+import { OptionCard } from './ui/ConsultSurface';
 
 const options = [
     {
@@ -409,39 +410,14 @@ export default function GeneratorReniec() {
                     className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl"
                 >
                     {options.filter(opt => isFeatureEnabled('option_' + opt.id)).map((opt) => (
-                        <div
+                        <OptionCard
                             key={opt.id}
-                            onClick={() => handleOptionClick(opt)}
-                            className="group relative bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all text-left flex flex-col gap-3 hover:-translate-y-1 min-h-[140px] cursor-pointer"
-                        >
-                            <button
-                                onClick={(e) => openHelp(e, opt)}
-                                className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors z-10 border border-slate-100 dark:border-slate-700"
-                                aria-label="¿Qué hace esta opción?"
-                            >
-                                <span className="material-icons-round text-slate-400 dark:text-slate-500 text-base">help_outline</span>
-                            </button>
-
-                            <div className={`w-12 h-12 rounded-xl ${opt.color} flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
-                                <span className="material-icons-round text-2xl">{opt.icon}</span>
-                            </div>
-
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-0.5">{opt.title}</h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{opt.desc}</p>
-                            </div>
-
-                            <div className="mt-auto pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-sm">
-                                    <span className="material-icons-round text-sm">toll</span>
-                                    {getCost(opt.id)} crédito{getCost(opt.id) !== 1 ? 's' : ''}
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-400 group-hover:text-blue-500 transition-colors font-black">
-                                    Generar
-                                    <span className="material-icons-round text-xs">arrow_forward</span>
-                                </div>
-                            </div>
-                        </div>
+                            option={opt}
+                            onSelect={handleOptionClick}
+                            onHelp={openHelp}
+                            creditsLabel={`${getCost(opt.id)} Credito${getCost(opt.id) !== 1 ? 's' : ''}`}
+                            actionLabel="Generar"
+                        />
                     ))}
                 </motion.div>
             )}
@@ -457,7 +433,7 @@ export default function GeneratorReniec() {
                         {/* Back button (Arrow) */}
                         <button
                             onClick={handleBackClick}
-                            className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95 shadow-md shadow-black/10 dark:shadow-black/30"
+                            className="absolute top-6 left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                             title="Volver"
                         >
                             <span className="material-icons-round">arrow_back</span>
@@ -547,7 +523,7 @@ export default function GeneratorReniec() {
                             {(generatedData.type?.id === 'virtual_azul' || generatedData.type?.id === 'amarillo' || generatedData.type?.id === 'virtual_electronico') ? (
                                 <button
                                     onClick={downloadImages}
-                                    className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg hover:scale-[1.02]"
+                                    className="w-full py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
                                 >
                                     <span className="material-icons-round">download</span>
                                     Descargar Imágenes
@@ -555,7 +531,7 @@ export default function GeneratorReniec() {
                             ) : (
                                 <button
                                     onClick={downloadPdf}
-                                    className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg hover:scale-[1.02]"
+                                    className="w-full py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
                                 >
                                     <span className="material-icons-round">download</span>
                                     {generatedData.type?.id === 'inscripcion' ? 'Descargar Ficha' : (generatedData.type?.id === 'arbol' ? 'Descargar Árbol' : 'Descargar C4')}
@@ -577,7 +553,7 @@ export default function GeneratorReniec() {
             {createPortal(
                 <AnimatePresence>
                     {showInputModal && selectedOption && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/50 backdrop-blur-sm">
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -632,7 +608,7 @@ export default function GeneratorReniec() {
             {createPortal(
                 <AnimatePresence>
                     {showExitModal && (
-                        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <div className="fixed inset-0 z-[150] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-md">
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -686,7 +662,7 @@ export default function GeneratorReniec() {
                     {previewImage && (
                         <div
                             onClick={() => setPreviewImage(null)}
-                            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-pointer"
+                            className="fixed inset-0 z-[200] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/90 backdrop-blur-md cursor-pointer"
                         >
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}

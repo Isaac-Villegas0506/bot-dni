@@ -335,7 +335,7 @@ export default function Facial() {
                                 <div className="flex items-center gap-3">
                                     <button 
                                         onClick={handleBackClick}
-                                        className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white font-semibold h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 transition-all duration-150 flex items-center justify-center gap-2 text-sm shadow-sm min-w-[44px]"
+                                        className="min-h-[44px] min-w-[44px] rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 flex items-center justify-center gap-2"
                                     >
                                         <span className="material-icons-round text-slate-400 text-[18px]">arrow_back</span>
                                         <span>Regresar</span>
@@ -405,7 +405,7 @@ export default function Facial() {
                                     {pdfBlobUrl && (
                                         <button
                                             onClick={downloadPdf}
-                                            className="w-full sm:w-2/3 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-slate-900/20"
+                                            className="w-full sm:w-2/3 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                                         >
                                             <span className="material-icons-round text-red-500">picture_as_pdf</span>
                                             DESCARGAR INFORME PDF
@@ -422,7 +422,7 @@ export default function Facial() {
             {createPortal(
                 <AnimatePresence>
                     {showExitModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))]">
                             <motion.div 
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}

@@ -35,7 +35,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                     id="sidebar-toggle-btn"
                     onClick={() => setMenuOpen(true)}
                     aria-label="Abrir menú"
-                    className="hidden md:flex w-11 h-11 items-center justify-center shrink-0 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all duration-150 focus-ring"
+                    className="hidden md:flex w-11 h-11 items-center justify-center shrink-0 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-150 focus-ring"
                 >
                     <span className="material-icons-round text-2xl">menu</span>
                 </button>
@@ -43,7 +43,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                 {/* Left: User Avatar (Mobile Only) */}
                 <div className="flex md:hidden items-center justify-center shrink-0">
                     {user ? (
-                        <button onClick={() => navigate('/tienda')} className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base overflow-hidden border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
+                        <button onClick={() => navigate('/tienda')} className="min-h-[44px] min-w-[44px] rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
                             {user.avatar_url ? (
                                 <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
@@ -51,8 +51,8 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                             )}
                         </button>
                     ) : (
-                        <button onClick={openLoginModal} className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                            <span className="material-icons-round text-lg">person</span>
+                        <button onClick={openLoginModal} className="min-h-[44px] rounded-lg bg-blue-600 px-3 text-sm font-bold text-white hover:bg-blue-700 transition-colors focus-ring">
+                            Ingresar
                         </button>
                     )}
                 </div>
@@ -67,7 +67,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                 <button
                     onClick={() => setDarkMode(!darkMode)}
                     aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                    className="w-11 h-11 flex items-center justify-center shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all duration-150 focus-ring"
+                    className="w-11 h-11 flex items-center justify-center shrink-0 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-150 focus-ring"
                 >
                     <span className="material-icons-round text-2xl">
                         {darkMode ? 'light_mode' : 'dark_mode'}

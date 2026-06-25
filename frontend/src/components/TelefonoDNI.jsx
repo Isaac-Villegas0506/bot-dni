@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
@@ -8,6 +8,7 @@ import { useCreditCosts } from '../hooks/useCredits';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { toast } from 'sonner';
+import { OptionCard } from './ui/ConsultSurface';
 
 // ─── Option definitions ───────────────────────────────────────────────────────
 const TELEFONO_OPTIONS = [
@@ -452,7 +453,7 @@ function TelefonoModal({ option, onClose, onSubmit, loading }) {
             <motion.div
                 key="backdrop"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-[80] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/50 backdrop-blur-sm"
                 onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}
             >
                 <motion.div
@@ -573,7 +574,7 @@ function NumerosResult({ dni, rawText, onBack }) {
                     {/* Back button (Arrow) */}
                     <button
                         onClick={handleBackClick}
-                        className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-110 active:scale-95"
+                        className="absolute top-6 left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                         title="Volver"
                     >
                         <span className="material-icons-round">arrow_back</span>
@@ -637,7 +638,7 @@ function NumerosResult({ dni, rawText, onBack }) {
                         {/* TXT download — full width, same style as Familiares */}
                         <button
                             onClick={handleDownload}
-                            className="mt-4 w-full py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 hover:scale-[1.02]"
+                            className="mt-4 w-full py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                         >
                             <span className="material-icons-round">download</span>
                             Descargar telefonos_{dni}.txt
@@ -658,7 +659,7 @@ function NumerosResult({ dni, rawText, onBack }) {
             {/* Exit Modal (5s countdown — same as Familiares) */}
             {showExitModal && createPortal(
                 <AnimatePresence>
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-sm">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
@@ -767,7 +768,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
                     {/* Back button (Arrow) */}
                     <button
                         onClick={handleBackClick}
-                        className="absolute top-4 left-4 sm:top-6 sm:left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-full bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
+                        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                         title="Volver"
                     >
                         <span className="material-icons-round text-[20px]">arrow_back</span>
@@ -903,7 +904,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
                             {/* TXT download */}
                             <button
                                 onClick={handleDownload}
-                                className="flex-1 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 text-sm sm:text-base"
+                                className="flex-1 py-3 sm:py-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                             >
                                 <span className="material-icons-round text-[18px] sm:text-[20px]">download</span>
                                 Descargar resultados
@@ -916,7 +917,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
             {/* Exit Modal (5s countdown) */}
             {showExitModal && createPortal(
                 <AnimatePresence>
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-sm">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
@@ -965,7 +966,7 @@ function AuthRequiredModal({ onClose }) {
             <motion.div
                 key="auth-backdrop"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-[90] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/50 backdrop-blur-sm"
                 onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
             >
                 <motion.div
@@ -1136,7 +1137,7 @@ function VerificadorResult({ data, onBack }) {
                     {/* Download button */}
                     <button
                         onClick={handleDownload}
-                        className="w-full py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 hover:scale-[1.02] mb-3"
+                        className="w-full py-3 rounded-lg bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 mb-3"
                     >
                         <span className="material-icons-round">download</span>
                         Descargar operadora_{data.telefono}.txt
@@ -1156,7 +1157,7 @@ function VerificadorResult({ data, onBack }) {
             {/* Exit Modal */}
             {showExitModal && createPortal(
                 <AnimatePresence>
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-sm">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
@@ -1247,7 +1248,7 @@ function TitularResult({ phone, rawText, onBack }) {
                     {/* Back button (Arrow) */}
                     <button
                         onClick={handleBackClick}
-                        className="absolute top-4 left-4 sm:top-6 sm:left-6 w-10 h-10 flex items-center justify-center shrink-0 rounded-full bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
+                        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                         title="Volver"
                     >
                         <span className="material-icons-round text-[20px]">arrow_back</span>
@@ -1375,7 +1376,7 @@ function TitularResult({ phone, rawText, onBack }) {
                             {/* TXT download */}
                             <button
                                 onClick={handleDownload}
-                                className="flex-1 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 text-sm sm:text-base"
+                                className="flex-1 py-3 sm:py-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                             >
                                 <span className="material-icons-round text-[18px] sm:text-[20px]">download</span>
                                 Descargar resultados
@@ -1388,7 +1389,7 @@ function TitularResult({ phone, rawText, onBack }) {
             {/* Exit Modal (5s countdown) */}
             {showExitModal && createPortal(
                 <AnimatePresence>
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/60 backdrop-blur-sm">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700"
@@ -1447,7 +1448,7 @@ function PlaceholderModal({ option, onClose }) {
             <motion.div
                 key="ph-backdrop"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-[80] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))] bg-black/50 backdrop-blur-sm"
                 onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}
             >
                 <motion.div
@@ -1522,7 +1523,7 @@ export default function TelefonoDNI() {
     const { loading, showLoading, hideLoading } = useLoading();
     const { getCost } = useCreditCosts();
     const [activeModal, setActiveModal] = useState(null);
-    
+
     // session storage initialized states
     const [result, setResult] = useState(() => {
         const saved = sessionStorage.getItem('telefono_result');
@@ -1540,7 +1541,7 @@ export default function TelefonoDNI() {
         const saved = sessionStorage.getItem('telefono_titular');
         return saved ? JSON.parse(saved) : null;
     });
-    
+
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
 
     const location = useLocation();
@@ -1574,7 +1575,7 @@ export default function TelefonoDNI() {
     const isVerificadorOp = activeModal === 'verificador_op';
     const isTitularNumero = activeModal === 'titular_numero';
 
-    const handleSubmitNumerosDNI = async (dni) => {
+    const handleSubmitNumerosDNI = useCallback(async (dni) => {
         if (!user) { openLoginModal(); return; }
         setActiveModal(null);
         showLoading();
@@ -1616,9 +1617,9 @@ export default function TelefonoDNI() {
         } finally {
             hideLoading();
         }
-    };
+    }, [hideLoading, openLoginModal, showLoading, user]);
 
-    const handleSubmitInfoLinea = async (phone) => {
+    const handleSubmitInfoLinea = useCallback(async (phone) => {
         if (!user) { openLoginModal(); return; }
         setActiveModal(null);
         showLoading();
@@ -1662,9 +1663,9 @@ export default function TelefonoDNI() {
         } finally {
             hideLoading();
         }
-    };
+    }, [hideLoading, openLoginModal, showLoading, user]);
 
-    const handleSubmitVerificador = async (phone) => {
+    const handleSubmitVerificador = useCallback(async (phone) => {
         if (!user) { openLoginModal(); return; }
         setActiveModal(null);
         showLoading();
@@ -1695,9 +1696,9 @@ export default function TelefonoDNI() {
         } finally {
             hideLoading();
         }
-    };
+    }, [hideLoading, openLoginModal, showLoading, user]);
 
-    const handleSubmitTitular = async (phone) => {
+    const handleSubmitTitular = useCallback(async (phone) => {
         if (!user) { openLoginModal(); return; }
         setActiveModal(null);
         showLoading();
@@ -1744,7 +1745,7 @@ export default function TelefonoDNI() {
         } finally {
             hideLoading();
         }
-    };
+    }, [hideLoading, openLoginModal, showLoading, user]);
 
     const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
 
@@ -1764,12 +1765,12 @@ export default function TelefonoDNI() {
                 } else if (opt.id === 'titular_numero') {
                     handleSubmitTitular(value);
                 }
-                
+
                 // Clear state so it doesn't re-trigger on refresh
                 window.history.replaceState({}, document.title);
             }
         }
-    }, [location.state]);
+    }, [location.state, handleSubmitInfoLinea, handleSubmitNumerosDNI, handleSubmitTitular, handleSubmitVerificador]);
 
     const openHelp = (e, opt) => {
         e.stopPropagation();
@@ -1823,45 +1824,14 @@ export default function TelefonoDNI() {
             {/* Options grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {TELEFONO_OPTIONS.map((opt) => (
-                    <div
+                    <OptionCard
                         key={opt.id}
-                        onClick={() => {
-                            setActiveModal(opt.id);
-                        }}
-                        className="group relative bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl hover:border-violet-400 dark:hover:border-violet-500 transition-all text-left flex flex-col gap-3 hover:-translate-y-1 min-h-[140px] cursor-pointer"
-                    >
-                        <button
-                            onClick={(e) => openHelp(e, opt)}
-                            className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors z-20 border border-slate-100 dark:border-slate-700"
-                            aria-label="¿Qué hace esta opción?"
-                        >
-                            <span className="material-icons-round text-slate-400 dark:text-slate-500 text-base">help_outline</span>
-                        </button>
-
-                        <div className="flex items-start justify-between">
-                            <div className={`w-12 h-12 rounded-xl ${opt.iconBg} flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
-                                <span className="material-icons-round text-2xl">{opt.icon}</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-0.5">{opt.title}</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">{opt.desc}</p>
-                        </div>
-
-                        <div className="mt-auto pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs">
-                                <span className="material-icons-round text-sm">toll</span>
-                                {opt.credits === 0
-                                    ? 'Gratis'
-                                    : `${getCost(opt.id) ?? opt.credits} crédito${(getCost(opt.id) ?? opt.credits) !== 1 ? 's' : ''}`}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-400 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-colors font-black">
-                                Consultar
-                                <span className="material-icons-round text-xs">arrow_forward</span>
-                            </div>
-                        </div>
-                    </div>
+                        option={opt}
+                        onSelect={() => setActiveModal(opt.id)}
+                        onHelp={openHelp}
+                        creditsLabel={opt.credits === 0 ? 'Gratis' : `${getCost(opt.id) ?? opt.credits} Credito${(getCost(opt.id) ?? opt.credits) !== 1 ? 's' : ''}`}
+                        accent="violet"
+                    />
                 ))}
             </div>
 

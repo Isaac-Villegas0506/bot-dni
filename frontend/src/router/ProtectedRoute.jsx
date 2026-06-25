@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 // ─── Spinner mientras se verifica la sesión ──────────────────────────────────
@@ -25,11 +26,20 @@ export function RequireAuth({ children, openModalOnFail = false }) {
     if (authLoading) return <AuthLoadingSpinner />;
 
     if (!isLoggedIn) {
-        if (openModalOnFail) openLoginModal();
-        return <Navigate to="/" replace />;
+        return <AuthRedirect openModalOnFail={openModalOnFail} openLoginModal={openLoginModal} />;
     }
 
     return children;
+}
+
+function AuthRedirect({ openModalOnFail, openLoginModal }) {
+    useEffect(() => {
+        if (openModalOnFail) {
+            openLoginModal();
+        }
+    }, [openModalOnFail, openLoginModal]);
+
+    return <Navigate to="/" replace />;
 }
 
 // ─── Requiere rol admin ───────────────────────────────────────────────────────

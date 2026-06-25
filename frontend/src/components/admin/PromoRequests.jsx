@@ -52,7 +52,7 @@ export default function PromoRequests() {
             } else {
                 toast.error(data.detail || 'Error al actualizar');
             }
-        } catch (err) {
+        } catch {
             toast.error('Error de conexión');
         } finally {
             setUpdating(null);

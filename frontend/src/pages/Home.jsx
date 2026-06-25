@@ -61,7 +61,7 @@ export default function Home({ darkMode }) {
             // Clear state so it doesn't re-trigger on refresh
             navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state, navigate]);
+    }, [location.state, location.pathname, navigate, searchByName, setDni, setNombres, setSearchMode, setSearchType]);
 
     // Other UI state
     const [optionModal, setOptionModal] = useState({ isOpen: false, targetUser: null });
@@ -142,7 +142,7 @@ export default function Home({ darkMode }) {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <h2 className="text-2xl font-bold">Resultados ({totalResults})</h2>
                     <div className="flex flex-col md:flex-row gap-3">
-                        <button onClick={handleBack} className="order-1 md:order-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-150 w-full md:w-auto focus-ring">
+                        <button onClick={handleBack} className="order-1 md:order-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 w-full md:w-auto focus-ring">
                             Nueva búsqueda
                         </button>
                         {downloadUrl && (
@@ -160,7 +160,7 @@ export default function Home({ darkMode }) {
                                         URL.revokeObjectURL(url);
                                     } catch (err) { console.error('Error bajando TXT:', err); }
                                 }}
-                                className="order-2 md:order-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20 w-full md:w-auto"
+                                className="order-2 md:order-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors w-full md:w-auto"
                             >
                                 <span className="material-icons-round">description</span>
                                 Descargar TXT
@@ -173,14 +173,14 @@ export default function Home({ darkMode }) {
                         <div
                             key={i}
                             onClick={() => setOptionModal({ isOpen: true, targetUser: item })}
-                            className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md transition-all duration-200 flex justify-between items-center group"
+                            className="bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 transition-colors duration-150 flex justify-between items-center group"
                         >
                             <div>
                                 <p className="font-semibold text-slate-900 dark:text-white">{item.nombre_completo}</p>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">{item.documento}{item.edad ? ` · ${item.edad} años` : ''}</p>
                             </div>
-                            <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition-colors duration-150 shrink-0">
-                                <span className="material-icons-round text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150 text-xl">chevron_right</span>
+                            <div className="flex h-11 w-7 shrink-0 items-center justify-end text-slate-400 transition-colors duration-150 group-hover:text-blue-600 dark:text-slate-500 dark:group-hover:text-blue-400">
+                                <span className="material-icons-round text-xl">chevron_right</span>
                             </div>
                         </div>
                     ))}
@@ -238,7 +238,7 @@ export default function Home({ darkMode }) {
             <div className="w-full max-w-5xl flex flex-col sm:flex-row justify-center items-center gap-4 mt-10 lg:mt-14 px-4">
                 <button
                     onClick={() => navigate('/creditos')}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 focus-ring"
+                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors duration-150 focus-ring"
                 >
                     <span className="material-icons-round text-xl">redeem</span>
                     <span className="font-bold text-sm sm:text-base tracking-wide">Ganar Créditos Gratis</span>
@@ -246,7 +246,7 @@ export default function Home({ darkMode }) {
 
                 <button
                     onClick={openDonation}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white dark:bg-card-dark border-2 border-slate-200 dark:border-slate-800 px-8 py-4 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 active:scale-95 transition-all duration-200 focus-ring"
+                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-800 px-8 py-4 rounded-lg hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-150 focus-ring"
                 >
                     <span className="text-xl">💜</span>
                     <span className="font-bold text-sm sm:text-base text-slate-700 dark:text-slate-300">Apoyar con Yape</span>
@@ -279,14 +279,11 @@ export default function Home({ darkMode }) {
             {/* Captcha Modal */}
             <AnimatePresence>
                 {showCaptcha && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col relative border border-slate-200 dark:border-slate-800 w-[92%] max-w-[360px] overflow-hidden">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-950/55 backdrop-blur-sm z-[9999] flex items-center justify-center px-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-[max(1rem,var(--safe-top))] pb-[max(1rem,var(--safe-bottom))]">
+                        <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }} className="bg-white dark:bg-slate-900 rounded-lg shadow-xl flex flex-col relative border border-slate-200 dark:border-slate-800 w-[92%] max-w-[360px] overflow-hidden">
                             {/* Header */}
                             <div className="w-full flex justify-between items-center px-5 py-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-800/20">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                        <span className="material-icons-round text-lg">security</span>
-                                    </div>
                                     <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Verificación</h3>
                                 </div>
                                 <button onClick={() => { setShowCaptcha(false); setPendingSearch(null); }} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -305,12 +302,12 @@ export default function Home({ darkMode }) {
                                 </div>
 
                                 {/* Compact Horizontal CTA */}
-                                <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 sm:p-4 flex flex-row items-center justify-between gap-3 border border-slate-100 dark:border-slate-700/50">
+                                <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 sm:p-4 flex flex-row items-center justify-between gap-3 border border-slate-100 dark:border-slate-700/50">
                                     <div className="flex flex-col">
                                         <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 dark:text-slate-200">¿Usuario frecuente?</p>
                                         <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Omite esta validación</p>
                                     </div>
-                                    <button onClick={() => { setShowCaptcha(false); setShowWelcomeModal(true); }} className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-[11px] sm:text-[12px] transition-all active:scale-95 shrink-0 shadow-sm">
+                                    <button onClick={() => { setShowCaptcha(false); setShowWelcomeModal(true); }} className="min-h-[44px] px-4 sm:px-5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-[11px] sm:text-[12px] transition-colors shrink-0">
                                         Inicia sesión
                                     </button>
                                 </div>
