@@ -19,7 +19,7 @@ _OPTION_MAP = {
     "fiscalia_dni":    ("/fiscaliapdf", "FISCALIAPDF"),
     "fiscalia_ruc":    ("/fisruc",   "FISRUC"),
     "fiscalia_nombre": ("/fisnmpdf", "FISNMPDF"),
-    "caso_fiscal":     ("/fisca",    "FISCA"),
+    "caso_fiscal":     ("/fiscasopdf","FISCASOPDF"),
 }
 
 
@@ -62,9 +62,9 @@ async def query_fiscalia(
     # Detectores de texto para cada tipo (fallback cuando reply_to_msg_id no funciona)
     _TEXT_MARKERS = {
         "fiscalia_dni":    "FISCALÍA PDF DNI",
-        "fiscalia_ruc":    "FISCALÍA RUC",
-        "fiscalia_nombre": "FISCALÍA POR NOMBRES",
-        "caso_fiscal":     "FISCALÍA CASO",
+        "fiscalia_ruc":    "FISCALÍA PDF RUC",
+        "fiscalia_nombre": "FISCALÍA PDF NOMBRES",
+        "caso_fiscal":     "FISCALÍA CASO PDF",
     }
 
     print(f"⚖️ Enviando {cmd} al bot...")
