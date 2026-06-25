@@ -131,6 +131,7 @@ export default function MobileNav() {
                             exit={{ opacity: 0 }}
                             onClick={() => setShowMobileMenu(false)}
                             className="md:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm"
+                            style={{ willChange: 'opacity' }}
                         />
                         {/* Sheet */}
                         <motion.div
@@ -139,6 +140,7 @@ export default function MobileNav() {
                             exit={{ y: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                             className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl pb-[env(safe-area-inset-bottom)] h-[90dvh] flex flex-col"
+                            style={{ willChange: 'transform' }}
                         >
                             <div className="flex justify-center pt-4 pb-2 shrink-0">
                                 <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
