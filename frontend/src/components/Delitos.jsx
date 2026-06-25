@@ -324,23 +324,18 @@ export default function Delitos() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={selectedOption?.id === 'antper' ? "w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800" : "w-full max-w-5xl"}
+                    className={selectedOption?.id === 'antper' ? "w-full max-w-3xl relative" : "w-full max-w-5xl"}
                 >
                     {selectedOption?.id === 'antper' ? (
-                        <div className="p-8 flex flex-col items-center relative">
+                        <div className="p-1 sm:p-2 flex flex-col items-center relative">
                             {/* Back button (Arrow) */}
                             <button
                                 onClick={handleBackClick}
-                                className="absolute top-6 left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
+                                className="self-start mb-4 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
                                 title="Volver"
                             >
-                                <span className="material-icons-round">arrow_back</span>
+                                <span className="material-icons-round text-[20px]">arrow_back</span>
                             </button>
-
-                            {/* Success Icon */}
-                            <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-emerald-500/30">
-                                <span className="material-icons-round text-4xl">check</span>
-                            </div>
 
                             <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 tracking-wide text-center">
                                 ANTECEDENTES GENERADOS CON ÉXITO
