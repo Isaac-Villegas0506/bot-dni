@@ -26,7 +26,7 @@ function parseFiscalia(rawText) {
     if (cleanLine.toLowerCase().includes('usuario :') || cleanLine.includes('CRÉDITOS')) continue;
     if (cleanLine.includes('La consulta se hizo')) continue;
     if (cleanLine.match(/\.pdf$/i) || cleanLine.match(/\.txt$/i) || cleanLine.match(/^[0-9.]+MB$/i) || cleanLine.match(/^[0-9.]+KB$/i)) continue;
-    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_') || cleanLine.includes('FISNMPDF_') || cleanLine.includes('FISCALIA_')) continue;
+    if (cleanLine.includes('FISCALIAPDF_') || cleanLine.includes('FISNM_') || cleanLine.includes('FISNMPDF_') || cleanLine.includes('FISCALIA_') || cleanLine.includes('FISRUC_') || cleanLine.includes('FISCASOPDF_')) continue;
     if (cleanLine.startsWith('➤') && cleanLine.includes('#')) continue;
 
     let parts = cleanLine.split('➣');
@@ -179,7 +179,7 @@ export default function Fiscalia() {
       color: 'bg-amber-800',
       desc: 'Consulta directa de un caso fiscal específico',
       credits: getCost('caso_fiscal', 2),
-      placeholder: 'Ej: 123456789',
+      placeholder: 'Ej: 01805114504-2023-000045-0000',
       helpDesc: 'Búsqueda de detalles de un caso fiscal utilizando su número de expediente.',
       helpDetails: [
         'Detalle exhaustivo',
@@ -538,7 +538,7 @@ export default function Fiscalia() {
                   inputMode={['fiscalia_dni', 'fiscalia_ruc'].includes(selectedOption.id) ? 'numeric' : 'text'}
                   maxLength={selectedOption.id === 'fiscalia_dni' ? 8 : (selectedOption.id === 'fiscalia_ruc' ? 11 : 50)}
                   placeholder={selectedOption.placeholder}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-xs sm:text-sm md:text-lg text-center mb-6 text-slate-900 dark:text-white"
                   type="text"
                   value={targetId}
                   onChange={(e) => {
