@@ -3,7 +3,7 @@ import Modal from './ui/Modal';
 import { ModalButton, ModalCloseButton, ModalHeader, ModalSection } from './ui/ModalElements';
 import { Z_INDEX } from '../lib/zIndex';
 
-export default function PromoModal({ onClose }) {
+export default function PromoModal({ isOpen, onClose }) {
     const navigate = useNavigate();
 
     const handleGoToShop = () => {
@@ -12,8 +12,8 @@ export default function PromoModal({ onClose }) {
     };
 
     return (
-        <Modal isOpen onClose={onClose} size="lg" panelClassName="overflow-hidden" zIndex={Z_INDEX.modalAbove}>
-            <ModalCloseButton onClick={onClose} />
+        <Modal isOpen={isOpen} onClose={onClose} size="lg" panelClassName="overflow-hidden" zIndex={Z_INDEX.modalAbove}>
+            <ModalCloseButton onClick={onClose} className="z-50" />
 
             <div className="grid gap-0 md:grid-cols-[0.9fr_1.1fr]">
                 <div className="border-b border-slate-200 p-5 pt-6 dark:border-slate-700 md:border-b-0 md:border-r">
