@@ -63,7 +63,7 @@ async def generate_familiares_pdf(client, dni: str, static_base_dir: Path) -> di
                         break
                 if dni in text:
                     if is_sin_resultados(text):
-                        raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
+                        raise SinResultadosError(text)
                     if "error" in text.lower() or "no encontrado" in text.lower():
                         raise Exception("Ocurrió un error al generar el árbol familiar.")
             if found_msg:
@@ -138,7 +138,7 @@ async def generate_familiares_texto(client, dni: str, static_base_dir: Path) -> 
                     if any(k in text.lower() for k in ["procesando", "espera", "buscando"]):
                         continue
                     if is_sin_resultados(text):
-                        raise SinResultadosError("No se encontraron familiares para los datos ingresados.")
+                        raise SinResultadosError(text)
                     is_part = (
                         dni in text or
                         ("[ " in text and " ]" in text and "Nombre ➟" in text) or
@@ -232,7 +232,7 @@ async def query_arbol_visual_pdf(client, bot_pool, dni: str, static_base_dir: Pa
                 if any(k in text.lower() for k in ["procesando", "espere", "buscando"]):
                     continue
                 if is_sin_resultados(text) or "sin resultados" in text.lower():
-                    raise SinResultadosError("No se encontraron familiares para este DNI en el sistema.")
+                    raise SinResultadosError(text)
                 seen_ids.add(message.id)
                 if "INFOR DATA" in text.upper() or "ÁRBOL VISUAL" in text.upper():
                     raw_text = _clean_text(text)

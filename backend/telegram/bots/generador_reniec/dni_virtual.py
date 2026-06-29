@@ -82,7 +82,7 @@ async def _generate_dni_virtual(
                 if any(k in text.lower() for k in ["procesando", "espera", "buscando"]):
                     continue
                 if is_sin_resultados(text) and (str(dni) in text or message.reply_to_msg_id == sent_msg.id):
-                    raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
+                    raise SinResultadosError(text)
                 is_ours = (message.reply_to_msg_id == sent_msg.id) or (str(dni) in text)
                 is_album = target_grouped_id and message.grouped_id == target_grouped_id
                 if not is_ours and not is_album:

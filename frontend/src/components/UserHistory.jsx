@@ -5,21 +5,36 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParamState } from '../hooks/useSearchParamState';
 
-// Maps search_type to { icon, label, color, category }
 const TYPE_INFO = {
+    // RENIEC
     dni: { icon: 'badge', label: 'DNI Básico', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100/50 dark:bg-blue-900/30', border: 'border-blue-500', category: 'reniec' },
     dni_premium: { icon: 'verified_user', label: 'DNI Premium', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100/50 dark:bg-amber-900/30', border: 'border-amber-500', category: 'reniec' },
     name: { icon: 'person_search', label: 'Búsqueda Nombre', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100/50 dark:bg-purple-900/30', border: 'border-purple-500', category: 'reniec' },
+    // GENERADOR
     reniec_c4_azul: { icon: 'article', label: 'C4 Azul', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100/50 dark:bg-cyan-900/30', border: 'border-cyan-500', category: 'generador' },
     reniec_inscripcion: { icon: 'assignment', label: 'Inscripción', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100/50 dark:bg-cyan-900/30', border: 'border-cyan-500', category: 'generador' },
+    reniec_dni_electronico: { icon: 'contact_page', label: 'DNI Electrónico', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100/50 dark:bg-cyan-900/30', border: 'border-cyan-500', category: 'generador' },
     reniec_dni_azul: { icon: 'credit_card', label: 'DNI Azul Virtual', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100/50 dark:bg-sky-900/30', border: 'border-sky-500', category: 'generador' },
-    reniec_dni_amarillo: { icon: 'credit_card', label: 'DNI Amarillo', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100/50 dark:bg-yellow-900/30', border: 'border-yellow-500', category: 'generador' },
+    reniec_dni_amarillo: { icon: 'child_care', label: 'DNI Amarillo', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100/50 dark:bg-yellow-900/30', border: 'border-yellow-500', category: 'generador' },
+    // FAMILIARES
     familiares_pdf: { icon: 'family_restroom', label: 'Familiares PDF', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100/50 dark:bg-green-900/30', border: 'border-green-500', category: 'familiares' },
     familiares_texto: { icon: 'family_restroom', label: 'Familiares Texto', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100/50 dark:bg-emerald-900/30', border: 'border-emerald-500', category: 'familiares' },
+    familiares_arbol_visual: { icon: 'account_tree', label: 'Árbol Familiar', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100/50 dark:bg-emerald-900/30', border: 'border-emerald-500', category: 'familiares' },
+    // TELEFONOS
     telefono_numeros_dni: { icon: 'phone_in_talk', label: 'Números x DNI', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100/50 dark:bg-violet-900/30', border: 'border-violet-500', category: 'telefonos' },
     telefono_info_linea: { icon: 'sim_card', label: 'Info de Línea', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-100/50 dark:bg-indigo-900/30', border: 'border-indigo-500', category: 'telefonos' },
     telefono_verificador: { icon: 'wifi_calling', label: 'Operadora', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-500', category: 'telefonos' },
     telefono_titular: { icon: 'contact_phone', label: 'Titular Número', color: 'text-fuchsia-600 dark:text-fuchsia-400', bg: 'bg-fuchsia-100/50 dark:bg-fuchsia-900/30', border: 'border-fuchsia-500', category: 'telefonos' },
+    // DELITOS
+    penales_antpen: { icon: 'gavel', label: 'Penales', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100/50 dark:bg-red-900/30', border: 'border-red-500', category: 'delitos' },
+    judiciales_antjud: { icon: 'gavel', label: 'Judiciales', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100/50 dark:bg-red-900/30', border: 'border-red-500', category: 'delitos' },
+    policiales_antpol: { icon: 'local_police', label: 'Policiales', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100/50 dark:bg-red-900/30', border: 'border-red-500', category: 'delitos' },
+    delitos_nombres: { icon: 'person_search', label: 'Denuncias Nombres', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100/50 dark:bg-red-900/30', border: 'border-red-500', category: 'delitos' },
+    delitos_dni: { icon: 'badge', label: 'Denuncias DNI', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100/50 dark:bg-red-900/30', border: 'border-red-500', category: 'delitos' },
+    // VEHICULOS
+    record_vehicular: { icon: 'directions_car', label: 'Récord Vehicular', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100/50 dark:bg-orange-900/30', border: 'border-orange-500', category: 'vehiculos' },
+    // FACIAL
+    busqueda_facial: { icon: 'face_retouching_natural', label: 'Búsqueda Facial', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-100/50 dark:bg-pink-900/30', border: 'border-pink-500', category: 'facial' },
 };
 
 const CATEGORY_CLASSES = {
@@ -28,9 +43,16 @@ const CATEGORY_CLASSES = {
     generador: 'bg-cyan-600 border-cyan-600 text-white shadow-xl shadow-cyan-500/20',
     familiares: 'bg-green-600 border-green-600 text-white shadow-xl shadow-green-500/20',
     telefonos: 'bg-violet-600 border-violet-600 text-white shadow-xl shadow-violet-500/20',
+    delitos: 'bg-red-600 border-red-600 text-white shadow-xl shadow-red-500/20',
+    vehiculos: 'bg-orange-600 border-orange-600 text-white shadow-xl shadow-orange-500/20',
+    facial: 'bg-pink-600 border-pink-600 text-white shadow-xl shadow-pink-500/20',
 };
 
 function getTypeInfo(type) {
+    // Para capturar variantes dinámicas de delitos (ej. delitos_...)
+    if (type && type.startsWith('delitos_') && !TYPE_INFO[type]) {
+         return { icon: 'gavel', label: 'Denuncias ' + type.replace('delitos_', ''), color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100/50 dark:bg-red-900/30', border: 'border-red-500', category: 'delitos' };
+    }
     return TYPE_INFO[type] || { icon: 'search', label: type, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-500', category: 'otros' };
 }
 
@@ -40,6 +62,9 @@ const FILTERS = [
     { id: 'generador', label: 'Generador', icon: 'article' },
     { id: 'familiares', label: 'Familiares', icon: 'family_restroom' },
     { id: 'telefonos', label: 'Teléfonos', icon: 'phone_in_talk' },
+    { id: 'delitos', label: 'Delitos', icon: 'gavel' },
+    { id: 'vehiculos', label: 'Vehículos', icon: 'directions_car' },
+    { id: 'facial', label: 'Facial', icon: 'face_retouching_natural' },
 ];
 
 function HistoryList() {
@@ -257,9 +282,13 @@ function HistoryList() {
                                                     if (info.category === 'reniec') path = '/';
                                                     if (info.category === 'telefonos') path = '/telefono';
 
-                                                    const searchState = info.category === 'reniec'
-                                                        ? { autoSearch: item.search_term, type: item.search_type }
-                                                        : { autoDni: item.search_term, autoOption: item.search_type };
+                                                    let searchState = { autoDni: item.search_term, autoOption: item.search_type };
+                                                    if (info.category === 'reniec') {
+                                                        searchState = { autoSearch: item.search_term, type: item.search_type };
+                                                    } else if (info.category === 'facial') {
+                                                        searchState = { showUploadAlert: true };
+                                                    }
+                                                    
                                                     navigate(path, { state: searchState });
                                                 }}
                                                 aria-label={`Repetir consulta ${item.search_term}`}

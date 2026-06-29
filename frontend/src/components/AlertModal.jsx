@@ -36,8 +36,20 @@ export default function AlertModal({
         normalizedMessage.includes('no tienes créditos') ||
         normalizedMessage.includes('necesitas más créditos');
 
-    const config = TYPE_CONFIG[isInsufficientCredits ? 'insufficient_credits' : type] || TYPE_CONFIG.info;
-    const displayTitle = title || config.title;
+    const isBotError = normalizedMessage.includes('no se encontró') || 
+                       normalizedMessage.includes('sin resultados') || 
+                       normalizedMessage.includes('no hay resultados') || 
+                       normalizedMessage.includes('no existe') || 
+                       normalizedMessage.includes('❰❌❱') || 
+                       normalizedMessage.includes('❰⚠️❱') ||
+                       normalizedMessage.includes('error en el reconocimiento facial');
+
+    let resolvedType = type;
+    if (isInsufficientCredits) resolvedType = 'insufficient_credits';
+    else if (isBotError) resolvedType = 'warning';
+
+    const config = TYPE_CONFIG[resolvedType] || TYPE_CONFIG.info;
+    const displayTitle = title || (isBotError ? 'Búsqueda sin resultados' : config.title);
     const progress = autoClose ? Math.max(0, Math.min(100, (timeLeft / duration) * 100)) : 100;
     const secondsLeft = Math.ceil(timeLeft / 1000);
 

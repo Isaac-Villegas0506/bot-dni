@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import Modal from './ui/Modal';
 import { ModalButton, ModalCloseButton, ModalHeader, ModalSection } from './ui/ModalElements';
@@ -11,9 +11,45 @@ const getExpectedSeconds = (message) => {
     return 0;
 };
 
+// 4 etapas de carga con ~5 variantes aleatorias cada una
+const LOADING_PHRASES = {
+    stage1: [ // 0-3 segundos
+        "Estableciendo conexión segura...",
+        "Iniciando búsqueda en los registros...",
+        "Preparando motores de búsqueda...",
+        "Conectando con el servidor central...",
+        "Analizando parámetros de entrada..."
+    ],
+    stage2: [ // 3-8 segundos
+        "Consultando bases de datos gubernamentales...",
+        "Cruzando información en tiempo real...",
+        "Buscando coincidencias exactas...",
+        "Verificando identidad en el sistema...",
+        "Procesando grandes volúmenes de datos..."
+    ],
+    stage3: [ // 8-15 segundos
+        "Aún buscando... esto puede tomar un momento...",
+        "Recopilando antecedentes e historiales...",
+        "Filtrando resultados encontrados...",
+        "Validando la autenticidad de los datos...",
+        "Consolidando el reporte de información..."
+    ],
+    stage4: [ // > 15 segundos
+        "¡Casi listo! Dando formato al documento...",
+        "Optimizando imágenes y certificados...",
+        "Generando la vista final para ti...",
+        "La búsqueda está tardando un poco, por favor espera...",
+        "Ultimando detalles de tu consulta..."
+    ]
+};
+
+const getRandomPhrase = (stageArray) => stageArray[Math.floor(Math.random() * stageArray.length)];
+
 export default function ModalLoading({ loading, showDonation, onClose, customMessage = null }) {
     const [showQRViewer, setShowQRViewer] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [currentPhrase, setCurrentPhrase] = useState(LOADING_PHRASES.stage1[0]);
     const totalSeconds = getExpectedSeconds(customMessage);
 
     useEffect(() => {
@@ -42,6 +78,43 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
             clearTimeout(syncTimer);
         };
     }, [loading, totalSeconds]);
+
+    useEffect(() => {
+        let timer;
+        let phraseInterval;
+        
+        if (loading) {
+            setElapsedTime(0);
+            setCurrentPhrase(getRandomPhrase(LOADING_PHRASES.stage1));
+            
+            // Incrementar elapsed time cada segundo
+            timer = setInterval(() => {
+                setElapsedTime(prev => prev + 1);
+            }, 1000);
+
+            // Cambiar de frase aleatoriamente cada 2-3 segundos dentro de la etapa correspondiente
+            phraseInterval = setInterval(() => {
+                setElapsedTime((currentElapsed) => {
+                    let nextPhrase = '';
+                    if (currentElapsed < 3) nextPhrase = getRandomPhrase(LOADING_PHRASES.stage1);
+                    else if (currentElapsed < 8) nextPhrase = getRandomPhrase(LOADING_PHRASES.stage2);
+                    else if (currentElapsed < 15) nextPhrase = getRandomPhrase(LOADING_PHRASES.stage3);
+                    else nextPhrase = getRandomPhrase(LOADING_PHRASES.stage4);
+                    
+                    setCurrentPhrase(nextPhrase);
+                    return currentElapsed; // Keep same value, just needed it for closure
+                });
+            }, 2500);
+        } else {
+            setElapsedTime(0);
+            setCurrentPhrase(LOADING_PHRASES.stage1[0]);
+        }
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(phraseInterval);
+        };
+    }, [loading]);
 
     const openQRViewer = () => setShowQRViewer(true);
     const handleQRKeyDown = (event) => {
@@ -78,13 +151,26 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     )}
                                 </div>
 
-                                <ModalHeader
-                                    title={customMessage || 'Buscando datos...'}
-                                    description={timeLeft > 0 ? 'Procesando documentos pesados.' : 'Consultando bases de datos.'}
-                                    tone="info"
-                                    align="center"
-                                    reserveCloseSpace={false}
-                                />
+                                <div className="min-h-[80px] w-full flex flex-col items-center justify-center">
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={currentPhrase}
+                                            initial={{ opacity: 0, y: 5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -5 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="w-full"
+                                        >
+                                            <ModalHeader
+                                                title={customMessage || 'Buscando datos...'}
+                                                description={currentPhrase}
+                                                tone="info"
+                                                align="center"
+                                                reserveCloseSpace={false}
+                                            />
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </div>
 
                                 {timeLeft > 0 && (
                                     <div className="h-2 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800" aria-hidden="true">

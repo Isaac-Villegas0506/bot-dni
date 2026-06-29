@@ -543,12 +543,6 @@ class Database:
         try:
             cursor = self.conn.cursor()
             
-            # Logic:
-            # Grant N credits IF:
-            # - Credits = 0
-            # - Not Premium
-            # - (last_premium_search IS NULL OR last_premium_search < NOW() - 24h)
-            
             # Fetch the dynamic daily reward amount
             daily_reward_cost = await self.get_cost_for_option('daily_reward')
             daily_credits = daily_reward_cost if daily_reward_cost is not None else 5
@@ -563,6 +557,12 @@ class Database:
             """, (daily_credits, user_id))
             
             rows = cursor.rowcount
+            if rows > 0:
+                cursor.execute("""
+                    INSERT INTO credit_log (user_id, amount, reason, admin_email)
+                    VALUES (%s, %s, %s, %s)
+                """, (user_id, daily_credits, "Bono recarga 24h", "sistema"))
+            
             self.conn.commit()
             cursor.close()
             return rows > 0
@@ -648,6 +648,52 @@ class Database:
             cursor.close()
             return True
         except: return False
+
+    async def remove_credits(self, user_id, amount):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("UPDATE users SET credits = GREATEST(0, credits - %s) WHERE id = %s", (amount, user_id))
+            self.conn.commit()
+            cursor.close()
+            return True
+        except: return False
+
+    async def log_credit_change(self, user_id, amount, reason, admin_email='sistema'):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                INSERT INTO credit_log (user_id, amount, reason, admin_email)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, amount, reason, admin_email))
+            self.conn.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(f"Error log_credit_change: {e}")
+            return False
+
+    async def get_credit_log(self, user_id, limit=50):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("""
+                SELECT id, amount, reason, admin_email, created_at
+                FROM credit_log
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+            """, (user_id, limit))
+            res = cursor.fetchall()
+            cursor.close()
+            for r in res:
+                if isinstance(r['created_at'], datetime):
+                    r['created_at'] = r['created_at'].isoformat()
+            return res
+        except Exception as e:
+            print(f"Error get_credit_log: {e}")
+            return []
 
     async def get_user_by_email(self, email):
         await self._ensure_connection()
@@ -804,6 +850,19 @@ class Database:
             cursor.execute("UPDATE users SET referred_by = %s WHERE id = %s", (referrer['id'], new_user_id))
             cursor.execute("UPDATE users SET credits = credits + 15 WHERE id = %s", (referrer['id'],))
             cursor.execute("UPDATE users SET credits = credits + 10 WHERE id = %s", (new_user_id,))
+            
+            # Log for referrer
+            cursor.execute("""
+                INSERT INTO credit_log (user_id, amount, reason, admin_email)
+                VALUES (%s, %s, %s, %s)
+            """, (referrer['id'], 15, f"Bono por referir usuario", "sistema"))
+            
+            # Log for referred user
+            cursor.execute("""
+                INSERT INTO credit_log (user_id, amount, reason, admin_email)
+                VALUES (%s, %s, %s, %s)
+            """, (new_user_id, 10, f"Bono por usar código de referido", "sistema"))
+            
             self.conn.commit()
             cursor.close()
             
@@ -1282,23 +1341,7 @@ class Database:
         except Exception as e:
             print(f"Error log_credit_change: {e}")
 
-    async def get_credit_log(self, user_id, limit=30):
-        """Returns credit change log for a user."""
-        await self._ensure_connection()
-        try:
-            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("""
-                SELECT amount, reason, admin_email, created_at
-                FROM credit_log WHERE user_id = %s
-                ORDER BY created_at DESC LIMIT %s
-            """, (user_id, limit))
-            rows = cursor.fetchall()
-            cursor.close()
-            for r in rows:
-                if hasattr(r.get('created_at'), 'strftime'):
-                    r['created_at'] = r['created_at'].strftime("%Y-%m-%d %H:%M:%S")
-            return rows
-        except: return []
+
 
     async def remove_credits(self, user_id, amount):
         """Subtract credits from user (clamp at 0)."""
@@ -1373,6 +1416,30 @@ class Database:
             cursor.close()
             if not user:
                 return None
+
+            # Auto-revoke expired unlimited plan
+            if user.get('unlimited_until') and not user.get('is_premium'):
+                unlimited_until = user['unlimited_until']
+                if hasattr(unlimited_until, 'tzinfo') and unlimited_until.tzinfo is None:
+                    unlimited_until = unlimited_until.replace(tzinfo=None)
+                if unlimited_until <= datetime.utcnow():
+                    try:
+                        exp_cursor = self.conn.cursor()
+                        exp_cursor.execute(
+                            "UPDATE users SET unlimited_until = NULL, unlimited_started_at = NULL WHERE id = %s",
+                            (user_id,)
+                        )
+                        exp_cursor.execute(
+                            "INSERT INTO credit_log (user_id, amount, reason, admin_email) VALUES (%s, %s, %s, %s)",
+                            (user_id, 0, "Plan ilimitado vencido — acceso revocado", "sistema")
+                        )
+                        self.conn.commit()
+                        exp_cursor.close()
+                        user['unlimited_until'] = None
+                        user['unlimited_started_at'] = None
+                    except Exception as ex:
+                        print(f"Error revoking expired unlimited (detail): {ex}")
+
             for f in ('last_login', 'created_at', 'unlimited_until', 'unlimited_started_at'):
                 if isinstance(user.get(f), datetime):
                     user[f] = user[f].strftime("%Y-%m-%d %H:%M:%S")
@@ -1450,11 +1517,32 @@ class Database:
             cursor.close()
             if not user:
                 return False, 0
-            # Permanent premium OR active timed unlimited
+            # Permanent premium
             if user['is_premium']:
                 return True, -1  # -1 signals unlimited
-            if user.get('unlimited_until') and user['unlimited_until'] > datetime.utcnow():
-                return True, -1
+            # Timed unlimited: check if still active
+            if user.get('unlimited_until'):
+                unlimited_until = user['unlimited_until']
+                if unlimited_until.tzinfo is None:
+                    unlimited_until = unlimited_until.replace(tzinfo=None)
+                if unlimited_until > datetime.utcnow():
+                    return True, -1
+                else:
+                    # Expired: revoke it automatically
+                    try:
+                        exp_cursor = self.conn.cursor()
+                        exp_cursor.execute(
+                            "UPDATE users SET unlimited_until = NULL, unlimited_started_at = NULL WHERE id = %s",
+                            (user_id,)
+                        )
+                        exp_cursor.execute(
+                            "INSERT INTO credit_log (user_id, amount, reason, admin_email) VALUES (%s, %s, %s, %s)",
+                            (user_id, 0, "Plan ilimitado vencido — acceso revocado", "sistema")
+                        )
+                        self.conn.commit()
+                        exp_cursor.close()
+                    except Exception as e:
+                        print(f"Error revoking expired unlimited: {e}")
             credits = user.get('credits', 0)
             return credits >= required_cost, credits
         except Exception as e:
@@ -1554,8 +1642,13 @@ class Database:
                 "WHERE id = %s AND credits >= %s",
                 (amount, user_id, amount)
             )
-            self.conn.commit()
             ok = cursor.rowcount > 0
+            if ok:
+                cursor.execute(
+                    "INSERT INTO credit_log (user_id, amount, reason, admin_email) VALUES (%s, %s, %s, %s)",
+                    (user_id, -amount, "Consumo por búsqueda", "sistema")
+                )
+            self.conn.commit()
             cursor.close()
             return ok
         except Exception as e:

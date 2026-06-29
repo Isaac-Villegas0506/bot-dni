@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import { getApiUrl } from '../utils/api';
 import { useCreditCosts } from '../hooks/useCredits';
 import PdfViewer from '../components/PdfViewer';
 import UploadGuidelinesModal from '../components/UploadGuidelinesModal';
+import AlertModal from '../components/AlertModal';
 import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
 
 export default function Facial() {
+    const location = useLocation();
     const { user, token, refreshUser, openLoginModal } = useAuth();
     const { showLoading, hideLoading } = useLoading();
     const { getCost, loading: costsLoading } = useCreditCosts();
     const cost = getCost('busqueda_facial', 3);
     
     const [selectedFile, setSelectedFile] = useState(null);
+    const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
     const [previewUrl, setPreviewUrl] = useState(null);
     const [resultData, setResultData] = useState(null);
     const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
@@ -28,6 +32,13 @@ export default function Facial() {
     // Guidelines Modal States
     const [showGuidelines, setShowGuidelines] = useState(false);
     const [hasSeenGuidelines, setHasSeenGuidelines] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.showUploadAlert) {
+            toast.info("Por favor, sube la imagen nuevamente para repetir la búsqueda facial.");
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     useEffect(() => {
         let timer;
@@ -170,7 +181,9 @@ export default function Facial() {
                 if (res.status === 402) {
                     throw new Error("Créditos insuficientes. Recarga en la tienda.");
                 }
-                throw new Error(data.detail || "Error al buscar el rostro");
+                const err = new Error(data.detail || "Error al buscar el rostro");
+                err.status = res.status;
+                throw err;
             }
 
             setResultData(data.data);
@@ -179,7 +192,11 @@ export default function Facial() {
 
         } catch (error) {
             console.error(error);
-            toast.error(error.message);
+            if (error.status === 404 || error.status === 400 || error.message.includes('Créditos insuficientes')) {
+                setAlert({ isOpen: true, type: 'error', message: error.message });
+            } else {
+                toast.error(error.message);
+            }
         } finally {
             hideLoading();
         }
@@ -193,10 +210,8 @@ export default function Facial() {
 
         lines.forEach(line => {
             const trimmed = line.trim();
-            // Old format match example: • 1 ➣ 22482972 「38.2%」
             const titleMatch = trimmed.match(/•\s*\d+\s*[➣➤>]\s*(\d+)\s*「([\d.]+%?)」/);
             
-            // New format starts with MEJOR MATCH
             if (trimmed.startsWith('MEJOR MATCH')) {
                 if (currentMatch) matches.push(currentMatch);
                 currentMatch = {
@@ -238,6 +253,15 @@ export default function Facial() {
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
             
+            <AlertModal
+                isOpen={alert.isOpen}
+                onClose={() => setAlert({ ...alert, isOpen: false })}
+                type={alert.type}
+                message={alert.message}
+                autoClose={true}
+                duration={15000}
+            />
+
             {/* Header / Title */}
             <div className="text-center mb-8 relative">
                 <div className="inline-block relative">

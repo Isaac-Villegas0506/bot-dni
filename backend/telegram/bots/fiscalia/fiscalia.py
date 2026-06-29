@@ -87,9 +87,7 @@ async def query_fiscalia(
                 continue
 
             if is_sin_resultados(text):
-                raise SinResultadosError(
-                    "「❌️」Sin Resultados. Verifique los datos e intente nuevamente."
-                )
+                raise SinResultadosError(text)
 
             is_our = message.reply_to_msg_id == sent_msg.id
             if not is_our:

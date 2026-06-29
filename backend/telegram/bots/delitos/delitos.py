@@ -96,7 +96,7 @@ async def query_delitos(
                     "sin denuncias" in text.lower()
                 )
                 if no_results:
-                    raise SinResultadosError("No se encontraron denuncias para esta búsqueda en el sistema.")
+                    raise SinResultadosError(text)
 
                 seen_ids.add(message.id)
 

@@ -6,6 +6,7 @@ venv/
 .venv/
 backend/anon.session
 backend/anon.session-journal
+.pytest_cache/
 
 # Node / React
 node_modules/
@@ -21,6 +22,7 @@ backend/serviceAccountKey.json
 # Sensitive local quarantine / generated private artifacts
 _quarantine_sensitive/
 backend/backend.log
+backend.log
 backend/bot.db
 backend/static/docs/
 backend/static/images/
@@ -32,6 +34,13 @@ frontend/public/guidelines/*
 !frontend/public/guidelines/tercera-imagen-correcta.png
 frontend/public/payments/receipts/*
 !frontend/public/payments/receipts/placeholder.jpg
+
+# Scripts de pruebas y fixes temporales
+test_*.py
+fix_*.py
+patch_*.py
+AUDITORIA_*.md
+REPORTE_*.md
 
 # Otros
 .DS_Store
