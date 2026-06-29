@@ -72,7 +72,7 @@ async def query_record(client, target: str, static_base_dir: Path) -> dict:
                 break
 
             if is_sin_resultados(text):
-                raise SinResultadosError("「❌️」Sin Resultados. Verifique los datos e intente nuevamente.")
+                raise SinResultadosError(text)
 
             if any(k in text.lower() for k in ["procesando", "buscando", "cargando", "analizando", "espere", "moment"]):
                 continue

@@ -69,7 +69,7 @@ async def generate_antecedentes(
                 if any(k in text.lower() for k in ["procesando", "espere", "buscando"]):
                     continue
                 if is_sin_resultados(text):
-                    raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
+                    raise SinResultadosError(text)
                 is_valid_doc = False
                 if message.media:
                     fname = message.file.name if message.file and message.file.name else ""

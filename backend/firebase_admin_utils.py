@@ -1,19 +1,23 @@
-
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, storage
 import os
 import json
+import uuid
 
 def init_firebase_admin():
     try:
         if not firebase_admin._apps:
+            bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", "")
+            
             # 1. Intentar leer desde variable de entorno (Render Environment Variable)
             env_cred = os.getenv("FIREBASE_CREDENTIALS")
             if env_cred:
                 import json
                 cred_dict = json.loads(env_cred)
                 cred = credentials.Certificate(cred_dict)
-                firebase_admin.initialize_app(cred)
+                firebase_admin.initialize_app(cred, {
+                    'storageBucket': bucket_name
+                } if bucket_name else None)
                 print("Firebase Admin SDK initialized successfully from ENV.")
                 return
 
@@ -27,7 +31,9 @@ def init_firebase_admin():
             for cred_path in paths_to_check:
                 if os.path.exists(cred_path):
                     cred = credentials.Certificate(cred_path)
-                    firebase_admin.initialize_app(cred)
+                    firebase_admin.initialize_app(cred, {
+                        'storageBucket': bucket_name
+                    } if bucket_name else None)
                     print(f"Firebase Admin SDK initialized from {cred_path}")
                     return
             
@@ -47,3 +53,33 @@ def generate_email_verification_link(email):
     except Exception as e:
         print(f"Error generating link: {e}")
         return None
+
+def upload_receipt_to_firebase(content: bytes, filename: str, content_type: str) -> str:
+    """Subee el comprobante a Firebase Storage y retorna la URL pública."""
+    try:
+        if not firebase_admin._apps:
+            print("Firebase Admin no inicializado. No se puede subir.")
+            return None
+            
+        bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET")
+        if not bucket_name:
+            print("FIREBASE_STORAGE_BUCKET no configurado en entorno.")
+            return None
+
+        bucket = storage.bucket()
+        blob = bucket.blob(f"receipts/{filename}")
+        
+        # Generar token aleatorio para que sea accesible públicamente sin Firebase Auth del cliente
+        token = str(uuid.uuid4())
+        metadata = {"firebaseStorageDownloadTokens": token}
+        
+        blob.metadata = metadata
+        blob.upload_from_string(content, content_type=content_type)
+        
+        # Construir URL pública
+        url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/receipts%2F{filename}?alt=media&token={token}"
+        return url
+    except Exception as e:
+        print(f"Error subiendo a Firebase Storage: {e}")
+        return None
+

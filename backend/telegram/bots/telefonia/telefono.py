@@ -52,7 +52,7 @@ async def query_telx(client, dni: str) -> dict:
                         continue
                     if is_sin_resultados(text):
                         seen_ids.add(message.id)
-                        raise SinResultadosError("「❌️」Sin Resultados. Verifique los datos e intente nuevamente.")
+                        raise SinResultadosError(text)
                     if dni in text and ("error" in text.lower() or "no encontrado" in text.lower()):
                         seen_ids.add(message.id)
                         raise Exception("Ocurrió un error al procesar la consulta.")
@@ -142,7 +142,7 @@ async def query_telp(client, phone: str, target_group: int, target_bot_id: int) 
                 break
 
             if is_sin_resultados(text):
-                raise SinResultadosError("「❌️」Sin Resultados. Verifique los datos e intente nuevamente.")
+                raise SinResultadosError(text)
 
             if any(k in text.lower() for k in ["procesando", "buscando", "cargando", "analizando"]):
                 continue
@@ -207,7 +207,7 @@ async def query_cel(client, phone: str) -> dict:
                 continue
             if is_sin_resultados(text):
                 seen_ids.add(message.id)
-                raise SinResultadosError("「❌️」Sin Resultados. Verifique los datos e intente nuevamente.")
+                raise SinResultadosError(text)
             text_upper = text.upper()
             is_valid = (
                 "KING DATA" in text_upper or "SHIELDGRAM DB" in text_upper or

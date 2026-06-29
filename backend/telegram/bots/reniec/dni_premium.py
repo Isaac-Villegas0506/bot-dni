@@ -88,7 +88,7 @@ async def query_dni_premium(
             text = _clean_bot_text(text)
 
             if is_sin_resultados(text):
-                raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
+                raise SinResultadosError(text)
 
             if "ANTI-SPAM" in text or "Espere" in text:
                 wait_time = 15
@@ -103,7 +103,7 @@ async def query_dni_premium(
                 continue
 
             if "no encontrado" in text.lower():
-                raise SinResultadosError("No se encontraron resultados.")
+                raise SinResultadosError(text)
 
             data = parse_bot_response(text)
             media_msgs = [m for m in found_msgs if m.media]

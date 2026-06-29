@@ -1,5 +1,6 @@
 import { useSettings } from '../context/settingsContextValue';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import HelpModal from './HelpModal';
@@ -125,6 +126,9 @@ export default function Vehiculos() {
     }
   ];
 
+  const location = useLocation();
+  const hasAutoTriggered = useRef(false);
+
   useEffect(() => {
     let timer;
     if (showExitModal && exitCountDown > 0) {
@@ -132,6 +136,27 @@ export default function Vehiculos() {
     }
     return () => clearTimeout(timer);
   }, [showExitModal, exitCountDown]);
+
+  useEffect(() => {
+    if (location.state?.autoDni && location.state?.autoOption && !hasAutoTriggered.current) {
+      const opt = options.find(o => o.id === location.state.autoOption);
+      if (opt) {
+        hasAutoTriggered.current = true;
+        setSelectedOption(opt);
+        setTargetId(location.state.autoDni);
+      }
+    }
+  }, [location.state, options]);
+
+  useEffect(() => {
+    if (hasAutoTriggered.current && selectedOption && targetId && view === 'selection') {
+      const isDni = /^\d{8}$/.test(targetId);
+      if (isDni) {
+        handleGenerate(targetId);
+        hasAutoTriggered.current = false;
+      }
+    }
+  }, [selectedOption, targetId, view]);
 
   const openHelp = (e, opt) => {
     e.stopPropagation();

@@ -50,7 +50,7 @@ async def _generate_c4(
                 if "procesando" in text.lower() or "espere" in text.lower():
                     continue
                 if is_sin_resultados(text) and str(dni) in text:
-                    raise SinResultadosError("No se encontraron resultados para los datos ingresados.")
+                    raise SinResultadosError(text)
                 if ("C4" in text.upper() or "ᴄ𝟺" in text) and str(dni) in text:
                     found_msg = message
                     break

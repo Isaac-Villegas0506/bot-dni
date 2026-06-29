@@ -431,6 +431,33 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Error updating daily credits: {e}")
 
+    # Auto-revoke expired unlimited plan
+    try:
+        unlimited_until_raw = current_user.get('unlimited_until')
+        if unlimited_until_raw and not current_user.get('is_premium'):
+            from datetime import datetime as dt
+            if isinstance(unlimited_until_raw, str):
+                unlimited_until = dt.fromisoformat(unlimited_until_raw.replace('Z', ''))
+            else:
+                unlimited_until = unlimited_until_raw
+            if unlimited_until <= dt.utcnow():
+                await db._ensure_connection()
+                cur = db.conn.cursor()
+                cur.execute(
+                    "UPDATE users SET unlimited_until = NULL, unlimited_started_at = NULL WHERE id = %s",
+                    (current_user['id'],)
+                )
+                cur.execute(
+                    "INSERT INTO credit_log (user_id, amount, reason, admin_email) VALUES (%s, %s, %s, %s)",
+                    (current_user['id'], 0, "Plan ilimitado vencido — acceso revocado", "sistema")
+                )
+                db.conn.commit()
+                cur.close()
+                current_user['unlimited_until'] = None
+                current_user['unlimited_started_at'] = None
+    except Exception as e:
+        logger.error(f"Error auto-revoking expired plan: {e}")
+
     current_user.pop('password_hash', None)
     return current_user
 
@@ -1679,10 +1706,35 @@ async def create_purchase(
     # Save receipt image
     content, file_extension = await read_limited_image_upload(receipt, "El comprobante")
     filename = f"{uuid.uuid4().hex}.{file_extension}"
-    dest = RECEIPTS_DIR / filename
-    with dest.open('wb') as f:
-        f.write(content)
-    receipt_url = f"/api/static/receipts/{filename}"
+    
+    # Intentar subir a ImgBB primero
+    receipt_url = None
+    imgbb_key = os.getenv("IMGBB_API_KEY")
+    if imgbb_key:
+        import base64
+        try:
+            b64_image = base64.b64encode(content).decode('utf-8')
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    "https://api.imgbb.com/1/upload",
+                    data={"key": imgbb_key, "image": b64_image, "name": filename}
+                )
+                res_data = res.json()
+                if res.status_code == 200 and res_data.get("success"):
+                    receipt_url = res_data["data"]["url"]
+                    logger.info(f"Imagen subida a ImgBB: {receipt_url}")
+                else:
+                    logger.error(f"Error subiendo a ImgBB: {res_data}")
+        except Exception as e:
+            logger.error(f"Excepción subiendo a ImgBB: {e}")
+    
+    if not receipt_url:
+        # Fallback local
+        dest = RECEIPTS_DIR / filename
+        with dest.open('wb') as f:
+            f.write(content)
+        receipt_url = f"/api/static/receipts/{filename}"
+
 
     purchase_id = await db.create_credit_purchase(
         user_id=current_user['id'],
@@ -1795,11 +1847,18 @@ async def approve_purchase(purchase_id: int, admin: dict = Depends(get_current_a
         
     # Send email notification to the user asynchronously
     if purchase and purchase.get('email'):
-        asyncio.create_task(send_purchase_approved_email(
-            to_email=purchase['email'],
-            plan_name=purchase.get('plan_label', 'Paquete de Créditos'),
-            is_premium=bool(purchase.get('is_premium_plan', False) or purchase.get('unlimited_days'))
-        ))
+        if purchase.get('amount_soles') == 1 or purchase.get('plan_key') == 'cr_promo_1sol':
+            from email_utils import send_promo_purchase_email
+            asyncio.create_task(send_promo_purchase_email(
+                to_email=purchase['email'],
+                amount_soles=purchase.get('amount_soles', 1)
+            ))
+        else:
+            asyncio.create_task(send_purchase_approved_email(
+                to_email=purchase['email'],
+                plan_name=purchase.get('plan_label', 'Paquete de Créditos'),
+                is_premium=bool(purchase.get('is_premium_plan', False) or purchase.get('unlimited_days'))
+            ))
         
     return {"ok": True, "message": msg}
 

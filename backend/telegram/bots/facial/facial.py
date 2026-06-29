@@ -73,12 +73,10 @@ async def generate_facial(client, file_path: str, static_base_dir: Path) -> dict
                     break
 
                 if is_sin_resultados(text):
-                    raise SinResultadosError("No se encontraron coincidencias faciales en la base de datos.")
+                    raise SinResultadosError(text)
 
                 if "no se recibió el reporte pdf" in text.lower() or "no se recibio el reporte pdf" in text.lower():
-                    raise SinResultadosError(
-                        "❰⚠️❱ No se recibió el reporte PDF. Verifique la imagen y busque otra mejor donde se pueda reconocer claramente a la persona."
-                    )
+                    raise SinResultadosError(text)
 
                 if "error" in text.lower() or "no encontrado" in text.lower():
                     raise Exception("Ocurrió un error al procesar la imagen facial. Intenta nuevamente.")

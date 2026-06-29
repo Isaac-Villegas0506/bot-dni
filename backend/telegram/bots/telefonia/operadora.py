@@ -72,9 +72,7 @@ async def query_operadora(client, client2, phone: str) -> dict:
                     break
 
                 if is_sin_resultados(text):
-                    raise SinResultadosError(
-                        "No se encontró información para este número. Verifique el número e intente nuevamente."
-                    )
+                    raise SinResultadosError(text)
 
                 if any(k in text.lower() for k in _WAIT_KWS):
                     await asyncio.sleep(2)
@@ -125,6 +123,4 @@ async def query_operadora(client, client2, phone: str) -> dict:
 
     if last_err and "POR FAVOR ESPERA" in str(last_err):
         raise Exception(last_err)
-    raise SinResultadosError(
-        "No se encontró información para este número. Verifique el número e intente nuevamente."
-    )
+    raise SinResultadosError(text)

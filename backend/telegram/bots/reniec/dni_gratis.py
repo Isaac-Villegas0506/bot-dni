@@ -79,9 +79,7 @@ async def query_dni_gratis(
                     continue
 
                 if is_sin_resultados(text):
-                    raise SinResultadosError(
-                        f"No se encontraron datos para el DNI {dni}. Verifica el número e intenta nuevamente."
-                    )
+                    raise SinResultadosError(text)
 
                 text_upper = text.upper()
                 has_data = any(k in text_upper for k in ["NOMBRES", "APELLIDOS", "DOCUMENTO", "FECHA", "DIRECCION", "DISTRITO"])
@@ -93,7 +91,7 @@ async def query_dni_gratis(
                         ("DOCUMENTO" in text_upper and "NONE" in text_upper)
                     )
                     if is_na:
-                        raise SinResultadosError(f"No se encontraron datos para el DNI {dni}. Verifica el número e intenta nuevamente.")
+                        raise SinResultadosError(text)
 
                     img_path = None
                     if msg.media:
