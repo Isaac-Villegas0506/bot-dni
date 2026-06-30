@@ -7,6 +7,7 @@ import { LoadingProvider } from './context/LoadingContext'
 import { SettingsProvider } from './context/SettingsContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
+import { Analytics } from '@vercel/analytics/react'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')).render(
             <SettingsProvider>
               <Toaster position="top-right" richColors closeButton theme="system" />
               <App />
+              <Analytics />
             </SettingsProvider>
           </LoadingProvider>
         </AuthProvider>
