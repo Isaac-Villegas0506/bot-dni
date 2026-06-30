@@ -66,7 +66,7 @@ export default function App() {
         openLoginModal, openRegisterModal,
     } = useAuth();
 
-    const { loading, message, showDonation, closeDonation } = useLoading();
+    const { loading, message, loadingType, showDonation, closeDonation } = useLoading();
     const { notifications, markAsRead } = useNotifications();
 
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
@@ -196,6 +196,7 @@ export default function App() {
                 <ModalLoading 
                     loading={loading} 
                     customMessage={message} 
+                    loadingType={loadingType}
                     showDonation={showDonation} 
                     onClose={closeDonation} 
                 />,

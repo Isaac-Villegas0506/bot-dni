@@ -1559,7 +1559,7 @@ export default function TelefonoDNI() {
   const handleSubmitNumerosDNI = useCallback(async (dni) => {
     if (!user) { openLoginModal(); return; }
     setActiveModal(null);
-    showLoading();
+    showLoading(null, 'telefonos');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -1603,7 +1603,7 @@ export default function TelefonoDNI() {
   const handleSubmitInfoLinea = useCallback(async (phone) => {
     if (!user) { openLoginModal(); return; }
     setActiveModal(null);
-    showLoading();
+    showLoading(null, 'telefonos');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -1649,7 +1649,7 @@ export default function TelefonoDNI() {
   const handleSubmitVerificador = useCallback(async (phone) => {
     if (!user) { openLoginModal(); return; }
     setActiveModal(null);
-    showLoading();
+    showLoading(null, 'telefonos');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -1682,7 +1682,7 @@ export default function TelefonoDNI() {
   const handleSubmitTitular = useCallback(async (phone) => {
     if (!user) { openLoginModal(); return; }
     setActiveModal(null);
-    showLoading();
+    showLoading(null, 'telefonos');
     try {
       const token = localStorage.getItem('token');
       if (!token) {

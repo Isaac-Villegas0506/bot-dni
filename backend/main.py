@@ -787,6 +787,38 @@ async def submit_promo_request(req: PromoRequestCreate, user: dict = Depends(get
     if not user: raise HTTPException(401, "No autenticado")
     success = await db.create_promo_request(user['id'], req.tiktok_username, req.video_url)
     if not success: raise HTTPException(500, "Error al enviar la solicitud")
+    
+    # Enviar correo a los administradores
+    admin_emails = await db.get_admin_emails()
+    configured_admin_emails = [
+        email.strip()
+        for email in os.getenv("ADMIN_NOTIFICATION_EMAILS", "").split(",")
+        if email.strip()
+    ]
+    for email in configured_admin_emails:
+        if email not in admin_emails:
+            admin_emails.append(email)
+            
+    if admin_emails:
+        purchase_details = {
+            'user_email': user.get('email', 'Desconocido'),
+            'plan_label': 'Promo TikTok',
+            'amount_soles': 0.0,
+            'payment_method': 'TikTok',
+            'purchase_id': 'Solicitud Promo'
+        }
+        for email in admin_emails:
+            asyncio.create_task(send_purchase_notification_email(email, purchase_details))
+            
+    # Enviar correo al usuario
+    user_email = user.get('email')
+    if user_email:
+        asyncio.create_task(send_purchase_received_email(
+            to_email=user_email,
+            plan_name='Promo TikTok',
+            amount_soles='0.0'
+        ))
+
     return {"message": "Solicitud enviada correctamente"}
 
 @app.get("/api/admin/promos")

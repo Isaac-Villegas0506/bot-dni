@@ -139,7 +139,7 @@ export default function CertificadosPoliciales() {
     }
 
     setShowInputModal(false);
-    showLoading();
+    showLoading(null, 'policiales');
 
     try {
       const token = localStorage.getItem('token');

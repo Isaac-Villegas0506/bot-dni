@@ -37,7 +37,7 @@ export function useSearch() {
     }, [nameResults]);
 
     const searchDirectDni = async (dniVal, type = 'basic', captchaToken = null) => {
-        showLoading();
+        showLoading(null, 'reniec');
         try {
             const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
             if (captchaToken) headers['X-Turnstile-Token'] = captchaToken;
@@ -69,7 +69,7 @@ export function useSearch() {
     };
 
     const searchByName = async (n, apP, apM, captchaToken = null) => {
-        showLoading();
+        showLoading(null, 'reniec');
         setSearchMode('name');
         setTotalResults(0);
         try {

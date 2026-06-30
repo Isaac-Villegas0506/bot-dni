@@ -141,9 +141,9 @@ export default function GeneratorReniec() {
 
     // Custom loading for Arbol (50s countdown)
     if (selectedOption.id === 'arbol') {
-      showLoading("Generando Árbol Genealógico... (Aprox. 50s)");
+      showLoading("Generando Árbol Genealógico... (Aprox. 50s)", 'reniec');
     } else {
-      showLoading();
+      showLoading(null, 'reniec');
     }
 
     try {

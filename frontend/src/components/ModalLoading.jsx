@@ -4,53 +4,104 @@ import Modal from './ui/Modal';
 import { ModalButton, ModalCloseButton, ModalHeader, ModalSection } from './ui/ModalElements';
 import { Z_INDEX } from '../lib/zIndex';
 
-const getExpectedSeconds = (message) => {
+const getExpectedSeconds = (type, message) => {
+    if (type === 'reniec') return 20;
+    if (type === 'fiscalia') return 30;
+    if (type === 'policiales' || type === 'judiciales' || type === 'penales') return 25;
+    if (type === 'vehiculos') return 15;
+    if (type === 'telefonos') return 15;
+
     if (!message) return 0;
     if (message.includes('120s')) return 120;
     if (message.includes('50s')) return 50;
-    return 0;
+    return 15;
 };
 
 // 4 etapas de carga con ~5 variantes aleatorias cada una
-const LOADING_PHRASES = {
-    stage1: [ // 0-3 segundos
-        "Estableciendo conexión segura...",
-        "Iniciando búsqueda en los registros...",
-        "Preparando motores de búsqueda...",
-        "Conectando con el servidor central...",
-        "Analizando parámetros de entrada..."
-    ],
-    stage2: [ // 3-8 segundos
-        "Consultando bases de datos gubernamentales...",
-        "Cruzando información en tiempo real...",
-        "Buscando coincidencias exactas...",
-        "Verificando identidad en el sistema...",
-        "Procesando grandes volúmenes de datos..."
-    ],
-    stage3: [ // 8-15 segundos
-        "Aún buscando... esto puede tomar un momento...",
-        "Recopilando antecedentes e historiales...",
-        "Filtrando resultados encontrados...",
-        "Validando la autenticidad de los datos...",
-        "Consolidando el reporte de información..."
-    ],
-    stage4: [ // > 15 segundos
-        "¡Casi listo! Dando formato al documento...",
-        "Optimizando imágenes y certificados...",
-        "Generando la vista final para ti...",
-        "La búsqueda está tardando un poco, por favor espera...",
-        "Ultimando detalles de tu consulta..."
-    ]
+const ALL_LOADING_PHRASES = {
+    default: {
+        stage1: [ // 0-3 segundos
+            "Estableciendo conexión segura...",
+            "Iniciando búsqueda en los registros...",
+            "Preparando motores de búsqueda...",
+            "Conectando con el servidor central...",
+            "Analizando parámetros de entrada..."
+        ],
+        stage2: [ // 3-8 segundos
+            "Consultando bases de datos gubernamentales...",
+            "Cruzando información en tiempo real...",
+            "Buscando coincidencias exactas...",
+            "Verificando identidad en el sistema...",
+            "Procesando grandes volúmenes de datos..."
+        ],
+        stage3: [ // 8-15 segundos
+            "Aún buscando... esto puede tomar un momento...",
+            "Recopilando antecedentes e historiales...",
+            "Filtrando resultados encontrados...",
+            "Validando la autenticidad de los datos...",
+            "Consolidando el reporte de información..."
+        ],
+        stage4: [ // > 15 segundos
+            "¡Casi listo! Dando formato al documento...",
+            "Optimizando imágenes y certificados...",
+            "Generando la vista final para ti...",
+            "La búsqueda está tardando un poco, por favor espera...",
+            "Ultimando detalles de tu consulta..."
+        ]
+    },
+    reniec: {
+        stage1: ["Conectando con RENIEC...", "Estableciendo conexión segura..."],
+        stage2: ["Consultando padrón nacional...", "Verificando identidad..."],
+        stage3: ["Cruzando datos biométricos...", "Recopilando información..."],
+        stage4: ["Generando ficha RENIEC...", "Aún buscando... esto puede tomar un momento..."]
+    },
+    fiscalia: {
+        stage1: ["Conectando con el Ministerio Público...", "Iniciando búsqueda de casos..."],
+        stage2: ["Buscando antecedentes y denuncias...", "Consultando registros fiscales..."],
+        stage3: ["Filtrando casos fiscales...", "Recopilando historiales..."],
+        stage4: ["Consolidando reporte fiscal...", "Procesando documento..."]
+    },
+    policiales: {
+        stage1: ["Conectando con la PNP...", "Estableciendo conexión..."],
+        stage2: ["Consultando antecedentes policiales...", "Verificando base de datos PNP..."],
+        stage3: ["Verificando requisitorias...", "Cruzando información..."],
+        stage4: ["Generando certificado policial...", "Dando formato al documento..."]
+    },
+    judiciales: {
+        stage1: ["Conectando con el Poder Judicial...", "Estableciendo conexión..."],
+        stage2: ["Consultando antecedentes judiciales...", "Verificando registros..."],
+        stage3: ["Verificando condenas...", "Cruzando información..."],
+        stage4: ["Generando certificado judicial...", "Dando formato al documento..."]
+    },
+    penales: {
+        stage1: ["Conectando con el INPE...", "Conectando con el Poder Judicial..."],
+        stage2: ["Consultando antecedentes penales...", "Verificando registros..."],
+        stage3: ["Verificando registros penitenciarios...", "Cruzando información..."],
+        stage4: ["Generando certificado penal...", "Dando formato al documento..."]
+    },
+    vehiculos: {
+        stage1: ["Conectando con SUNARP y MTC...", "Preparando consulta..."],
+        stage2: ["Consultando registro vehicular...", "Buscando placa..."],
+        stage3: ["Verificando papeletas y SOAT...", "Recopilando historial..."],
+        stage4: ["Consolidando información del vehículo...", "Generando reporte..."]
+    },
+    telefonos: {
+        stage1: ["Conectando con operadoras de telecomunicaciones...", "Iniciando consulta..."],
+        stage2: ["Verificando titularidad de la línea...", "Consultando registros..."],
+        stage3: ["Buscando líneas asociadas...", "Cruzando información..."],
+        stage4: ["Generando reporte telefónico...", "Consolidando reporte..."]
+    }
 };
 
 const getRandomPhrase = (stageArray) => stageArray[Math.floor(Math.random() * stageArray.length)];
 
-export default function ModalLoading({ loading, showDonation, onClose, customMessage = null }) {
+export default function ModalLoading({ loading, showDonation, onClose, customMessage = null, loadingType = 'default' }) {
     const [showQRViewer, setShowQRViewer] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
     const [elapsedTime, setElapsedTime] = useState(0);
-    const [currentPhrase, setCurrentPhrase] = useState(LOADING_PHRASES.stage1[0]);
-    const totalSeconds = getExpectedSeconds(customMessage);
+    const phrases = ALL_LOADING_PHRASES[loadingType] || ALL_LOADING_PHRASES['default'];
+    const [currentPhrase, setCurrentPhrase] = useState(phrases.stage1[0]);
+    const totalSeconds = getExpectedSeconds(loadingType, customMessage);
 
     useEffect(() => {
         let syncTimer;
@@ -85,7 +136,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
         
         if (loading) {
             setElapsedTime(0);
-            setCurrentPhrase(getRandomPhrase(LOADING_PHRASES.stage1));
+            setCurrentPhrase(getRandomPhrase(phrases.stage1));
             
             // Incrementar elapsed time cada segundo
             timer = setInterval(() => {
@@ -96,10 +147,10 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
             phraseInterval = setInterval(() => {
                 setElapsedTime((currentElapsed) => {
                     let nextPhrase = '';
-                    if (currentElapsed < 3) nextPhrase = getRandomPhrase(LOADING_PHRASES.stage1);
-                    else if (currentElapsed < 8) nextPhrase = getRandomPhrase(LOADING_PHRASES.stage2);
-                    else if (currentElapsed < 15) nextPhrase = getRandomPhrase(LOADING_PHRASES.stage3);
-                    else nextPhrase = getRandomPhrase(LOADING_PHRASES.stage4);
+                    if (currentElapsed < 3) nextPhrase = getRandomPhrase(phrases.stage1);
+                    else if (currentElapsed < 8) nextPhrase = getRandomPhrase(phrases.stage2);
+                    else if (currentElapsed < 15) nextPhrase = getRandomPhrase(phrases.stage3);
+                    else nextPhrase = getRandomPhrase(phrases.stage4);
                     
                     setCurrentPhrase(nextPhrase);
                     return currentElapsed; // Keep same value, just needed it for closure
@@ -107,7 +158,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
             }, 2500);
         } else {
             setElapsedTime(0);
-            setCurrentPhrase(LOADING_PHRASES.stage1[0]);
+            setCurrentPhrase(phrases.stage1[0]);
         }
 
         return () => {
@@ -146,7 +197,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-blue-600 dark:border-t-blue-300" aria-hidden="true" />
                                     {timeLeft > 0 && (
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{timeLeft}</span>
+                                            <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{Math.round(progress)}%</span>
                                         </div>
                                     )}
                                 </div>
