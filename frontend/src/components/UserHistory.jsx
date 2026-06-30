@@ -282,7 +282,42 @@ function HistoryList() {
                                                     if (info.category === 'reniec') path = '/';
                                                     if (info.category === 'telefonos') path = '/telefono';
 
-                                                    let searchState = { autoDni: item.search_term, autoOption: item.search_type };
+                                                    let mappedOption = item.search_type;
+                                                    
+                                                    // Mapping for Generador Reniec
+                                                    if (mappedOption === 'reniec_c4_azul') mappedOption = 'c4_azul';
+                                                    if (mappedOption === 'reniec_inscripcion') mappedOption = 'inscripcion';
+                                                    if (mappedOption === 'reniec_dni_electronico') mappedOption = 'virtual_electronico';
+                                                    if (mappedOption === 'reniec_dni_azul') mappedOption = 'virtual_azul';
+                                                    if (mappedOption === 'reniec_dni_amarillo') mappedOption = 'amarillo';
+                                                    
+                                                    // Mapping for Familiares
+                                                    if (mappedOption === 'familiares_pdf') mappedOption = 'pdf';
+                                                    if (mappedOption === 'familiares_texto') mappedOption = 'texto';
+                                                    if (mappedOption === 'familiares_arbol_visual') mappedOption = 'arbol';
+                                                    
+                                                    // Mapping for Telefonos
+                                                    if (mappedOption === 'telefono_numeros_dni') mappedOption = 'numeros_dni';
+                                                    if (mappedOption === 'telefono_info_linea') mappedOption = 'info_linea';
+                                                    if (mappedOption === 'telefono_verificador') mappedOption = 'verificador_op';
+                                                    if (mappedOption === 'telefono_titular') mappedOption = 'titular_numero';
+                                                    
+                                                    // Mapping for Delitos/Fiscalia
+                                                    if (mappedOption === 'delitos_dni') mappedOption = 'dni';
+                                                    if (mappedOption === 'delitos_placa') mappedOption = 'placa';
+                                                    if (mappedOption === 'delitos_antper') mappedOption = 'antper';
+                                                    if (mappedOption === 'fiscalia_dni') mappedOption = 'dni';
+                                                    if (mappedOption === 'fiscalia_nombre') mappedOption = 'nombre';
+                                                    
+                                                    // Mapping for Policiales
+                                                    if (mappedOption === 'policiales_antpol' || mappedOption === 'policiales_antpo') mappedOption = 'antecedentes_policiales';
+                                                    if (mappedOption === 'penales_antpen') mappedOption = 'antecedentes_penales';
+                                                    if (mappedOption === 'judiciales_antjud') mappedOption = 'antecedentes_judiciales';
+                                                    
+                                                    // Mapping for Vehiculos
+                                                    if (mappedOption === 'record_vehicular') mappedOption = 'record';
+
+                                                    let searchState = { autoDni: item.search_term, autoOption: mappedOption };
                                                     if (info.category === 'reniec') {
                                                         searchState = { autoSearch: item.search_term, type: item.search_type };
                                                     } else if (info.category === 'facial') {
