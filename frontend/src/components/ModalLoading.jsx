@@ -175,7 +175,13 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
         }
     };
 
-    const progress = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;
+    let progress = 0;
+    if (totalSeconds > 0) {
+        progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
+        if (progress >= 100 && loading) {
+            progress = 99; // Cap at 99% until loading actually finishes
+        }
+    }
 
     return (
         <>
@@ -195,7 +201,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                 <div className="relative">
                                     <div className="h-20 w-20 rounded-full border-4 border-slate-200 dark:border-slate-700" aria-hidden="true" />
                                     <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-blue-600 dark:border-t-blue-300" aria-hidden="true" />
-                                    {timeLeft > 0 && (
+                                    {totalSeconds > 0 && (
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{Math.round(progress)}%</span>
                                         </div>
@@ -223,7 +229,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     </AnimatePresence>
                                 </div>
 
-                                {timeLeft > 0 && (
+                                {totalSeconds > 0 && (
                                     <div className="h-2 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800" aria-hidden="true">
                                         <motion.div
                                             className="h-full bg-blue-600"
