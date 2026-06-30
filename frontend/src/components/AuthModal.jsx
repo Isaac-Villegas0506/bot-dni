@@ -164,7 +164,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
                     <>
                         <ModalHeader
                             title={isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}
-                            description={isLogin ? 'Ingresa con tu correo o Google.' : 'Regístrate para acceder a tus consultas.'}
+                            description={isLogin ? 'Ingresa con tu correo o Google.' : 'Regístrate usando tu cuenta de Google.'}
                             tone="info"
                             align="center"
                         />
@@ -175,59 +175,48 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
                             </div>
                         )}
 
-                        <form className="space-y-4" onSubmit={handleSubmit}>
-                            {!isLogin && (
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        aria-label="Nombre completo"
-                                        autoComplete="name"
-                                        placeholder="Nombre completo"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        required
-                                        className={inputClass}
-                                    />
+                        {isLogin && (
+                            <>
+                                <form className="space-y-4" onSubmit={handleSubmit}>
+                                    <div className="relative">
+                                        <input
+                                            type="email"
+                                            aria-label="Correo electrónico"
+                                            autoComplete="email"
+                                            placeholder="Correo electrónico"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            aria-label="Contraseña"
+                                            autoComplete="current-password"
+                                            placeholder="Contraseña"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <ModalButton type="submit" disabled={loading} variant="info" className="w-full">
+                                        {loading && <span className="material-icons-round animate-spin text-[18px]" aria-hidden="true">refresh</span>}
+                                        Ingresar
+                                    </ModalButton>
+                                </form>
+
+                                <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                                    <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                                    O continúa con
+                                    <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                                 </div>
-                            )}
-
-                            <div className="relative">
-                                <input
-                                    type="email"
-                                    aria-label="Correo electrónico"
-                                    autoComplete="email"
-                                    placeholder="Correo electrónico"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    className={inputClass}
-                                />
-                            </div>
-
-                            <div className="relative">
-                                <input
-                                    type="password"
-                                    aria-label="Contraseña"
-                                    autoComplete={isLogin ? 'current-password' : 'new-password'}
-                                    placeholder="Contraseña"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className={inputClass}
-                                />
-                            </div>
-
-                            <ModalButton type="submit" disabled={loading} variant="info" className="w-full">
-                                {loading && <span className="material-icons-round animate-spin text-[18px]" aria-hidden="true">refresh</span>}
-                                {isLogin ? 'Ingresar' : 'Registrarse'}
-                            </ModalButton>
-                        </form>
-
-                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                            O continúa con
-                            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                        </div>
+                            </>
+                        )}
 
                         <ModalButton onClick={handleGoogleLogin} disabled={loading} variant="secondary" className="w-full">
                             <img src="/logos/Google__G__logo.svg (1).png" alt="" className="h-5 w-5" />
