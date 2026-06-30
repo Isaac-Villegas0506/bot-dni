@@ -462,7 +462,7 @@ export default function FamiliaresDNI() {
 
     setShowInputModal(false);
 
-    showLoading();
+    showLoading(null, 'reniec');
 
     try {
       const token = localStorage.getItem('token');

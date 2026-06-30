@@ -6,15 +6,18 @@ export function LoadingProvider({ children }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
     const [showDonation, setShowDonation] = useState(false);
+    const [loadingType, setLoadingType] = useState('default');
 
-    const showLoading = (msg = null) => {
+    const showLoading = (msg = null, type = 'default') => {
         setMessage(msg);
+        setLoadingType(type);
         setLoading(true);
     };
 
     const hideLoading = () => {
         setLoading(false);
         setMessage(null);
+        setLoadingType('default');
     };
 
     const openDonation = () => setShowDonation(true);
@@ -22,7 +25,7 @@ export function LoadingProvider({ children }) {
 
     return (
         <LoadingContext.Provider value={{ 
-            loading, message, showLoading, hideLoading,
+            loading, message, loadingType, showLoading, hideLoading,
             showDonation, openDonation, closeDonation 
         }}>
             {children}

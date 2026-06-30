@@ -198,7 +198,7 @@ export default function Vehiculos() {
     }
 
     setShowInputModal(false);
-    showLoading();
+    showLoading(null, 'vehiculos');
 
     try {
       const token = localStorage.getItem('token');

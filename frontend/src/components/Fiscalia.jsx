@@ -269,7 +269,7 @@ export default function Fiscalia() {
     }
 
     setShowInputModal(false);
-    showLoading();
+    showLoading(null, 'fiscalia');
 
     try {
       const token = localStorage.getItem('token');

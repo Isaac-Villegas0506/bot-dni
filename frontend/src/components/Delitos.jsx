@@ -241,7 +241,7 @@ export default function Delitos() {
     }
 
     setShowInputModal(false);
-    showLoading();
+    showLoading(null, 'fiscalia');
 
     try {
       const token = localStorage.getItem('token');

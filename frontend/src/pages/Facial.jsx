@@ -163,7 +163,7 @@ export default function Facial() {
         }
 
         try {
-            showLoading();
+            showLoading(null, 'reniec');
 
             const formData = new FormData();
             formData.append('image', selectedFile);
