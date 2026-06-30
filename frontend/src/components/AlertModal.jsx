@@ -14,6 +14,20 @@ const TYPE_CONFIG = {
     insufficient_credits: { tone: 'info', icon: 'toll', title: 'Saldo insuficiente', progress: 'bg-blue-600' },
 };
 
+const cleanErrorMessage = (msg) => {
+    if (!msg) return '';
+    let cleaned = msg.replace(/❰❌❱/g, '')
+                     .replace(/❰⚠️❱/g, '')
+                     .replace(/\*\*/g, '')
+                     .replace(/\*/g, '')
+                     .replace(/➤/g, '')
+                     .trim();
+    if (cleaned.length > 0) {
+        cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    }
+    return cleaned;
+};
+
 export default function AlertModal({
     isOpen,
     onClose,
@@ -86,7 +100,7 @@ export default function AlertModal({
             <div className="space-y-5 p-5 pt-6">
                 <ModalHeader
                     title={displayTitle}
-                    description={message}
+                    description={cleanErrorMessage(message)}
                     icon={config.icon}
                     tone={config.tone}
                 />
