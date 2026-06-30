@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { useAuth } from './context/AuthContext';
 import { RequireAuth, RequireAdmin } from './router/ProtectedRoute';
 import { getApiUrl } from './utils/api';
@@ -202,6 +203,7 @@ export default function App() {
                 />,
                 document.body
             )}
+            <Analytics />
         </div>
     );
 }
