@@ -13,6 +13,7 @@ import HistorialAdmin         from './HistorialAdmin';
 import CreditRequests         from './CreditRequests';
 import PromoRequests          from './PromoRequests';
 import SettingsManagement     from './SettingsManagement';
+import BannersManagement      from './BannersManagement';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 const NAV_GROUPS = [
@@ -34,7 +35,8 @@ const NAV_GROUPS = [
         items: [
             { id: 'purchases', icon: 'point_of_sale', label: 'Pagos', mobileLabel: 'Pagos' },
             { id: 'promos', icon: 'smart_display', label: 'Promos TikTok', mobileLabel: 'Promos' },
-            { id: 'precios', icon: 'sell', label: 'Precios', mobileLabel: 'Precios' }
+            { id: 'precios', icon: 'sell', label: 'Precios', mobileLabel: 'Precios' },
+            { id: 'banners', icon: 'view_carousel', label: 'Banners', mobileLabel: 'Banners' }
         ]
     },
     {
@@ -96,6 +98,7 @@ export default function AdminDashboard({ onBackToHome }) {
             case 'historial':     return <HistorialAdmin />;
             case 'purchases':     return <CreditRequests />;
             case 'promos':        return <PromoRequests />;
+            case 'banners':       return <BannersManagement />;
             case 'settings':      return <SettingsManagement />;
             default:              return <DashboardHome stats={stats} />;
         }

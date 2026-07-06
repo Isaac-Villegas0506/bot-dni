@@ -113,9 +113,9 @@ async def busqueda_por_nombre(
                     continue
 
                 text_lower = text.lower()
-                if "formato inválido" in text_lower or "formato incorrecto" in text_lower:
+                if "formato inválido" in text_lower or "formato incorrecto" in text_lower or "ejemplo correcto" in text_lower:
                     raise Exception("INVALID_FORMAT: El formato del nombre es incorrecto.")
-                if "no se encontró información" in text_lower or "sin resultados" in text_lower:
+                if "no se encontró" in text_lower or "no se encontro" in text_lower or "sin resultados" in text_lower:
                     raise Exception("NO_FOUND_404: No se encontraron resultados para ese nombre.")
 
                 is_success = msg.document or "resultados" in text_lower or "coincidencias" in text_lower or "dni" in text_lower

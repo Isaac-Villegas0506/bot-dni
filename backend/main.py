@@ -12,6 +12,7 @@ from database import Database
 from parser import parse_bot_response
 import asyncio
 import uuid
+import base64
 from pathlib import Path
 import logging
 from auth import verify_password, get_password_hash, create_access_token, decode_access_token
@@ -1422,6 +1423,51 @@ async def get_numeros_por_dni(request: Request, body: DniRequest, Authorization:
         raise internal_server_error()
 
 
+class MetadataRequest(BaseModel):
+    dni: str
+
+@app.post("/api/metadata")
+async def get_metadata_info(request: Request, body: MetadataRequest, Authorization: Optional[str] = Header(None)):
+    if not Authorization: raise HTTPException(401, "Token requerido")
+    token = Authorization.replace("Bearer ", "")
+    user = await get_current_user(token)
+    if not user: raise HTTPException(401, "Usuario inválido")
+    
+    user_id = user['id']
+    cost = await db.get_cost_for_option('metadata')
+    eligible, user_credits = await db.check_credits_for_option(user_id, cost)
+    if not eligible:
+        raise HTTPException(402, detail={
+            "code": "INSUFFICIENT_CREDITS",
+            "required": cost,
+            "available": user_credits,
+            "message": f"Esta opción cuesta {cost} crédito(s) y tienes {user_credits} disponible(s)."
+        })
+
+    dni = body.dni
+    if not dni or len(dni) != 8:
+        raise HTTPException(400, "DNI inválido")
+    check_banned_dni(dni)
+
+    try:
+        result = await bot_client.query_metadata(dni)
+        await db.deduct_credits(user_id, cost)
+        await api_log_search(request, user_id, dni, 'metadata')
+        return {
+            "status": "success",
+            "dni": dni,
+            "datos": result["datos"],
+            "pdf_url": result["pdf_url"]
+        }
+    except SinResultadosError as e:
+        raise HTTPException(404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error Info Global API: {e}")
+        err_msg = str(e)
+        if "POR FAVOR ESPERA" in err_msg:
+            raise HTTPException(429, detail=err_msg)
+        raise internal_server_error()
+
 class PhoneRequest(BaseModel):
     phone: str
 
@@ -1988,3 +2034,111 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
             await db.refund_credits(user_id, cost, f"Reembolso RECORD (Error) para {target}")
         raise internal_server_error()
 
+# ─── Banners Endpoints ────────────────────────────────────────────────────────
+
+@app.get("/api/banners")
+async def get_banners():
+    banners = await db.get_active_banners()
+    return banners
+
+@app.get("/api/admin/banners")
+async def get_admin_banners(Authorization: Optional[str] = Header(None)):
+    if not Authorization: raise HTTPException(401, "Token requerido")
+    token = Authorization.replace("Bearer ", "")
+    user = await get_current_user(token)
+    if not user or user.get("role") != "admin": raise HTTPException(403, "Acceso denegado")
+    
+    banners = await db.get_all_banners()
+    return banners
+
+@app.post("/api/admin/banners")
+async def create_banner(
+    Authorization: Optional[str] = Header(None),
+    title: str = Form(""),
+    target_url: str = Form(""),
+    image_desktop: UploadFile = File(...),
+    image_mobile: UploadFile = File(...)
+):
+    if not Authorization: raise HTTPException(401, "Token requerido")
+    token = Authorization.replace("Bearer ", "")
+    user = await get_current_user(token)
+    if not user or user.get("role") != "admin": raise HTTPException(403, "Acceso denegado")
+    
+    async def process_image(img_file):
+        content, ext = await read_limited_image_upload(img_file, "La imagen del banner")
+        filename = f"banner_{uuid.uuid4().hex}{ext}"
+        img_url = None
+        
+        imgbb_api_key = os.getenv("IMGBB_API_KEY")
+        if imgbb_api_key:
+            try:
+                encoded_img = base64.b64encode(content).decode('utf-8')
+                async with httpx.AsyncClient() as client:
+                    resp = await client.post(
+                        "https://api.imgbb.com/1/upload",
+                        data={"key": imgbb_api_key, "image": encoded_img},
+                        timeout=15.0
+                    )
+                if resp.status_code == 200:
+                    res_data = resp.json()
+                    if res_data.get("success"):
+                        img_url = res_data["data"]["url"]
+            except Exception as e:
+                logger.error(f"Error subiendo banner a ImgBB: {e}")
+                
+        if not img_url:
+            dest = RECEIPTS_DIR / filename
+            with dest.open('wb') as f:
+                f.write(content)
+            img_url = f"/api/static/receipts/{filename}"
+            
+        return img_url
+
+    desktop_url = await process_image(image_desktop)
+    mobile_url = await process_image(image_mobile)
+    
+    banner = await db.create_banner(
+        title=title,
+        image_url_desktop=desktop_url,
+        image_url_mobile=mobile_url,
+        target_url=target_url,
+        display_order=0
+    )
+    if not banner:
+        raise HTTPException(500, "Error creando el banner")
+    return banner
+
+@app.put("/api/admin/banners/{banner_id}")
+async def update_banner(
+    banner_id: int,
+    request: Request,
+    Authorization: Optional[str] = Header(None)
+):
+    if not Authorization: raise HTTPException(401, "Token requerido")
+    token = Authorization.replace("Bearer ", "")
+    user = await get_current_user(token)
+    if not user or user.get("role") != "admin": raise HTTPException(403, "Acceso denegado")
+    
+    body = await request.json()
+    is_active = body.get("is_active")
+    display_order = body.get("display_order")
+    
+    success = await db.update_banner(banner_id, is_active=is_active, display_order=display_order)
+    if not success:
+        raise HTTPException(500, "Error actualizando el banner")
+    return {"status": "success"}
+
+@app.delete("/api/admin/banners/{banner_id}")
+async def delete_banner(
+    banner_id: int,
+    Authorization: Optional[str] = Header(None)
+):
+    if not Authorization: raise HTTPException(401, "Token requerido")
+    token = Authorization.replace("Bearer ", "")
+    user = await get_current_user(token)
+    if not user or user.get("role") != "admin": raise HTTPException(403, "Acceso denegado")
+    
+    success = await db.delete_banner(banner_id)
+    if not success:
+        raise HTTPException(500, "Error eliminando el banner")
+    return {"status": "success"}

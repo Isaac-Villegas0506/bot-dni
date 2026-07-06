@@ -191,6 +191,7 @@ export default function Sidebar({ isOpen, onClose, onNav }) {
                                             <div className="space-y-0.5">
                                                 <MenuItem icon="face" label="Búsqueda Facial" active={path === '/facial'} disabled={!isFeatureEnabled('feature_facial')} onClick={() => handleNavClick('facial')} isNew={true} />
                                                 <MenuItem icon="home" label="Reniec" active={path === '/'} onClick={() => handleNavClick('home')} />
+                                                <MenuItem icon="manage_search" label="Info Global" active={path === '/infoglobal'} disabled={!isFeatureEnabled('feature_infoglobal')} onClick={() => handleNavClick('infoglobal')} isNew={true} />
                                                 <MenuItem icon="badge" label="Generador Reniec" active={path === '/generador'} disabled={!isFeatureEnabled('feature_generador')} onClick={() => handleNavClick('generator')} />
                                                 <MenuItem icon="family_restroom" label="Familiares" active={path === '/familiares'} disabled={!isFeatureEnabled('feature_familiares')} onClick={() => handleNavClick('familiares')} />
                                                 <MenuItem icon="phone_android" label="Teléfono" active={path === '/telefono'} disabled={!isFeatureEnabled('feature_telefono')} onClick={() => handleNavClick('telefono')} />
