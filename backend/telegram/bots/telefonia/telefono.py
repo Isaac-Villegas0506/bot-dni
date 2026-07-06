@@ -88,14 +88,30 @@ async def query_telx(client, dni: str) -> dict:
             return {"raw_text": combined, "parts": total_parts or 1}
 
         except SinResultadosError:
-            raise
+            print("⚠️ telx: Sin resultados, intentando con /telp (fallback)...")
+            return await query_telp_gratis(client, dni)
         except Exception as e:
             if global_attempt < 1:
                 print(f"⚠️ telx error (intento {global_attempt + 1}): {e}")
                 continue
-            raise
+            print(f"⚠️ telx error global: {e}. Intentando con /telp (fallback)...")
+            return await query_telp_gratis(client, dni)
 
-    raise Exception("No se pudo completar la consulta de teléfonos. Intente nuevamente.")
+    print("⚠️ telx: No se pudo completar tras reintentos, fallback a /telp...")
+    return await query_telp_gratis(client, dni)
+
+
+async def query_telp_gratis(client, target: str) -> dict:
+    """
+    Fallback a /telp para el bot gratuito.
+    """
+    try:
+        bot_entity = await client.get_entity(TARGET_BOT)
+        target_bot_id = bot_entity.id
+    except Exception:
+        target_bot_id = 0
+        
+    return await query_telp(client, target, TARGET_BOT, target_bot_id)
 
 
 async def query_telp(client, phone: str, target_group: int, target_bot_id: int) -> dict:
@@ -151,10 +167,15 @@ async def query_telp(client, phone: str, target_group: int, target_bot_id: int) 
             if not is_valid:
                 raise Exception("UNKNOWN_RESPONSE: No se encontraron datos. Intente nuevamente en 10 segundos.")
 
-            pm = re.search(r"(\d+)\s*/\s*(\d+)", text)
-            if pm:
-                part_num    = int(pm.group(1))
-                total_parts = int(pm.group(2))
+            pm_premium = re.search(r"(\d+)\s*/\s*(\d+)", text)
+            pm_gratis = re.search(r"P[aá]gina\s+(\d+)\s+de\s+(\d+)", text, re.IGNORECASE)
+            
+            if pm_premium:
+                part_num    = int(pm_premium.group(1))
+                total_parts = int(pm_premium.group(2))
+            elif pm_gratis:
+                part_num    = int(pm_gratis.group(1))
+                total_parts = int(pm_gratis.group(2))
             else:
                 part_num    = 1
                 total_parts = 1
@@ -169,7 +190,7 @@ async def query_telp(client, phone: str, target_group: int, target_bot_id: int) 
         raise Exception("UNKNOWN_RESPONSE: No se encontraron datos. Intente nuevamente en 10 segundos.")
 
     combined = "\n\n".join(received_parts[k] for k in sorted(received_parts))
-    return {"raw_text": combined}
+    return {"raw_text": combined, "parts": total_parts or 1}
 
 
 async def query_cel(client, phone: str) -> dict:
@@ -193,47 +214,56 @@ async def query_cel(client, phone: str) -> dict:
     seen_ids: set[int] = set()
     total_parts = None
 
-    for attempt in range(12):
-        print(f"🔄 cel intento {attempt + 1}/12...")
-        async for message in client.iter_messages(TARGET_BOT, limit=100, min_id=sent_msg.id, reverse=True):
-            if message.id in seen_ids:
-                continue
-            if target_bot_id and message.sender_id != target_bot_id:
-                continue
-            text = message.text or ""
-            if not text:
-                continue
-            if any(k in text.lower() for k in ["procesando", "espere", "buscando"]):
-                continue
-            if is_sin_resultados(text):
+    try:
+        for attempt in range(12):
+            print(f"🔄 cel intento {attempt + 1}/12...")
+            async for message in client.iter_messages(TARGET_BOT, limit=100, min_id=sent_msg.id, reverse=True):
+                if message.id in seen_ids:
+                    continue
+                if target_bot_id and message.sender_id != target_bot_id:
+                    continue
+                text = message.text or ""
+                if not text:
+                    continue
+                if any(k in text.lower() for k in ["procesando", "espere", "buscando"]):
+                    continue
+                if is_sin_resultados(text):
+                    seen_ids.add(message.id)
+                    raise SinResultadosError(text)
+                text_upper = text.upper()
+                is_valid = (
+                    "KING DATA" in text_upper or "SHIELDGRAM DB" in text_upper or
+                    "DETALLE DE LINEAS" in text_upper or "TITULAR" in text_upper or
+                    "TELEFONÍA" in text_upper or "OSIPTEL" in text_upper or
+                    "TELX" in text_upper or "NÚMERO" in text_upper
+                )
+                if not is_valid:
+                    continue
                 seen_ids.add(message.id)
-                raise SinResultadosError(text)
-            text_upper = text.upper()
-            is_valid = (
-                "KING DATA" in text_upper or "SHIELDGRAM DB" in text_upper or
-                "DETALLE DE LINEAS" in text_upper or "TITULAR" in text_upper or
-                "TELEFONÍA" in text_upper or "OSIPTEL" in text_upper or
-                "TELX" in text_upper or "NÚMERO" in text_upper
-            )
-            if not is_valid:
-                continue
-            seen_ids.add(message.id)
-            pm = re.search(r"P[aá]gina\s+(\d+)\s+de\s+(\d+)", text, re.IGNORECASE)
-            if pm:
-                part_num    = int(pm.group(1))
-                total_parts = int(pm.group(2))
-            else:
-                part_num    = 1
-                total_parts = 1
-            received_parts[part_num] = text
-            print(f"✅ cel: parte {part_num}/{total_parts}")
+                pm = re.search(r"P[aá]gina\s+(\d+)\s+de\s+(\d+)", text, re.IGNORECASE)
+                if pm:
+                    part_num    = int(pm.group(1))
+                    total_parts = int(pm.group(2))
+                else:
+                    part_num    = 1
+                    total_parts = 1
+                received_parts[part_num] = text
+                print(f"✅ cel: parte {part_num}/{total_parts}")
 
-        if total_parts is not None and len(received_parts) >= total_parts:
-            break
-        await asyncio.sleep(3)
+            if total_parts is not None and len(received_parts) >= total_parts:
+                break
+            await asyncio.sleep(3)
 
-    if not received_parts:
-        raise Exception("UNKNOWN_RESPONSE: No se encontraron datos. Verifique el número e intente nuevamente en 10 o 15 segundos.")
+        if not received_parts:
+            print("⚠️ cel: Sin resultados, intentando con /telp (fallback)...")
+            return await query_telp_gratis(client, phone)
 
-    combined = "\n\n".join(received_parts[k] for k in sorted(received_parts))
-    return {"raw_text": combined}
+        combined = "\n\n".join(received_parts[k] for k in sorted(received_parts))
+        return {"raw_text": combined}
+        
+    except SinResultadosError:
+        print("⚠️ cel: Sin resultados (Exception), intentando con /telp (fallback)...")
+        return await query_telp_gratis(client, phone)
+    except Exception as e:
+        print(f"⚠️ cel error global: {e}. Intentando con /telp (fallback)...")
+        return await query_telp_gratis(client, phone)

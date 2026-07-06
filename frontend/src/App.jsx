@@ -7,12 +7,15 @@ import { useNotifications } from './hooks/useNotifications';
 
 // Layout
 import Header from './components/Header';
+import SearchOptionModal from './components/SearchOptionModal';
+import AnnouncementModal from './components/AnnouncementModal';
+import UserNotificationModal from './components/UserNotificationModal';
+import InfoGlobalPage from './pages/InfoGlobal';
 import AuthModal from './components/AuthModal';
 import WelcomeModal from './components/WelcomeModal';
 import ModalLoading from './components/ModalLoading';
 import { useLoading } from './context/LoadingContext';
 import { createPortal } from 'react-dom';
-import UserNotificationModal from './components/UserNotificationModal';
 import MobileNav from './components/MobileNav';
 import PromoModal from './components/PromoModal';
 import { useSettings } from './context/settingsContextValue';
@@ -50,7 +53,7 @@ const VIEW_ROUTES = {
     home: '/', history: '/historial', shop: '/tienda',
     generator: '/generador', familiares: '/familiares',
     telefono: '/telefono', policiales: '/policiales', delitos: '/delitos', vehiculos: '/vehiculos', admin: '/admin',
-    terms: '/terminos', facial: '/facial', creditos: '/creditos', fiscalia: '/fiscalia'
+    terms: '/terminos', facial: '/facial', creditos: '/creditos', fiscalia: '/fiscalia', infoglobal: '/infoglobal'
 };
 
 export default function App() {
@@ -90,25 +93,38 @@ export default function App() {
         }
     }, [location.search]);
 
-    // Lógica para mostrar la promoción (1 sol = 15 créditos)
+    // Lógica para mostrar los Banners dinámicos (carrusel)
     useEffect(() => {
         let syncTimer;
-        if (isLoggedIn && user && !user.has_bought_promo && isFeatureEnabled('promo_pack_active')) {
-            const lastShownStr = localStorage.getItem('last_promo_shown_time');
+        
+        // Solo mostrar en la página de inicio (Home)
+        if (location.pathname !== '/') {
+            setShowPromoModal(false);
+            return;
+        }
+
+        // Solo mostramos el carrusel a usuarios logueados
+        if (isLoggedIn && user) {
+            const lastShownStr = localStorage.getItem('last_banner_shown_time');
             if (lastShownStr) {
                 const lastShown = parseInt(lastShownStr, 10);
                 const oneHour = 60 * 60 * 1000;
+                // Si ya se mostró en la última hora, no lo mostramos de nuevo
                 if (Date.now() - lastShown < oneHour) {
                     return;
                 }
             }
-            syncTimer = setTimeout(() => setShowPromoModal(true), 0);
-            localStorage.setItem('last_promo_shown_time', Date.now().toString());
+
+            syncTimer = setTimeout(() => {
+                setShowPromoModal(true);
+            }, 1500); // 1.5s de retraso para que cargue la app primero
+
         } else {
-            syncTimer = setTimeout(() => setShowPromoModal(false), 0);
+            setShowPromoModal(false);
         }
+        
         return () => clearTimeout(syncTimer);
-    }, [isLoggedIn, user, isFeatureEnabled]);
+    }, [isLoggedIn, user, location.pathname]);
 
     // Compatibilidad con Sidebar/Header que aún usan nombres de vista legacy
     const handleViewChange = (newView) => {
@@ -146,6 +162,7 @@ export default function App() {
                         <Route path="/" element={<Home darkMode={darkMode} />} />
                         <Route path="/historial" element={<RequireAuth openModalOnFail={true}><HistorialPage /></RequireAuth>} />
                         <Route path="/tienda" element={<RequireAuth openModalOnFail={true}><TiendaPage /></RequireAuth>} />
+                        <Route path="/infoglobal" element={<RequireAuth openModalOnFail={true}><InfoGlobalPage /></RequireAuth>} />
                         <Route path="/generador" element={<GeneradorPage />} />
                         <Route path="/familiares" element={<FamiliaresPage />} />
                         <Route path="/telefono" element={<TelefonoPage />} />
@@ -182,7 +199,10 @@ export default function App() {
             {/* User Notifications */}
             <PromoModal 
                 isOpen={showPromoModal} 
-                onClose={() => setShowPromoModal(false)} 
+                onClose={() => {
+                    setShowPromoModal(false);
+                    localStorage.setItem('last_banner_shown_time', Date.now().toString());
+                }} 
             />
             
             {notifications.length > 0 && (

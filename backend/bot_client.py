@@ -18,6 +18,7 @@ NUEVA ARQUITECTURA:
   telegram/bots/familiares_bot.py   → generate_familiares_pdf / texto / arbol_visual_pdf
   telegram/bots/facial_bot.py       → generate_facial
   telegram/bots/delitos_bot.py      → query_delitos
+  telegram/bots/metadata/metadata.py → query_metadata
 """
 
 import os
@@ -53,6 +54,7 @@ from telegram.bots.reniec.familiares import (
 )
 from telegram.bots.facial.facial import generate_facial as _gen_facial
 from telegram.bots.delitos.delitos import query_delitos as _query_delitos
+from telegram.bots.metadata.metadata import query_metadata as _query_metadata
 
 
 def _static_dir() -> Path:
@@ -148,6 +150,11 @@ class BotClient:
         await self._ensure_connection()
         return await query_dni_gratis(
             self.client, self.client2, self.bot_pool, str(dni), _static_dir()
+        )
+
+    async def query_metadata(self, dni: str) -> dict:
+        return await _query_metadata(
+            self.client, self.bot_pool, dni, _static_dir()
         )
 
     async def search_premium_group(self, dni):

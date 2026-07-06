@@ -62,6 +62,7 @@ export default function MobileNav() {
 
     const menuItems = [
         { id: '/facial', icon: 'face', label: 'Búsqueda Facial', featureKey: 'feature_facial', isNew: true },
+        { id: '/infoglobal', icon: 'manage_search', label: 'Info Global', featureKey: 'feature_infoglobal', isNew: true },
         { id: '/generador', icon: 'badge', label: 'Generador Reniec', featureKey: 'feature_generador' },
         { id: '/familiares', icon: 'family_restroom', label: 'Familiares', featureKey: 'feature_familiares' },
         { id: '/telefono', icon: 'phone_android', label: 'Teléfonos', featureKey: 'feature_telefono' },

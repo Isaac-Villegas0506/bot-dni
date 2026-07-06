@@ -186,21 +186,6 @@ export default function Fiscalia() {
   ];
 
   useEffect(() => {
-    if (location.state?.autoDni && location.state?.autoOption && !hasAutoTriggered.current) {
-      hasAutoTriggered.current = true;
-      const opt = options.find(o => o.id === location.state.autoOption);
-      if (opt) {
-        setSelectedOption(opt);
-        setTargetId(location.state.autoDni);
-        // Esperamos un tick para que los estados se actualicen antes de ejecutar handleGenerate
-        setTimeout(() => {
-           handleGenerate(location.state.autoDni);
-        }, 100);
-      }
-    }
-  }, [location.state, options, handleGenerate]);
-
-  useEffect(() => {
     if (generatedData) {
       sessionStorage.setItem('fiscalia_data', JSON.stringify(generatedData));
     } else {
@@ -345,6 +330,21 @@ export default function Fiscalia() {
       sessionStorage.removeItem('fiscalia_data');
     }
   };
+
+  useEffect(() => {
+    if (location.state?.autoDni && location.state?.autoOption && !hasAutoTriggered.current) {
+      hasAutoTriggered.current = true;
+      const opt = options.find(o => o.id === location.state.autoOption);
+      if (opt) {
+        setSelectedOption(opt);
+        setTargetId(location.state.autoDni);
+        // Esperamos un tick para que los estados se actualicen antes de ejecutar handleGenerate
+        setTimeout(() => {
+           handleGenerate(location.state.autoDni);
+        }, 100);
+      }
+    }
+  }, [location.state, options, handleGenerate]);
 
   const confirmExit = () => {
     if (exitCountDown > 0) return;

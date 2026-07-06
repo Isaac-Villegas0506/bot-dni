@@ -6,12 +6,14 @@ import { Z_INDEX } from '../lib/zIndex';
 
 const getExpectedSeconds = (type, message) => {
     if (type === 'reniec') return 20;
-    if (type === 'fiscalia') return 30;
+    if (type === 'fiscalia') return 120; // Fiscalia can take a long time returning multiple cases
     if (type === 'policiales' || type === 'judiciales' || type === 'penales') return 25;
-    if (type === 'vehiculos') return 15;
-    if (type === 'telefonos') return 15;
+    if (type === 'vehiculos') return 20;
+    if (type === 'telefonos') return 20;
+    if (type === 'familiares') return 60; // Often produces PDFs
 
     if (!message) return 0;
+    if (message.toUpperCase().includes('PDF')) return 60;
     if (message.includes('120s')) return 120;
     if (message.includes('50s')) return 50;
     return 15;
@@ -177,9 +179,17 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
 
     let progress = 0;
     if (totalSeconds > 0) {
-        progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
-        if (progress >= 100 && loading) {
-            progress = 99; // Cap at 99% until loading actually finishes
+        // Use an asymptotic approach to slowly inch towards 99%
+        // Math.exp(-elapsedTime / tau) creates a decay curve.
+        // We'll use tau = totalSeconds / 3 so it reaches ~95% near totalSeconds.
+        const tau = Math.max(totalSeconds / 3, 5); 
+        const asymptoticProgress = 100 * (1 - Math.exp(-elapsedTime / tau));
+        
+        progress = Math.min(asymptoticProgress, 99); // Never exceed 99% just from time
+        
+        // Snap to 100 if no longer loading
+        if (!loading) {
+            progress = 100;
         }
     }
 
@@ -203,7 +213,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-blue-600 dark:border-t-blue-300" aria-hidden="true" />
                                     {totalSeconds > 0 && (
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{Math.round(progress)}%</span>
+                                            <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{Math.floor(progress)}%</span>
                                         </div>
                                     )}
                                 </div>

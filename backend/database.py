@@ -448,6 +448,20 @@ class Database:
                             is_premium = EXCLUDED.is_premium
                 """, seed)
 
+            # 11. Banners
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS banners (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255),
+                image_url_desktop VARCHAR(1024) NOT NULL,
+                image_url_mobile VARCHAR(1024) NOT NULL,
+                target_url VARCHAR(1024),
+                is_active BOOLEAN DEFAULT TRUE,
+                display_order INT DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
+
             self.conn.commit()
             cursor.close()
             print("Connected to PostgreSQL and tables initialized.")
@@ -1605,6 +1619,7 @@ class Database:
                 ('antecedentes_penales',    2, 'Certificado de Antecedentes Penales'),
                 ('antecedentes_judiciales', 2, 'Certificado de Antecedentes Judiciales'),
                 ('familiares_arbol_visual', 2, 'Ver Familiares (PDF + Fotos)'),
+                ('metadata',       1, 'Info Global (Metadata)'),
             ]
             cursor.executemany(
                 "INSERT INTO credit_costs (option_id, cost, label) VALUES (%s, %s, %s) ON CONFLICT (option_id) DO NOTHING",
@@ -1940,6 +1955,89 @@ class Database:
             return True
         except Exception as e:
             print(f"Error grant_unlimited_access: {e}")
+            return False
+
+    # --- Banners Methods ---
+    async def get_active_banners(self):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("""
+                SELECT * FROM banners 
+                WHERE is_active = TRUE 
+                ORDER BY display_order ASC, created_at DESC
+            """)
+            res = cursor.fetchall()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(f"Error get_active_banners: {e}")
+            return []
+
+    async def get_all_banners(self):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("SELECT * FROM banners ORDER BY display_order ASC, created_at DESC")
+            res = cursor.fetchall()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(f"Error get_all_banners: {e}")
+            return []
+
+    async def create_banner(self, title, image_url_desktop, image_url_mobile, target_url, display_order=0):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("""
+                INSERT INTO banners (title, image_url_desktop, image_url_mobile, target_url, display_order)
+                VALUES (%s, %s, %s, %s, %s) RETURNING *
+            """, (title, image_url_desktop, image_url_mobile, target_url, display_order))
+            res = cursor.fetchone()
+            self.conn.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(f"Error create_banner: {e}")
+            return None
+
+    async def update_banner(self, banner_id, is_active=None, display_order=None):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor()
+            updates = []
+            params = []
+            if is_active != None:
+                updates.append("is_active = %s")
+                params.append(is_active)
+            if display_order != None:
+                updates.append("display_order = %s")
+                params.append(display_order)
+                
+            if not updates:
+                return True
+                
+            params.append(banner_id)
+            query = f"UPDATE banners SET {', '.join(updates)} WHERE id = %s"
+            cursor.execute(query, params)
+            self.conn.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(f"Error update_banner: {e}")
+            return False
+
+    async def delete_banner(self, banner_id):
+        await self._ensure_connection()
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("DELETE FROM banners WHERE id = %s", (banner_id,))
+            self.conn.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(f"Error delete_banner: {e}")
             return False
 
     async def revoke_unlimited_access(self, user_id):
