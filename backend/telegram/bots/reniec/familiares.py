@@ -201,9 +201,9 @@ async def query_arbol_visual_pdf(client, bot_pool, dni: str, static_base_dir: Pa
 
     acquired_bot = None
     if bot_pool:
-        acquired_bot = await bot_pool.acquire_bot([TARGET_BOT], timeout=10)
+        acquired_bot = await bot_pool.acquire_bot([TARGET_BOT], timeout=60)
         if not acquired_bot:
-            raise Exception("El sistema está ocupado actualmente. Intenta en unos segundos.")
+            raise Exception("El sistema está procesando otras solicitudes. Por favor, intenta de nuevo en unos segundos.")
 
     try:
         bot_entity = await client.get_entity(TARGET_BOT)
@@ -244,7 +244,7 @@ async def query_arbol_visual_pdf(client, bot_pool, dni: str, static_base_dir: Pa
                     await message.download_media(file=abs_path)
                     file_url = f"files/{clean_name}"
 
-            if file_url and raw_text:
+            if file_url:
                 break
             await asyncio.sleep(2)
 

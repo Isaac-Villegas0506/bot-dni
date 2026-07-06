@@ -7,6 +7,7 @@ import ModalLoading from '../components/ModalLoading';
 import AlertModal from '../components/AlertModal';
 import { OptionCard, ResultPanel, BackButton } from '../components/ui/ConsultSurface';
 import HelpModal from '../components/HelpModal';
+import PdfViewer from '../components/PdfViewer';
 
 const option = {
     id: 'metadata',
@@ -317,20 +318,12 @@ export default function InfoGlobal() {
 
                         {/* Visor de PDF embebido */}
                         {result.pdf_url && (
-                            <div className="mt-6 flex flex-col h-[700px] border-t border-slate-200 dark:border-slate-700">
-                                <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                                    <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                        <span className="material-icons-round text-red-500">picture_as_pdf</span>
-                                        Visualización del Documento Original
-                                    </h3>
-                                </div>
-                                <div className="flex-1 bg-slate-200 dark:bg-slate-800">
-                                    <iframe 
-                                        src={getApiUrl(`/api/static/${result.pdf_url}`)} 
-                                        className="w-full h-full border-none" 
-                                        title="PDF Document"
-                                    />
-                                </div>
+                            <div className="mt-4 px-6 pb-4">
+                                <h3 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">Vista Previa del Informe</h3>
+                                <PdfViewer
+                                    url={getApiUrl(`/api/static/${result.pdf_url}`)}
+                                    height="500px"
+                                />
                             </div>
                         )}
                         

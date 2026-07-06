@@ -36,28 +36,33 @@ class BotPool:
         start_time = time.time()
         bots_to_try = bot_list if bot_list else list(self.bots.keys())
         
+        FORCE_RELEASE_AFTER = 30  # segundos máximos que un bot puede estar bloqueado
+
         while (time.time() - start_time) < timeout:
             # Try each bot in order
             for bot in bots_to_try:
                 if bot not in self.bots:
                     continue
-                    
-                # Try to acquire lock without blocking
+
+                # Check if bot is locked
                 if self.bots[bot].locked():
-                    # Bot is busy, check if it's been locked too long (force release after 8s)
                     acquire_time = self.bot_acquire_times.get(bot, 0)
-                    if acquire_time > 0 and (time.time() - acquire_time) > 8:
-                        print(f"⚠️ Force releasing {bot} (locked > 8s)")
-                        # Don't actually force release here, let the timeout handle it
-                    continue
-                
-                # Try to acquire the lock
-                acquired = self.bots[bot].locked() == False
-                if not acquired:
-                    # Quick check - if we can't get it immediately, skip
-                    continue
-                
-                # Attempt to lock
+                    elapsed = time.time() - acquire_time if acquire_time > 0 else 0
+
+                    # Force-release if the lock has been held too long
+                    if acquire_time > 0 and elapsed > FORCE_RELEASE_AFTER:
+                        print(f"⚠️ Force releasing {bot} (locked > {FORCE_RELEASE_AFTER}s)")
+                        try:
+                            self.bots[bot].release()
+                            self.bot_acquire_times[bot] = 0
+                            print(f"🔓 Force released: {bot}")
+                        except RuntimeError:
+                            # Lock was already released by another coroutine
+                            pass
+                    else:
+                        continue
+
+                # Attempt to acquire the lock (non-blocking)
                 try:
                     await asyncio.wait_for(self.bots[bot].acquire(), timeout=0.1)
                     self.bot_acquire_times[bot] = time.time()
@@ -65,10 +70,10 @@ class BotPool:
                     return bot
                 except asyncio.TimeoutError:
                     continue
-            
+
             # No bot available, wait a bit before retrying
             await asyncio.sleep(0.5)
-        
+
         print(f"⏰ Timeout: No bot available after {timeout}s")
         return None
     
