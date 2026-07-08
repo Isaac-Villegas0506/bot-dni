@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Z_INDEX } from '../lib/zIndex';
 
@@ -116,10 +117,10 @@ export default function PromoModal({ isOpen, onClose }) {
                                 className="w-full h-full"
                             >
                                 <picture className="w-full h-full block">
-                                    <source media="(max-width: 767px)" srcSet={currentBanner.image_url_mobile} />
-                                    <source media="(min-width: 768px)" srcSet={currentBanner.image_url_desktop} />
+                                    <source media="(max-width: 767px)" srcSet={getApiUrl(currentBanner.image_url_mobile)} />
+                                    <source media="(min-width: 768px)" srcSet={getApiUrl(currentBanner.image_url_desktop)} />
                                     <img 
-                                        src={currentBanner.image_url_desktop} 
+                                        src={getApiUrl(currentBanner.image_url_desktop)} 
                                         alt={currentBanner.title || 'Promoción'} 
                                         className="w-full h-full object-cover"
                                     />
