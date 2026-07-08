@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from '../../utils/api';
 
 export default function BannersManagement() {
     const [banners, setBanners] = useState([]);
@@ -222,14 +223,14 @@ export default function BannersManagement() {
                     banners.map(banner => (
                         <div key={banner.id} className={`bg-white dark:bg-slate-800 rounded-2xl border ${banner.is_active ? 'border-blue-200 dark:border-blue-900/50 ring-1 ring-blue-500/20' : 'border-slate-200 dark:border-slate-700 opacity-75'} overflow-hidden flex flex-col`}>
                             <div className="relative aspect-video bg-slate-100 dark:bg-slate-900">
-                                <img src={banner.image_url_desktop} alt={banner.title} className="w-full h-full object-cover" />
+                                <img src={getApiUrl(banner.image_url_desktop)} alt={banner.title} className="w-full h-full object-cover" />
                                 <div className="absolute top-2 right-2 flex gap-1">
                                     <span className="bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
                                         PC
                                     </span>
                                 </div>
                                 <div className="absolute bottom-2 right-2 w-16 h-24 border-2 border-white/20 rounded-lg overflow-hidden bg-slate-800 shadow-xl">
-                                    <img src={banner.image_url_mobile} alt="mobile" className="w-full h-full object-cover" />
+                                    <img src={getApiUrl(banner.image_url_mobile)} alt="mobile" className="w-full h-full object-cover" />
                                 </div>
                             </div>
                             
