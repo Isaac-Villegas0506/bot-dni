@@ -1,5 +1,5 @@
 import { useSettings } from '../context/settingsContextValue';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -120,7 +120,7 @@ export default function Delitos() {
 
   const { getCost } = useCreditCosts();
 
-  const options = [
+  const options = useMemo(() => [
     {
       id: 'antper',
       title: 'Antecedentes Global',
@@ -166,7 +166,7 @@ export default function Delitos() {
         'Formato de denuncias completas'
       ]
     }
-  ];
+  ], [getCost]);
 
   const location = useLocation();
   const hasAutoTriggered = useRef(false);
@@ -199,7 +199,7 @@ export default function Delitos() {
         hasAutoTriggered.current = false;
       }
     }
-  }, [selectedOption, targetId, view]);
+  }, [selectedOption, targetId, view, handleGenerate]);
 
   const openHelp = (e, opt) => {
     e.stopPropagation();

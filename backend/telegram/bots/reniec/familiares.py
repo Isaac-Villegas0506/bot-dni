@@ -75,7 +75,8 @@ async def generate_familiares_pdf(client, dni: str, static_base_dir: Path) -> di
 
         files_dir = static_base_dir / "files"
         files_dir.mkdir(parents=True, exist_ok=True)
-        filename = f"ARBOL_VISUAL_{dni}.pdf"
+        # PRIVACIDAD: nombre no adivinable (antes incluía el DNI).
+        filename = f"ARBOL_VISUAL_{uuid.uuid4().hex}.pdf"
         path = files_dir / filename
         await found_msg.download_media(file=path)
 
@@ -160,7 +161,8 @@ async def generate_familiares_texto(client, dni: str, static_base_dir: Path) -> 
                             message.file.name and message.file.name.endswith(".txt")):
                         files_dir = static_base_dir / "files"
                         files_dir.mkdir(parents=True, exist_ok=True)
-                        filename = f"FAMILIARES_REPORT_{dni}.txt"
+                        # PRIVACIDAD: nombre no adivinable (antes incluía el DNI).
+                        filename = f"FAMILIARES_REPORT_{uuid.uuid4().hex}.txt"
                         path = files_dir / filename
                         await message.download_media(file=path)
                         txt_file_path = f"files/{filename}"

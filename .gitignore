@@ -23,6 +23,8 @@ backend/serviceAccountKey.json
 _quarantine_sensitive/
 backend/backend.log
 backend.log
+backend/error_log.txt
+*.log
 backend/bot.db
 backend/static/docs/
 backend/static/images/
@@ -41,6 +43,8 @@ fix_*.py
 patch_*.py
 AUDITORIA_*.md
 REPORTE_*.md
+brain/
+debug_*.txt
 
 # Otros
 .DS_Store

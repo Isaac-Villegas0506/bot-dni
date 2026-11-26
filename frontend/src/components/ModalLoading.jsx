@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Modal from './ui/Modal';
 import { ModalButton, ModalCloseButton, ModalHeader, ModalSection } from './ui/ModalElements';
 import { Z_INDEX } from '../lib/zIndex';
@@ -99,10 +99,11 @@ const getRandomPhrase = (stageArray) => stageArray[Math.floor(Math.random() * st
 
 export default function ModalLoading({ loading, showDonation, onClose, customMessage = null, loadingType = 'default' }) {
     const [showQRViewer, setShowQRViewer] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(0);
     const [elapsedTime, setElapsedTime] = useState(0);
-    const phrases = ALL_LOADING_PHRASES[loadingType] || ALL_LOADING_PHRASES['default'];
-    const [currentPhrase, setCurrentPhrase] = useState(phrases.stage1[0]);
+    const phrases = useMemo(
+        () => ALL_LOADING_PHRASES[loadingType] || ALL_LOADING_PHRASES['default'],
+        [loadingType],
+    );
     const totalSeconds = getExpectedSeconds(loadingType, customMessage);
 
     useEffect(() => {
@@ -113,61 +114,27 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
         return () => clearTimeout(syncTimer);
     }, [loading, showDonation]);
 
+    // Cronómetro: avanza elapsedTime mientras hay carga.
+    // Si la carga termina, el reset se hace dentro de los callbacks (setState
+    // asíncrono), nunca de forma síncrona en el cuerpo del efecto.
     useEffect(() => {
-        let timer;
-        let syncTimer;
+        if (!loading) return;
 
-        if (loading && totalSeconds > 0) {
-            syncTimer = setTimeout(() => setTimeLeft(totalSeconds), 0);
-            timer = setInterval(() => {
-                setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
-            }, 1000);
-        } else {
-            syncTimer = setTimeout(() => setTimeLeft(0), 0);
-        }
+        const timer = setInterval(() => {
+            setElapsedTime(prev => prev + 1);
+        }, 1000);
 
-        return () => {
-            clearInterval(timer);
-            clearTimeout(syncTimer);
-        };
-    }, [loading, totalSeconds]);
-
-    useEffect(() => {
-        let timer;
-        let phraseInterval;
-        
-        if (loading) {
-            setElapsedTime(0);
-            setCurrentPhrase(getRandomPhrase(phrases.stage1));
-            
-            // Incrementar elapsed time cada segundo
-            timer = setInterval(() => {
-                setElapsedTime(prev => prev + 1);
-            }, 1000);
-
-            // Cambiar de frase aleatoriamente cada 2-3 segundos dentro de la etapa correspondiente
-            phraseInterval = setInterval(() => {
-                setElapsedTime((currentElapsed) => {
-                    let nextPhrase = '';
-                    if (currentElapsed < 3) nextPhrase = getRandomPhrase(phrases.stage1);
-                    else if (currentElapsed < 8) nextPhrase = getRandomPhrase(phrases.stage2);
-                    else if (currentElapsed < 15) nextPhrase = getRandomPhrase(phrases.stage3);
-                    else nextPhrase = getRandomPhrase(phrases.stage4);
-                    
-                    setCurrentPhrase(nextPhrase);
-                    return currentElapsed; // Keep same value, just needed it for closure
-                });
-            }, 2500);
-        } else {
-            setElapsedTime(0);
-            setCurrentPhrase(phrases.stage1[0]);
-        }
-
-        return () => {
-            clearInterval(timer);
-            clearInterval(phraseInterval);
-        };
+        return () => clearInterval(timer);
     }, [loading]);
+
+    // Rotación de frases según el tiempo transcurrido (estado derivado, sin setState)
+    const currentPhrase = useMemo(() => {
+        if (!loading) return phrases.stage1[0];
+        if (elapsedTime < 3) return getRandomPhrase(phrases.stage1);
+        if (elapsedTime < 8) return getRandomPhrase(phrases.stage2);
+        if (elapsedTime < 15) return getRandomPhrase(phrases.stage3);
+        return getRandomPhrase(phrases.stage4);
+    }, [loading, elapsedTime, phrases]);
 
     const openQRViewer = () => setShowQRViewer(true);
     const handleQRKeyDown = (event) => {

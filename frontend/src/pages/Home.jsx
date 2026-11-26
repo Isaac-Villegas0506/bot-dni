@@ -238,7 +238,7 @@ export default function Home({ darkMode }) {
             <div className="w-full max-w-5xl flex flex-col sm:flex-row justify-center items-center gap-4 mt-10 lg:mt-14 px-4">
                 <button
                     onClick={() => navigate('/creditos')}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors duration-150 focus-ring"
+                    className="btn-primary-minimal w-full px-8 py-4 sm:w-auto"
                 >
                     <span className="material-icons-round text-xl">redeem</span>
                     <span className="font-bold text-sm sm:text-base tracking-wide">Ganar Créditos Gratis</span>
@@ -246,10 +246,10 @@ export default function Home({ darkMode }) {
 
                 <button
                     onClick={openDonation}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-800 px-8 py-4 rounded-lg hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-150 focus-ring"
+                    className="btn-secondary-minimal w-full px-8 py-4 sm:w-auto"
                 >
-                    <span className="text-xl">💜</span>
-                    <span className="font-bold text-sm sm:text-base text-slate-700 dark:text-slate-300">Apoyar con Yape</span>
+                    <span className="material-icons-round text-xl">favorite</span>
+                    <span className="font-bold text-sm sm:text-base">Apoyar con Yape</span>
                 </button>
             </div>
 

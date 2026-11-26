@@ -1,3 +1,13 @@
+/* Hallmark · v2.0.0
+   redesign: full · scope: site (SPA de consultas DNI)
+   genre: modern-minimal · built: the project
+   critique: sistema Apple-blue sobre slate; se conserva la identidad y se
+   endurecen jerarquía, estados y densidad móvil. Reparto 60/30/10 declarado
+   en --color-surface-60 / --color-surface-30 / --color-accent-10.
+   waive: 1 (--font-display conserva la pila del sistema: es la identidad del producto)
+   waive: 74 (escala slate de Tailwind: es la paleta de la marca, no un default)
+   answered: 26b (todos los controles tienen :active vía sus utilidades)
+*/
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
@@ -31,6 +41,7 @@
   --font-display: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --font-icons:   'Material Symbols Rounded', 'Material Icons Round', sans-serif;
 
   /* ── Border Radius (Apple heavily uses rounded corners) ────────── */
   --radius-sm:  0.5rem;    /* 8px  */
@@ -48,6 +59,33 @@
   --shadow-lg:   0 8px 24px 0 rgba(0,0,0,0.08);
   --shadow-xl:   0 12px 32px 0 rgba(0,0,0,0.1);
   --shadow-glow: 0 0 0 4px rgba(0, 113, 227, 0.2);
+  /* Elevación de botones (antes no existía y los CTA salían planos) */
+  --shadow-btn:       0 1px 2px rgba(2,6,23,0.10), 0 4px 12px -2px rgba(2,6,23,0.18);
+  --shadow-btn-hover: 0 2px 4px rgba(2,6,23,0.12), 0 8px 20px -4px rgba(2,6,23,0.26);
+
+  /* ── Distribución de color 60 / 30 / 10 ─────────────────
+     El sistema se reparte así en toda la app:
+       60%  --color-surface-60  (fondo dominante; neutro frío)
+       30%  --color-surface-30  (superficies y texto de apoyo)
+       10%  --color-accent-10   (acción y énfasis: SOLO el CTA primario) */
+  --color-surface-60-light: #F8FAFC;
+  --color-surface-60-dark:  #020617;
+  --color-surface-30-light: #E2E8F0;
+  --color-surface-30-dark:  #0F172A;
+  --color-accent-10:        #0071E3;
+  --color-accent-10-hover:  #0058B0;
+
+  /* ── Superficies de vidrio y bordes ───────────────────── */
+  --glass-dark:        rgba(15, 23, 42, 0.9);
+  --glass-dark-border: rgba(255, 255, 255, 0.08);
+  --glass-dark-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --border-muted:      #CBD5E1;
+  --border-dark:       #1E293B;
+  --surface-dark-hover:#16233B;
+  --border-dark-hover: #334155;
+  --glass-light:        rgba(255, 255, 255, 0.9);
+  --glass-light-border: rgba(255, 255, 255, 0.4);
+  --on-accent:          #FFFFFF;
 
   /* ── Transitions ──────────────────────────────── */
   --duration-fast:   150ms;
@@ -92,6 +130,9 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   min-height: 100%;
+  /* clip en vez de hidden: `hidden` rompe position: sticky en los ancestros
+     y era la causa de que algunas tarjetas anchas se salieran de pantalla. */
+  overflow-x: clip;
 }
 
 body {
@@ -105,7 +146,7 @@ body {
   transition: background-color 300ms ease, color 300ms ease;
   min-height: 100dvh;
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 #root {
@@ -125,17 +166,17 @@ body {
 
 /* ── Glass Card ────────────────────────────────────────────────────────────── */
 @utility glass-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-light);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--glass-light-border);
   box-shadow: var(--shadow-md);
 }
 
 .dark .glass-card {
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  background: var(--glass-dark);
+  border: 1px solid var(--glass-dark-border);
+  box-shadow: var(--glass-dark-shadow);
 }
 
 /* ── Focus Ring Utility ────────────────────────────────────────────────────── */
@@ -143,10 +184,111 @@ body {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900;
 }
 
+/* ── Botones base ──────────────────────────────────────────────────────────
+   `btn-primary-minimal` y `btn-secondary-minimal` se usaban en Home.jsx pero
+   nunca estuvieron definidas: los dos CTA de la portada salían planos, sin
+   sombra ni foco. Aquí quedan con elevación real y el acento al 10%.        */
+
+@utility btn-primary-minimal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 44px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-accent-10);
+  color: var(--on-accent);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-btn);
+  transition-property: background-color, box-shadow, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-smooth);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-accent-10-hover);
+    box-shadow: var(--shadow-btn-hover);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-xs);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent-10);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+@utility btn-secondary-minimal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 44px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-card-light);
+  color: var(--color-text-main-light);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--color-surface-30-light);
+  box-shadow: var(--shadow-btn);
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-smooth);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--on-accent);
+    border-color: var(--border-muted);
+    box-shadow: var(--shadow-btn-hover);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-xs);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent-10);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.dark .btn-secondary-minimal {
+  background-color: var(--color-card-dark);
+  color: var(--color-text-main-dark);
+  border-color: var(--border-dark);
+
+  &:hover {
+    background-color: var(--surface-dark-hover);
+    border-color: var(--border-dark-hover);
+  }
+}
+
 /* ── Material Icons ────────────────────────────────────────────────────────── */
 .material-symbols-rounded,
 .material-icons-round {
-  font-family: 'Material Symbols Rounded', 'Material Icons Round', sans-serif;
+  font-family: var(--font-icons);
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -171,7 +313,19 @@ body {
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: var(--border-muted);
   border-radius: 9999px;
 }
-.dark ::-webkit-scrollbar-thumb { background: #334155; }
+.dark ::-webkit-scrollbar-thumb { background: var(--border-dark-hover); }
+
+/* ── Accesibilidad: movimiento reducido ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

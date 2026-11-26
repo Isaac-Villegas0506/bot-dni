@@ -1,28 +1,83 @@
 services:
-  # Backend: FastAPI
+  # ─────────────────────────────────────────────────────────────────────────
+  # Backend: FastAPI  →  https://bot-dni-backend.onrender.com
+  # ─────────────────────────────────────────────────────────────────────────
   - type: web
     name: bot-dni-backend
-    env: python
+    runtime: python
+    plan: free
+    healthCheckPath: /
     buildCommand: "pip install -r backend/requirements.txt"
-    startCommand: "cd backend && gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
+    # -w 1 es OBLIGATORIO: el BotPool y el rate limit viven en memoria y
+    # Telethon duplica AuthKey si hay más de un worker con la misma sesión.
+    startCommand: "cd backend && gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 180"
     envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: TELEGRAM_SESSION_STRING
-        sync: false
+      # ── Entorno ──
+      - key: ENVIRONMENT
+        value: production
+      # ── Telegram (cuenta 1) ──
       - key: TELEGRAM_API_ID
         sync: false
       - key: TELEGRAM_API_HASH
         sync: false
+      - key: TELEGRAM_SESSION_STRING
+        sync: false
+      # ── Telegram (cuenta 2, balanceo de carga) ──
+      - key: TELEGRAM_API_ID_2
+        sync: false
+      - key: TELEGRAM_API_HASH_2
+        sync: false
+      - key: TELEGRAM_SESSION_STRING_2
+        sync: false
+      # ── Bot objetivo ──
       - key: TARGET_BOT_USERNAME
-        value: "@SectaData_Bot"
+        value: "@Sitexdata_bot"
+      # ── Base de datos (Supabase/Postgres) ──
+      - key: DATABASE_URL
+        sync: false
+      # ── Seguridad ──
+      - key: SECRET_KEY
+        sync: false
+      # El frontend está en Vercel, no en Render. Sin esto, CORS en
+      # producción bloquea todas las peticiones de la SPA.
+      - key: ALLOWED_ORIGINS
+        value: "https://bot-dni.vercel.app"
+      - key: ENFORCE_TURNSTILE
+        value: "true"
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: ALLOW_DEV_LOGIN
+        value: "false"
+      - key: ALLOW_INSECURE_FIREBASE_FALLBACK
+        value: "false"
+      # ── Firebase Admin (verificación de id_token) ──
+      - key: FIREBASE_CREDENTIALS
+        sync: false
+      # ── Email (notificaciones de compra) ──
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: ADMIN_NOTIFICATION_EMAILS
+        sync: false
+      # ── Receipts / banners ──
+      - key: IMGBB_API_KEY
+        sync: false
+      # ── Rate limiting (peticiones por minuto) ──
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      - key: RATE_LIMIT_SEARCH_MAX
+        value: "20"
+      - key: RATE_LIMIT_LOGIN_MAX
+        value: "10"
+      - key: RATE_LIMIT_UPLOAD_MAX
+        value: "10"
+      - key: RATE_LIMIT_WRITE_MAX
+        value: "60"
 
-  # Frontend: Static Site (Vite)
-  - type: web
-    name: bot-dni-frontend
-    env: static
-    buildCommand: "cd frontend && npm install && npm run build"
-    staticPublishPath: "frontend/dist"
-    envVars:
-      - key: VITE_API_URL
-        value: "https://bot-dni-backend.onrender.com" # Cambia esto por tu URL de Render una vez desplegado
+# ─────────────────────────────────────────────────────────────────────────
+# NOTA: el frontend NO se despliega en Render.
+#       Vive en Vercel:  https://bot-dni.vercel.app
+#       Configuración de Vercel: frontend/vercel.json (rewrites /api/* →
+#       bot-dni-backend.onrender.com). No requiere servicios estáticos aquí.
+# ─────────────────────────────────────────────────────────────────────────

@@ -4,21 +4,18 @@ bot_client.py — Thin wrapper de compatibilidad.
 Este archivo mantiene la API pública original de BotClient para que
 main.py no requiera cambios.
 
-Cada método delega a su módulo especializado en telegram/bots/.
+DOS FAMILIAS DE BOTS
+────────────────────
+  PREMIUM  → @Bitxdatabot  (telegram/bitx_client.py + telegram/bitx_parser.py)
+             Todas las consultas de pago: RENIEC full, C4, DNI virtuales,
+             hogar/familiares, telefonía, denuncias, facial y Seeker.
 
-NUEVA ARQUITECTURA:
-  telegram/bots/dni_bot.py          → query_bot / search_premium_group / search_with_sirius
-  telegram/bots/fiscalia_bot.py     → query_fiscalia_bot
-  telegram/bots/operadora_bot.py    → query_operadora
-  telegram/bots/telefono_bot.py     → query_telx / query_telp / query_cel
-  telegram/bots/vehiculos_bot.py    → query_record
-  telegram/bots/antecedentes_bot.py → generate_antpen / antjud / antpol
-  telegram/bots/c4_bot.py           → generate_c4_blue / generate_c4_inscripcion
-  telegram/bots/dni_virtual_bot.py  → generate_dni_electronico / azul / amarillo
-  telegram/bots/familiares_bot.py   → generate_familiares_pdf / texto / arbol_visual_pdf
-  telegram/bots/facial_bot.py       → generate_facial
-  telegram/bots/delitos_bot.py      → query_delitos
-  telegram/bots/metadata/metadata.py → query_metadata
+  GRATIS   → pool de telegram/bots/  (@SeleneSearch_Bot, @DEALERDATABOT,
+             @HexDataBOT, @ImperialData_bot...). DNI básico, nombre,
+             operadora, récord vehicular, fiscalía.
+
+La migración a BitxData se hizo el 2026-11-26 porque @Infordata1_bot
+(que cubría casi todo lo premium) dejó de ser un bot de consultas.
 """
 
 import os
@@ -29,32 +26,18 @@ from telethon.sessions import StringSession
 # ── Re-exportar SinResultadosError para compatibilidad con main.py ─────────
 from telegram.exceptions import SinResultadosError   # noqa: F401 — usado por main.py
 
-# ── Módulos especializados ─────────────────────────────────────────────────
+# ── Cliente PREMIUM (BitxData) ─────────────────────────────────────────────
+from telegram.bitx_client import run_command as _bitx_run
+
+# ── Módulos especializados del POOL GRATUITO ───────────────────────────────
+# (todo lo premium vive ahora en telegram/bitx_client.py)
 from telegram.bots.reniec.dni_gratis import query_dni_gratis
-from telegram.bots.reniec.dni_premium import query_dni_premium
 from telegram.bots.reniec.busqueda_por_nombre import busqueda_por_nombre
 from telegram.bots.fiscalia.fiscalia import query_fiscalia
 from telegram.bots.telefonia.operadora import query_operadora as _query_operadora
 from telegram.bots.telefonia.telefono import query_telx as _query_telx
-from telegram.bots.telefonia.telefono import query_telp as _query_telp
 from telegram.bots.telefonia.telefono import query_cel as _query_cel
 from telegram.bots.vehiculos.vehiculos import query_record as _query_record
-from telegram.bots.antecedentes.antecedentes import generate_antecedentes
-from telegram.bots.generador_reniec.generar_c4_azul import generate_c4_azul
-from telegram.bots.generador_reniec.generar_ficha_inscripcion import generate_c4_inscripcion
-from telegram.bots.generador_reniec.dni_virtual import (
-    generate_dni_electronico as _gen_dni_electronico,
-    generate_dni_azul as _gen_dni_azul,
-    generate_dni_amarillo as _gen_dni_amarillo,
-)
-from telegram.bots.reniec.familiares import (
-    generate_familiares_pdf as _gen_fam_pdf,
-    generate_familiares_texto as _gen_fam_texto,
-    query_arbol_visual_pdf as _query_arbol,
-)
-from telegram.bots.facial.facial import generate_facial as _gen_facial
-from telegram.bots.delitos.delitos import query_delitos as _query_delitos
-from telegram.bots.metadata.metadata import query_metadata as _query_metadata
 
 
 def _static_dir() -> Path:
@@ -85,8 +68,11 @@ class BotClient:
             self.client = TelegramClient(session_path, self.api_id, self.api_hash)
 
         self.target_bot = os.getenv("TARGET_BOT_USERNAME")
-        self.name_search_bot = "@OlimpoDataBot"
+        self.name_search_bot = "@SeleneSearch_Bot"
         self.bot_pool = None  # Set externally by main.py
+
+        # Bot PREMIUM (BitxData). Configurable por entorno.
+        self.premium_bot = os.getenv("BITX_BOT_USERNAME", "@Bitxdatabot")
 
         # Cliente secundario para balanceo de carga
         session_string2 = os.getenv("TELEGRAM_SESSION_STRING_2")
@@ -143,31 +129,37 @@ class BotClient:
             except Exception:
                 pass
 
-    # ── Métodos de compatibilidad (delegan a módulos especializados) ──────
+    # ── Helpers de BitxData (PREMIUM) ────────────────────────────────────
+
+    async def _bitx(self, command_key: str, argument: str = "", file_path: str | None = None) -> dict:
+        """
+        Ejecuta un comando en @Bitxdatabot y devuelve un dict plano.
+
+        Normaliza la respuesta del bot (texto + archivos/fotos) al formato
+        que consumen los endpoints de main.py.
+        """
+        await self._ensure_connection()
+        result = await _bitx_run(
+            self.client,
+            command_key,
+            argument,
+            _static_dir(),
+            bot_username=self.premium_bot,
+            file_path=file_path,
+        )
+        return result.to_dict()
+
+    # ── Métodos GRATIS (pool de bots) ────────────────────────────────────
 
     async def query_bot(self, dni):
-        """Consulta DNI gratuita — delega a telegram/bots/dni_bot.py"""
+        """Consulta DNI gratuita — pool de bots gratis."""
         await self._ensure_connection()
         return await query_dni_gratis(
             self.client, self.client2, self.bot_pool, str(dni), _static_dir()
         )
 
-    async def query_metadata(self, dni: str) -> dict:
-        return await _query_metadata(
-            self.client, self.bot_pool, dni, _static_dir()
-        )
-
-    async def search_premium_group(self, dni):
-        """Consulta DNI premium — delega a telegram/bots/dni_bot.py"""
-        await self._ensure_connection()
-        return await query_dni_premium(
-            self.client, self.bot_pool, str(dni), _static_dir(),
-            target_group=f"@Infordata1_bot",
-            target_bot_id=self.premium_bot_id,
-        )
-
     async def search_with_sirius(self, nombres, paterno, materno):
-        """Búsqueda por nombre — delega a telegram/bots/dni_bot.py"""
+        """Búsqueda por nombre — pool de bots gratis."""
         await self._ensure_connection()
         return await busqueda_por_nombre(
             self.client, self.client2, self.bot_pool,
@@ -180,102 +172,108 @@ class BotClient:
         return _parse_sirius_re(text)
 
     async def query_fiscalia_bot(self, target: str, option_type: str) -> dict:
-        """Consulta Fiscalía — delega a telegram/bots/fiscalia_bot.py"""
+        """Consulta Fiscalía — pool de bots gratis."""
         await self._ensure_connection()
         return await query_fiscalia(self.client, target, option_type, _static_dir())
 
     async def query_operadora(self, phone: str) -> dict:
-        """Consulta operadora — delega a telegram/bots/operadora_bot.py"""
+        """Consulta operadora — pool de bots gratis."""
         await self._ensure_connection()
         return await _query_operadora(self.client, self.client2, phone)
 
     async def query_telx(self, dni: str) -> dict:
-        """Teléfonos por DNI — delega a telegram/bots/telefono_bot.py"""
+        """Teléfonos por DNI — pool de bots gratis."""
         await self._ensure_connection()
         return await _query_telx(self.client, dni)
 
-    async def query_telp(self, phone: str) -> dict:
-        """Línea por número (premium) — delega a telegram/bots/telefono_bot.py"""
-        await self._ensure_connection()
-        return await _query_telp(
-            self.client, phone,
-            target_group=self.premium_group_id,
-            target_bot_id=self.premium_bot_id,
-        )
-
     async def query_cel(self, phone: str) -> dict:
-        """Titular por número — delega a telegram/bots/telefono_bot.py"""
+        """Titular por número — pool de bots gratis."""
         await self._ensure_connection()
         return await _query_cel(self.client, phone)
 
     async def query_record(self, target: str) -> dict:
-        """Récord vehicular — delega a telegram/bots/vehiculos_bot.py"""
+        """Récord vehicular — pool de bots gratis."""
         await self._ensure_connection()
         return await _query_record(self.client, target, _static_dir())
 
-    async def generate_antpen(self, dni) -> dict:
-        """Antecedentes Penales — delega a telegram/bots/antecedentes_bot.py"""
-        await self._ensure_connection()
-        return await generate_antecedentes(self.client, str(dni), "penales", _static_dir())
+    # ── Métodos PREMIUM (BitxData) ───────────────────────────────────────
 
-    async def generate_antjud(self, dni) -> dict:
-        """Antecedentes Judiciales — delega a telegram/bots/antecedentes_bot.py"""
-        await self._ensure_connection()
-        return await generate_antecedentes(self.client, str(dni), "judiciales", _static_dir())
+    async def search_premium_group(self, dni) -> dict:
+        """DNI Premium / RENIEC Full Biometría — /dnif"""
+        return await self._bitx("dni_premium", str(dni))
 
-    async def generate_antpol(self, dni) -> dict:
-        """Antecedentes Policiales — delega a telegram/bots/antecedentes_bot.py"""
-        await self._ensure_connection()
-        return await generate_antecedentes(self.client, str(dni), "policiales", _static_dir())
+    async def query_dni_premium_online(self, dni) -> dict:
+        """RENIEC Online NV3 — /dni"""
+        return await self._bitx("dni", str(dni))
+
+    async def query_metadata(self, dni: str) -> dict:
+        """Info Global / Reporte Seeker PDF — /seekerpdf"""
+        return await self._bitx("seekerpdf", str(dni))
+
+    async def query_telp(self, phone: str) -> dict:
+        """Telefonía completa (titular de línea) — /telp"""
+        return await self._bitx("telp", str(phone))
+
+    async def query_fonos(self, dni: str) -> dict:
+        """Líneas asociadas a un DNI — /fonos"""
+        return await self._bitx("fonos", str(dni))
 
     async def generate_c4_blue(self, dni) -> dict:
-        """Ficha C4 Azul — delega a telegram/bots/c4_bot.py"""
-        await self._ensure_connection()
-        return await generate_c4_azul(self.client, str(dni), _static_dir())
+        """Ficha C4 Azul — /c4a"""
+        return await self._bitx("c4_azul", str(dni))
 
     async def generate_c4_inscripcion(self, dni) -> dict:
-        """Ficha C4 Inscripción — delega a telegram/bots/c4_bot.py"""
-        await self._ensure_connection()
-        return await generate_c4_inscripcion(self.client, str(dni), _static_dir())
+        """Ficha C4 Inscripción — /c4i"""
+        return await self._bitx("c4_inscripcion", str(dni))
 
     async def generate_dni_electronico(self, dni) -> dict:
-        """DNI Electrónico — delega a telegram/bots/dni_virtual_bot.py"""
-        await self._ensure_connection()
-        return await _gen_dni_electronico(self.client, str(dni), _static_dir())
+        """DNI Electrónico — /dnivel (2 fotos + datos)"""
+        return await self._bitx("dni_electronico", str(dni))
 
     async def generate_dni_azul(self, dni) -> dict:
-        """DNI Azul — delega a telegram/bots/dni_virtual_bot.py"""
-        await self._ensure_connection()
-        return await _gen_dni_azul(self.client, str(dni), _static_dir())
+        """DNI Virtual Azul — /dniv (2 fotos + datos)"""
+        return await self._bitx("dni_azul", str(dni))
 
     async def generate_dni_amarillo(self, dni) -> dict:
-        """DNI Amarillo — delega a telegram/bots/dni_virtual_bot.py"""
-        await self._ensure_connection()
-        return await _gen_dni_amarillo(self.client, str(dni), _static_dir())
+        """DNI Amarillo — /dniva (2 fotos + datos)"""
+        return await self._bitx("dni_amarillo", str(dni))
 
-    async def generate_familiares_pdf(self, dni) -> dict:
-        """Árbol Visual PDF — delega a telegram/bots/familiares_bot.py"""
-        await self._ensure_connection()
-        return await _gen_fam_pdf(self.client, str(dni), _static_dir())
+    async def generate_hogar(self, dni) -> dict:
+        """Reporte SISFOH / Hogar — /hogar"""
+        return await self._bitx("hogar", str(dni))
 
-    async def generate_familiares_texto(self, dni) -> dict:
-        """Árbol Genealógico texto — delega a telegram/bots/familiares_bot.py"""
-        await self._ensure_connection()
-        return await _gen_fam_texto(self.client, str(dni), _static_dir())
+    async def generate_arbol_texto(self, dni) -> dict:
+        """Árbol genealógico en texto — /ag"""
+        return await self._bitx("arbol_texto", str(dni))
+
+    async def generate_arbol_visual(self, dni) -> dict:
+        """Árbol visual (imagen) — /agv"""
+        return await self._bitx("arbol_visual", str(dni))
 
     async def query_arbol_visual_pdf(self, dni: str) -> dict:
-        """Árbol Visual v2 PDF — delega a telegram/bots/familiares_bot.py"""
-        await self._ensure_connection()
-        return await _query_arbol(self.client, self.bot_pool, dni, _static_dir())
+        """Árbol visual completo en PDF — /agvpdf"""
+        return await self._bitx("arbol_visual_pdf", str(dni))
 
     async def generate_facial(self, file_path: str) -> dict:
-        """Búsqueda Facial — delega a telegram/bots/facial_bot.py"""
-        await self._ensure_connection()
-        return await _gen_facial(self.client, file_path, _static_dir())
+        """Búsqueda facial — /reco (envía la imagen)"""
+        return await self._bitx("facial", file_path=file_path)
+
+    async def query_denuncias(self, target: str) -> dict:
+        """Denuncias por DNI — /denuncias"""
+        return await self._bitx("denuncias", str(target))
+
+    async def query_denuncias_placa(self, placa: str) -> dict:
+        """Denuncias por placa — /pladenuncias"""
+        return await self._bitx("denuncias_placa", str(placa))
 
     async def query_delitos(self, query_type: str, target: str) -> dict:
-        """Denuncias/Delitos — delega a telegram/bots/delitos_bot.py"""
-        await self._ensure_connection()
-        return await _query_delitos(
-            self.client, self.bot_pool, query_type, target, _static_dir()
-        )
+        """
+        Denuncias/Delitos.
+
+        ``query_type`` puede ser 'dni'/'antper' (denuncias por DNI) o
+        'placa' (denuncias por placa). Antecedentes penales/judiciales/
+        policiales NO tienen comando en BitxData: se mantienen desactivados.
+        """
+        if query_type in ("placa", "denuncias_placa"):
+            return await self.query_denuncias_placa(target)
+        return await self.query_denuncias(target)

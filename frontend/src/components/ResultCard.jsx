@@ -16,11 +16,56 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
     const navigate = useNavigate();
 
     const baseResult = incomingResult.data || incomingResult || {};
+
+    // Helper temprano: se usa antes de definir `hasValue` (que va más abajo)
+    const hasValueSafe = (v) => v !== undefined && v !== null
+        && String(v).trim() !== ''
+        && String(v).trim() !== '-'
+
+    // ── Normalización de imágenes de BitxData ──────────────────────────────
+    // El bot premium devuelve `image_paths` (array) en lugar de `imagen_url`.
+    // Para /dnif las 4 fotos son: [cara, huella?, huella?, firma?]; para los
+    // DNI virtuales son [frontal, reverso]. Mapeamos a los campos que ya usa
+    // esta tarjeta para que se muestren sin tocar el resto del componente.
+    const paths = baseResult.image_paths || baseResult.data?.image_paths || [];
+    const imagenes = { ...baseResult };
+    if (paths.length > 0 && !imagenes.imagen_url) {
+        imagenes.imagen_url = paths[0];                        // foto principal
+    }
+    // El backend ya entrega firma_imagen / huella_izquierda / huella_derecha
+    // con el orden correcto (1 rostro, 2 firma, 3 huella izq, 4 huella der).
+    // Solo rellenamos por posición cuando el backend NO los mandó (bots gratis,
+    // DNI virtual frontal/reverso, etc.).
+    if (!hasValueSafe(imagenes.firma_imagen) && paths.length >= 4) {
+        imagenes.firma_imagen     = paths[1];
+        imagenes.huella_izquierda = paths[2];
+        imagenes.huella_derecha   = paths[3];
+    } else if (paths.length > 1 && !hasValueSafe(imagenes.imagen_reverso)) {
+        imagenes.imagen_reverso = paths[1];
+    }
+
     const result = incomingResult.file_path
-        ? { ...baseResult, file_path: incomingResult.file_path }
-        : baseResult;
+        ? { ...imagenes, file_path: incomingResult.file_path }
+        : imagenes;
 
     const initials = `${result.nombres?.charAt(0) || ''}${result.apellidos?.charAt(0) || ''}`;
+
+    // ── Ocultar campos sin datos ───────────────────────────────────────────
+    // Los bots no devuelven siempre todos los campos. Mostrar "-" en cada
+    // casilla deja la tarjeta llena de huecos vacíos.
+    const hasValue = (v) => v !== undefined && v !== null
+        && String(v).trim() !== ''
+        && String(v).trim() !== '-'
+        && String(v).trim().toUpperCase() !== 'N/A';
+
+    // La sección de registro solo se pinta si algún campo tiene dato
+    const hasRegistro = ['fecha_emision', 'fecha_inscripcion', 'fecha_caducidad', 'restriccion']
+        .some((k) => hasValue(result[k]));
+
+    // Biometría: solo si hay alguna imagen real
+    const bioImgs = [result.firma_imagen, result.huella_izquierda, result.huella_derecha,
+                     result.imagen_extra_1, result.imagen_extra_2];
+    const hasBiometria = bioImgs.some((v) => hasValue(v));
 
     useEffect(() => {
         const handleEsc = (e) => {
@@ -302,10 +347,16 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                className="w-full max-w-md md:max-w-6xl space-y-6 pb-20 mx-auto"
+                className="mx-auto w-full min-w-0 max-w-md space-y-4 pb-20 sm:space-y-6 md:max-w-6xl"
             >
-                <div className="w-full mb-3 px-1 flex items-center justify-between gap-2 no-print">
-                    <div className="flex items-center gap-2">
+                {/* ── Barra de acciones ─────────────────────────────────────
+                    Antes eran 4 botones en un `flex` sin wrap: en móvil se
+                    salían de pantalla y quedaban pegados. Ahora es una barra
+                    que envuelve (wrap), con separación real y agrupando a la
+                    izquierda las acciones de documento y a la derecha las de
+                    la ficha. En móvil cada grupo ocupa su propia fila. */}
+                <div className="no-print mb-4 flex w-full flex-col gap-3 px-1 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
                         {onBack && (
                             <BackButton onClick={onBack} />
                         )}
@@ -314,12 +365,15 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                             <button
                                 onClick={handleDownloadC4}
                                 disabled={c4Loading}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-800 dark:bg-amber-950/25 dark:text-amber-300 dark:hover:bg-amber-950/40 md:px-5"
+                                className="flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-bold text-amber-800 shadow-sm transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-800 dark:bg-amber-950/25 dark:text-amber-300 dark:hover:bg-amber-950/40 md:px-5"
                             >
                                 {c4Loading ? (
                                     <span>Generando...</span>
                                 ) : (
-                                    <span>Descargar C4</span>
+                                    <>
+                                        <span className="material-icons-round text-lg">badge</span>
+                                        <span>Descargar C4</span>
+                                    </>
                                 )}
                             </button>
                         )}
@@ -342,25 +396,33 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                         console.error('Error al descargar archivo:', err);
                                     }
                                 }}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 md:px-5"
+                                className="btn-primary-minimal px-4 text-sm md:px-5"
                             >
-                                <span className="hidden md:inline">Descargar Archivo</span>
-                                <span className="md:hidden">Archivo</span>
+                                <span className="material-icons-round text-lg">download</span>
+                                <span className="hidden sm:inline">Descargar archivo</span>
+                                <span className="sm:hidden">Archivo</span>
                             </button>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <button onClick={handleDownloadPDF} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-ring md:px-5">
-                            <span className="hidden md:inline">Descargar PDF</span>
-                            <span className="md:hidden">PDF</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            onClick={handleDownloadPDF}
+                            className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-ring dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 sm:flex-none md:px-5"
+                        >
+                            <span className="material-icons-round text-lg">picture_as_pdf</span>
+                            <span className="hidden sm:inline">Descargar PDF</span>
+                            <span className="sm:hidden">PDF</span>
                         </button>
 
-                        <button onClick={handleShare} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-ring dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 md:px-5">
-                            <span className="hidden md:inline">Compartir</span>
-                            <span className="md:hidden">Share</span>
+                        <button
+                            onClick={handleShare}
+                            className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-ring dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 sm:flex-none md:px-5"
+                        >
+                            <span className="material-icons-round text-lg">share</span>
+                            <span className="hidden sm:inline">Compartir</span>
+                            <span className="sm:hidden">Enviar</span>
                         </button>
-
                     </div>
                 </div>
 
@@ -402,7 +464,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
 
                             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto md:mx-0">
                                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mb-1">DNI</p>
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">DNI</p>
                                     <div className="flex items-center justify-center md:justify-start gap-2">
                                         <p className="font-mono font-bold text-blue-700 dark:text-blue-400 text-lg md:text-xl">{result.documento}</p>
                                         <button
@@ -416,7 +478,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                     </div>
                                 </div>
                                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mb-1">Género</p>
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Género</p>
                                     <div className="flex items-center justify-center md:justify-start">
                                         <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{result.genero}</p>
                                     </div>
@@ -426,7 +488,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                     </div>
                 </div>
 
-                {searchType === 'premium' && (
+                {searchType === 'premium' && hasBiometria && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                         <div className="md:col-span-2 flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
@@ -435,9 +497,9 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Registros biométricos oficiales de RENIEC</p>
                                 </div>
                             </div>
-                            <span className="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest border border-amber-200 dark:border-amber-700/50">Premium</span>
+                            <span className="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 dark:border-amber-700/50">Premium</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 md:gap-4 md:col-span-2">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 md:col-span-2">
                             <BioImageCard 
                                 label="Firma" 
                                 url={result.firma_imagen} 
@@ -470,37 +532,63 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                         </div>
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest font-bold">Nacimiento</p>
-                                    <div className="flex items-center gap-2">
-                                        <span className="material-icons-round text-slate-400 text-base">calendar_today</span>
-                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.fecha_nacimiento || '-'}</p>
+                                {hasValue(result.fecha_nacimiento) && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Nacimiento</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-icons-round text-slate-400 text-base">calendar_today</span>
+                                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.fecha_nacimiento}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest font-bold">Edad</p>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.edad ? `${result.edad} Años` : '-'}</p>
-                                </div>
+                                )}
+                                {hasValue(result.edad) && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Edad</p>
+                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.edad} Años</p>
+                                    </div>
+                                )}
                             </div>
                             {searchType === 'premium' && (
                                 <div className="grid grid-cols-2 gap-6 pt-2">
-                                    <div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest font-bold">Estado Civil</p>
-                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.estado_civil || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest font-bold">Género</p>
-                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.genero || '-'}</p>
-                                    </div>
+                                    {hasValue(result.estado_civil) && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Estado Civil</p>
+                                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.estado_civil}</p>
+                                        </div>
+                                    )}
+                                    {hasValue(result.genero) && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Género</p>
+                                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.genero}</p>
+                                        </div>
+                                    )}
+                                    {hasValue(result.grado_instruccion || result.instruccion) && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Instrucción</p>
+                                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.grado_instruccion || result.instruccion}</p>
+                                        </div>
+                                    )}
+                                    {hasValue(result.estatura) && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Estatura</p>
+                                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.estatura}</p>
+                                        </div>
+                                    )}
+                                    {hasValue(result.donacion_organos) && (
+                                        <div className="col-span-2">
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Donante de Órganos</p>
+                                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.donacion_organos}</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {(result.padre || result.madre) && (
                                 <div className="mt-4">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest font-bold">Filiación</p>
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Filiación</p>
                                     <div className="grid grid-cols-1 gap-3">
                                         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between mb-2">
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Padre</p>
+                                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Padre</p>
                                                 {result.dni_padre && (
                                                     <span 
                                                         onClick={() => handleCopyDNI(result.dni_padre)}
@@ -515,7 +603,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                         </div>
                                         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between mb-2">
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Madre</p>
+                                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Madre</p>
                                                 {result.dni_madre && (
                                                     <span 
                                                         onClick={() => handleCopyDNI(result.dni_madre)}
@@ -542,13 +630,13 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Domicilio</h3>
                         </div>
                         <div className="space-y-6 flex-1">
-                            <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
                                 <LocationBox label="Dpto" value={result.departamento} />
                                 <LocationBox label="Prov" value={result.provincia} />
                                 <LocationBox label="Dist" value={result.distrito} />
                             </div>
                             <div className="pt-2 flex-1 flex flex-col justify-center">
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest font-bold">Dirección Completa</p>
+                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Dirección Completa</p>
                                 <div className="flex items-start space-x-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors">
                                     <span className="material-icons-round text-red-500 mt-0.5">place</span>
                                     <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base leading-relaxed">
@@ -559,7 +647,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                         </div>
                     </div>
 
-                    {searchType === 'premium' && (
+                    {searchType === 'premium' && hasRegistro && (
                         <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                             <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
                                 <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
@@ -568,22 +656,30 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">Información de Registro</h3>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest font-bold">Emisión</p>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.fecha_emision || '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest font-bold">Inscripción</p>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.fecha_inscripcion || '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest font-bold">Caducidad</p>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base text-red-500 dark:text-red-400">{result.fecha_caducidad || '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest font-bold">Restricción</p>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.restriccion || 'NINGUNA'}</p>
-                                </div>
+                                {hasValue(result.fecha_emision) && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Emisión</p>
+                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.fecha_emision}</p>
+                                    </div>
+                                )}
+                                {hasValue(result.fecha_inscripcion) && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Inscripción</p>
+                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.fecha_inscripcion}</p>
+                                    </div>
+                                )}
+                                {hasValue(result.fecha_caducidad) && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Caducidad</p>
+                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base text-red-500 dark:text-red-400">{result.fecha_caducidad}</p>
+                                    </div>
+                                )}
+                                {hasValue(result.restriccion) && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Restricción</p>
+                                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base">{result.restriccion}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -705,7 +801,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
 function LocationBox({ label, value }) {
     return (
         <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3 border border-slate-200 dark:border-slate-700/50 hover:border-blue-300 dark:hover:border-blue-500 transition-colors">
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mb-1">{label}</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{label}</p>
             <p className="text-xs md:text-sm font-bold text-slate-900 dark:text-white truncate" title={value}>{value || '-'}</p>
         </div>
     );
@@ -713,10 +809,12 @@ function LocationBox({ label, value }) {
 
 function BioImageCard({ label, url, onDownload, onPreview }) {
     return (
-        <div className="flex flex-col gap-1.5">
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-black text-center">{label}</p>
+        <div className="flex min-w-0 flex-col gap-2">
+            {/* Etiqueta en caja baja y sin tracking (antes iba en mayúsculas
+                espaciadas, que lee como etiqueta generada) */}
+            <p className="truncate text-center text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p>
             <div 
-                className={`group relative h-20 md:h-32 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700/50 ${url ? 'cursor-pointer' : ''}`}
+                className={`group relative h-28 sm:h-32 md:h-36 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700/50 ${url ? 'cursor-pointer' : ''}`}
             >
                 {url ? (
                     <>

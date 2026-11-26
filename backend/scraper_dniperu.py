@@ -39,7 +39,7 @@ class DniPeruScraper:
                     data = json.loads(json_match.group(1))
                     if 'security' in data: tokens['security'] = data['security']
                     if 'nonce' in data: tokens['security'] = data['nonce'] # A veces se llama nonce
-                except: pass
+                except Exception: pass
 
             # 2. Búsqueda por Regex directa si falla el JSON (Backup robusto)
             if 'security' not in tokens:

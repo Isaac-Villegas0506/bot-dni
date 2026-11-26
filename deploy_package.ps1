@@ -200,7 +200,18 @@ Write-Host "Copiando archivos del Backend..." -ForegroundColor Cyan
 Copy-Item -Path "backend/*.py" -Destination "$DeploymentDir/backend"
 Copy-Item -Path "backend/requirements.txt" -Destination "$DeploymentDir/backend"
 Copy-Item -Path "backend/bot-dni.service" -Destination "$DeploymentDir/backend"
-Copy-Item -Path "backend/.env" -Destination "$DeploymentDir/backend" -ErrorAction SilentlyContinue
+Copy-Item -Path "backend/config" -Destination "$DeploymentDir/backend" -Recurse
+Copy-Item -Path "backend/telegram" -Destination "$DeploymentDir/backend" -Recurse
+Copy-Item -Path "backend/parser.py" -Destination "$DeploymentDir/backend"
+
+# SEGURIDAD: NUNCA empaquetar secretos en el ZIP de despliegue.
+# Antes se copiaba backend/.env (TELEGRAM_*, DATABASE_URL, SECRET_KEY, SMTP_PASS,
+# IMGBB_API_KEY) y quedaba dentro de un ZIP que se sube a un hosting compartido.
+# Ahora solo se incluye la PLANTILLA y el operador rellena el .env en el servidor.
+if (Test-Path "backend/.env.example") {
+    Copy-Item -Path "backend/.env.example" -Destination "$DeploymentDir/backend/.env.example"
+}
+Write-Host "  (backend/.env NO se incluye: créalo en el servidor a partir de .env.example)" -ForegroundColor Yellow
 
 # Copiar auth.py si existe (o crearlo)
 if (Test-Path "backend/auth.py") {

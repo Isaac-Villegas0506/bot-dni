@@ -109,7 +109,7 @@ export default function InfoGlobal() {
             setResult(data);
             setHasDownloaded(false);
             setView('result');
-        } catch (error) {
+        } catch {
             setAlertMessage('Error de conexión con el servidor.');
         } finally {
             setLoading(false);

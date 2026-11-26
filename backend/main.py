@@ -71,6 +71,10 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Turnstile-Token"],
 )
 
+# --- Rate limiting por IP (ver middleware/rate_limit.py) ---
+from middleware.rate_limit import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware)
+
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"status": "online", "message": "Bot DNI API is running"}
@@ -105,7 +109,7 @@ async def api_log_search(request: Request, user_id, term, search_type):
     ua_data = parse_user_agent(ua_str)
     try:
         await db.log_search(user_id, term, search_type, client_ip, ua_data["device"], ua_data["browser"], ua_data["os"], ua_str)
-    except: pass
+    except Exception: pass
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token", auto_error=False)
 AUTH_ERROR_HEADERS = {"WWW-Authenticate": "Bearer"}
@@ -1072,33 +1076,12 @@ class DniRequest(BaseModel):
 
 @app.post("/api/penales/antpen")
 async def generate_antpen_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
-    dni = dni_data.get("dni")
-    if not dni: raise HTTPException(status_code=400, detail="DNI requerido")
-    check_banned_dni(dni)
-    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
-    
-    try:
-        user_id = user['id']
-        cost = await db.get_cost_for_option('antecedentes_penales') # Usar costo dinamico si existe, sino 2
-        cost = cost if cost is not None else 2
-        eligible, user_credits = await db.check_credits_for_option(user_id, cost)
-        if not eligible:
-            raise HTTPException(402, detail="Créditos insuficientes")
-
-        result = await bot_client.generate_antpen(dni)
-        await db.deduct_credits(user_id, cost)
-        await api_log_search(request, user_id, dni, 'penales_antpen')
-        return {
-            "status": "success",
-            "message": "Certificado generado correctamente",
-            "file_path": result['file_path'],
-            "data": result
-        }
-    except SinResultadosError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error Penales API: {e}")
-        raise internal_server_error()
+    # BitxData (@Bitxdatabot) no ofrece comando de antecedentes penales.
+    # El antiguo proveedor (@Infordata1_bot) dejó de dar servicio el 2026-11-26.
+    raise HTTPException(
+        status_code=503,
+        detail="El certificado de antecedentes penales no está disponible con el proveedor actual.",
+    )
 
 @app.post("/api/delitos/search")
 async def search_delitos_api(request: Request, data: dict = Body(...), user: dict = Depends(get_current_user)):
@@ -1135,63 +1118,19 @@ async def search_delitos_api(request: Request, data: dict = Body(...), user: dic
 
 @app.post("/api/judiciales/antjud")
 async def generate_antjud_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
-    dni = dni_data.get("dni")
-    if not dni: raise HTTPException(status_code=400, detail="DNI requerido")
-    check_banned_dni(dni)
-    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
-    
-    try:
-        user_id = user['id']
-        cost = await db.get_cost_for_option('antecedentes_judiciales')
-        cost = cost if cost is not None else 2
-        eligible, user_credits = await db.check_credits_for_option(user_id, cost)
-        if not eligible:
-            raise HTTPException(402, detail="Créditos insuficientes")
-
-        result = await bot_client.generate_antjud(dni)
-        await db.deduct_credits(user_id, cost)
-        await api_log_search(request, user_id, dni, 'judiciales_antjud')
-        return {
-            "status": "success",
-            "message": "Certificado generado correctamente",
-            "file_path": result['file_path'],
-            "data": result
-        }
-    except SinResultadosError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error Judiciales API: {e}")
-        raise internal_server_error()
+    # BitxData (@Bitxdatabot) no ofrece comando de antecedentes judiciales.
+    raise HTTPException(
+        status_code=503,
+        detail="El certificado de antecedentes judiciales no está disponible con el proveedor actual.",
+    )
 
 @app.post("/api/policiales/antpol")
 async def generate_antpol_api(request: Request, dni_data: dict = Body(...), user: dict = Depends(get_current_user)):
-    dni = dni_data.get("dni")
-    if not dni: raise HTTPException(status_code=400, detail="DNI requerido")
-    check_banned_dni(dni)
-    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
-    
-    try:
-        user_id = user['id']
-        cost = await db.get_cost_for_option('antecedentes_policiales')
-        cost = cost if cost is not None else 2
-        eligible, user_credits = await db.check_credits_for_option(user_id, cost)
-        if not eligible:
-            raise HTTPException(402, detail="Créditos insuficientes")
-
-        result = await bot_client.generate_antpol(dni)
-        await db.deduct_credits(user_id, cost)
-        await api_log_search(request, user_id, dni, 'policiales_antpol')
-        return {
-            "status": "success",
-            "message": "Certificado generado correctamente",
-            "file_path": result['file_path'],
-            "data": result
-        }
-    except SinResultadosError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error Policiales API: {e}")
-        raise internal_server_error()
+    # BitxData (@Bitxdatabot) no ofrece comando de antecedentes policiales.
+    raise HTTPException(
+        status_code=503,
+        detail="El certificado de antecedentes policiales no está disponible con el proveedor actual.",
+    )
 
 @app.post("/api/facial/search")
 async def search_facial_api(
@@ -1255,42 +1194,12 @@ async def search_facial_api(
 @app.post("/api/reniec/arbol")
 @app.post("/api/familiares/pdf")
 async def get_familiares_pdf(request: Request, body: DniRequest, Authorization: Optional[str] = Header(None)):
-    if not Authorization: raise HTTPException(401, "Token requerido")
-    token = Authorization.replace("Bearer ", "")
-    user = await get_current_user(token)
-    if not user: raise HTTPException(401, "Usuario inválido")
-    client_ip = request.headers.get('X-Forwarded-For', request.client.host if request.client else '').split(',')[0].strip()
-
-    user_id = user['id']
-    cost = await db.get_cost_for_option('familiares_pdf')
-    eligible, user_credits = await db.check_credits_for_option(user_id, cost)
-    if not eligible:
-        raise HTTPException(402, detail={
-            "code": "INSUFFICIENT_CREDITS",
-            "required": cost,
-            "available": user_credits,
-            "message": f"Esta opción cuesta {cost} crédito(s) y tienes {user_credits} disponible(s)."
-        })
-
-    dni = body.dni
-    if not dni or len(dni) != 8:
-        raise HTTPException(400, "DNI inválido")
-
-    try:
-        result = await bot_client.generate_familiares_pdf(dni)
-        await db.deduct_credits(user_id, cost)
-        await api_log_search(request, user_id, dni, 'familiares_pdf')
-        return {
-            "status": "success",
-            "message": "Árbol Familiar PDF generado correctamente",
-            "file_path": result["file_path"],
-            "raw_text": result["raw_text"],
-        }
-    except SinResultadosError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error Familiares PDF API: {e}")
-        raise internal_server_error()
+    # DESACTIVADO: "Ver Familiares (PDF + Fotos)" no se va a usar por ahora
+    # (decisión del 2026-11-26). BitxData tampoco ofrece ese comando.
+    raise HTTPException(
+        status_code=503,
+        detail="La opción 'Ver Familiares (PDF + Fotos)' está desactivada temporalmente.",
+    )
 
 
 @app.post("/api/familiares/texto")
@@ -1318,14 +1227,15 @@ async def get_familiares_texto(request: Request, body: DniRequest, Authorization
     check_banned_dni(dni)
 
     try:
-        result = await bot_client.generate_familiares_texto(dni)
+        # /hogar devuelve el reporte SISFOH del hogar (BitxData)
+        result = await bot_client.generate_hogar(dni)
         await db.deduct_credits(user_id, cost)
         await api_log_search(request, user_id, dni, 'familiares_texto')
         return {
             "status": "success",
-            "message": "Árbol Familiar Texto generado correctamente",
-            "raw_text": result["raw_text"],
-            "block_count": result["block_count"],
+            "message": "Reporte de hogar generado correctamente",
+            "raw_text": result.get("raw_text", ""),
+            "data": result,
             "file_path": result.get("file_path"),
         }
     except SinResultadosError as e:
@@ -1366,8 +1276,10 @@ async def get_familiares_arbol_visual(request: Request, body: DniRequest, Author
         return {
             "status": "success",
             "message": "Árbol Visual PDF generado correctamente",
-            "file_path": result["file_path"],
-            "raw_text": result["raw_text"],
+            "file_path": result.get("file_path"),
+            "file_paths": result.get("file_paths", []),
+            "raw_text": result.get("raw_text", ""),
+            "data": result,
         }
     except SinResultadosError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -1404,14 +1316,16 @@ async def get_numeros_por_dni(request: Request, body: DniRequest, Authorization:
     check_banned_dni(dni)
 
     try:
-        result = await bot_client.query_telx(dni)
+        # /fonos devuelve las líneas asociadas a un DNI (BitxData)
+        result = await bot_client.query_fonos(dni)
         await db.deduct_credits(user_id, cost)
         await api_log_search(request, user_id, dni, 'telefono_numeros_dni')
         return {
             "status": "success",
             "dni": dni,
-            "raw_text": result["raw_text"],
-            "parts": result["parts"],
+            "raw_text": result.get("raw_text", ""),
+            "numeros": result.get("numeros", []),
+            "data": result,
         }
     except SinResultadosError as e:
         raise HTTPException(404, detail=str(e))
@@ -1450,14 +1364,16 @@ async def get_metadata_info(request: Request, body: MetadataRequest, Authorizati
     check_banned_dni(dni)
 
     try:
+        # /seekerpdf devuelve PDF + datos del consolidado (BitxData)
         result = await bot_client.query_metadata(dni)
         await db.deduct_credits(user_id, cost)
         await api_log_search(request, user_id, dni, 'metadata')
         return {
             "status": "success",
             "dni": dni,
-            "datos": result["datos"],
-            "pdf_url": result["pdf_url"]
+            "datos": result,
+            "pdf_url": result.get("file_path"),
+            "file_paths": result.get("file_paths", []),
         }
     except SinResultadosError as e:
         raise HTTPException(404, detail=str(e))
@@ -1495,13 +1411,15 @@ async def get_info_linea(request: Request, body: PhoneRequest, Authorization: Op
         raise HTTPException(400, "Número de celular inválido (debe tener 9 dígitos)")
 
     try:
+        # /telp devuelve 2 mensajes: TITULAR + REGISTROS OSIPTEL (BitxData)
         result = await bot_client.query_telp(phone)
         await db.deduct_credits(user_id, cost)
         await api_log_search(request, user_id, phone, 'telefono_info_linea')
         return {
             "status": "success",
             "phone": phone,
-            "raw_text": result["raw_text"],
+            "raw_text": result.get("raw_text", ""),
+            "data": result,
         }
     except SinResultadosError as e:
         raise HTTPException(404, detail=str(e))
@@ -1633,7 +1551,7 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
                     "message": f"Esta consulta premium requiere {cost} créditos y tienes {user_credits} disponible(s)."
                 })
 
-            # Call Premium Bot
+            # Call Premium Bot (BitxData /dnif)
             data = await bot_client.search_premium_group(dni)
             
             # Deduct credits
@@ -1642,7 +1560,9 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
             # Log successful search
             await api_log_search(request, user_id, dni, 'dni_premium')
             
-            return data
+            # El frontend (ResultCard) espera los campos en la raíz y también
+            # soporta `data`. Devolvemos ambos para no romper ningún componente.
+            return {**data, "data": data}
             
         except SinResultadosError as e:
             raise HTTPException(404, detail=str(e))
@@ -1699,9 +1619,6 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
         if "POR FAVOR ESPERA" in err_msg: raise HTTPException(429, detail=err_msg)
         if "No results" in err_msg or "no encontrado" in err_msg.lower():
              raise HTTPException(404, detail="No se encontraron datos.")
-        raise internal_server_error()
-        if "No results" in err_msg or "no encontrado" in err_msg.lower():
-             raise HTTPException(404, detail="No se encontró información.")
         raise internal_server_error()
 
 @app.get("/api/search/name")
@@ -2011,27 +1928,36 @@ async def generate_record_api(request: Request, body_data: dict = Body(...), use
         cost = await db.get_cost_for_option('record_vehicular')
         cost = cost if cost is not None else 2
 
-        if user.get('role') != 'admin':
-            if not user.get('is_premium') and user.get('credits', 0) < cost:
+        es_admin = user.get('role') == 'admin'
+        es_ilimitado = bool(user.get('is_premium')) or bool(user.get('unlimited_until'))
+
+        if not es_admin and not es_ilimitado:
+            if user.get('credits', 0) < cost:
                 raise HTTPException(status_code=402, detail="Créditos insuficientes")
-            
-            success = await db.deduct_credits(user_id, cost, f"Búsqueda RECORD para {target}")
+
+        # NOTA: la consulta se cobra solo si el bot devuelve algo. Antes se
+        # cobraba antes de consultar y el reembolso llamaba a un método
+        # inexistente (refund_credits), así que un fallo dejaba al usuario sin
+        # créditos y devolvía 500 en vez de 404.
+        res = await bot_client.query_record(target)
+
+        if not es_admin and not es_ilimitado:
+            success = await db.deduct_credits(user_id, cost)
             if not success:
                 raise HTTPException(status_code=402, detail="Error al descontar créditos")
-
-        res = await bot_client.query_record(target)
 
         await api_log_search(request, user_id, target, 'record_vehicular')
         
         return {"data": res, "file_path": res.get("file_path")}
 
+    except HTTPException:
+        raise
     except SinResultadosError as e:
-        if user.get('role') != 'admin' and not user.get('is_premium'):
-            await db.refund_credits(user_id, cost, f"Reembolso RECORD (Sin resultados) para {target}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        if user.get('role') != 'admin' and not user.get('is_premium'):
-            await db.refund_credits(user_id, cost, f"Reembolso RECORD (Error) para {target}")
+        # Los bots señalan "sin datos" con este prefijo en vez de SinResultadosError.
+        if "UNKNOWN_RESPONSE" in str(e) or "No se encontraron datos" in str(e):
+            raise HTTPException(status_code=404, detail="No se encontraron datos para la consulta.")
         raise internal_server_error()
 
 # ─── Banners Endpoints ────────────────────────────────────────────────────────

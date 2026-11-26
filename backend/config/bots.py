@@ -15,24 +15,35 @@ incremental cuando se refactorizan los métodos individuales.
 """
 
 # ── Bots gratuitos ────────────────────────────────────────────────────────────
-# Usados en: query_bot, query_operadora, query_telx, query_telp, query_cel,
-#            query_record, search_with_sirius
+# Verificados el 2026-11-26:
+#   OK   @SeleneSearch_Bot, @DEALERDATABOT, @HexDataBOT, @ImperialData_bot
+#   MUERTO  @Infordata1_bot  → ya no es de consultas, ahora es una tienda
+#   MIGRADO @OlimpoDataBot   → anuncia "NOS HEMOS MUDADO"
+# Los que fallan se dejan al final como último recurso: el código los salta
+# solos al no obtener respuesta con datos.
 FREE_BOTS: list[str] = [
-    "@OlimpoDataBot",
     "@SeleneSearch_Bot",
     "@DEALERDATABOT",
     "@HexDataBOT",
-    "@Infordata1_bot",
     "@ImperialData_bot",
+    # Último recurso (pueden estar caídos)
+    "@OlimpoDataBot",
+    "@Infordata1_bot",
 ]
 
+# ── Bot PREMIUM (todas las consultas de pago) ────────────────────────────────
+# @Bitxdatabot sustituye a @Infordata1_bot para TODA la operación premium:
+# RENIEC full, C4, DNI virtuales, familiares, telefonía, denuncias, facial
+# y el reporte Seeker. La configuración de comandos está en
+# telegram/bitx_client.py (BOT_COMMANDS_BITX).
+PREMIUM_BOT: str = "@Bitxdatabot"
+
 # ── Bot de búsqueda por nombre ────────────────────────────────────────────────
-# Usado como fallback principal para búsquedas por nombre (Sirius)
-NAME_SEARCH_BOT: str = "@OlimpoDataBot"
+NAME_SEARCH_BOT: str = "@SeleneSearch_Bot"
 
 # ── Bot de Fiscalía ───────────────────────────────────────────────────────────
-# Usado en: query_fiscalia_bot
-FISCALIA_BOT: str = "@Infordata1_bot"
+# Fiscalía sigue usando el pool gratuito mientras no haya comando en BitxData.
+FISCALIA_BOT: str = "@SeleneSearch_Bot"
 
 # ── Comandos por tipo de consulta ─────────────────────────────────────────────
 # Mapeo de tipo de consulta → comando que se envía al bot

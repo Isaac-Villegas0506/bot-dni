@@ -100,16 +100,16 @@ export default function PdfViewer({ url, height = '500px', className = '' }) {
             </div>
 
             {/* Barra de navegación y Zoom */}
-            <div className="w-full flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 flex-wrap gap-2">
+            <div className="w-full flex items-center justify-between gap-3 px-3 py-2.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 flex-wrap gap-2">
                 
                 {/* Paginación */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                     {numPages && numPages > 1 ? (
                         <>
                             <button
                                 onClick={() => setPageNumber(p => Math.max(1, p - 1))}
                                 disabled={pageNumber <= 1}
-                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
+                                className="h-11 w-11 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
                             >
                                 <span className="material-icons-round text-xl">chevron_left</span>
                             </button>
@@ -119,22 +119,22 @@ export default function PdfViewer({ url, height = '500px', className = '' }) {
                             <button
                                 onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
                                 disabled={pageNumber >= numPages}
-                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
+                                className="h-11 w-11 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
                             >
                                 <span className="material-icons-round text-xl">chevron_right</span>
                             </button>
                         </>
                     ) : (
-                        <div className="w-9 h-9"></div> /* Espaciador si solo hay 1 pág */
+                        <div className="h-11 w-11"></div> /* Espaciador si solo hay 1 pág */
                     )}
                 </div>
 
                 {/* Controles de Zoom */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                     <button
                         onClick={() => setScale(s => Math.max(0.5, s - 0.25))}
                         disabled={scale <= 0.5}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
+                        className="h-11 w-11 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
                     >
                         <span className="material-icons-round text-lg">zoom_out</span>
                     </button>
@@ -144,7 +144,7 @@ export default function PdfViewer({ url, height = '500px', className = '' }) {
                     <button
                         onClick={() => setScale(s => Math.min(3, s + 0.25))}
                         disabled={scale >= 3}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
+                        className="h-11 w-11 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-90"
                     >
                         <span className="material-icons-round text-lg">zoom_in</span>
                     </button>

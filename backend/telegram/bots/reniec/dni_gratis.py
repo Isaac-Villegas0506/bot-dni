@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import random
+import uuid
 from pathlib import Path
 from telegram.exceptions import SinResultadosError
 from telegram.guards import is_sin_resultados, check_antispam
@@ -97,7 +98,9 @@ async def query_dni_gratis(
                     if msg.media:
                         images_dir = static_base_dir / "images"
                         images_dir.mkdir(parents=True, exist_ok=True)
-                        filename = f"{dni}.jpg"
+                        # PRIVACIDAD: nombre no adivinable. Antes era "{dni}.jpg"
+                        # y se servía sin auth en /api/static/images/{dni}.jpg.
+                        filename = f"{dni}_{uuid.uuid4().hex}.jpg"
                         abs_path = images_dir / filename
                         await msg.download_media(file=abs_path)
                         img_path = f"images/{filename}"

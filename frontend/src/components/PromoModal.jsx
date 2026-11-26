@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,16 +10,7 @@ export default function PromoModal({ isOpen, onClose }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchBanners();
-        } else {
-            // Reset state when closed
-            setCurrentIndex(0);
-        }
-    }, [isOpen]);
-
-    const fetchBanners = async () => {
+    const fetchBanners = useCallback(async () => {
         setLoading(true);
         try {
             const res = await fetch('/api/banners');
@@ -38,7 +29,16 @@ export default function PromoModal({ isOpen, onClose }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [onClose]);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchBanners();
+        } else {
+            // Reset state when closed
+            setCurrentIndex(0);
+        }
+    }, [isOpen, fetchBanners]);
 
     // Auto slide every 5 seconds
     useEffect(() => {

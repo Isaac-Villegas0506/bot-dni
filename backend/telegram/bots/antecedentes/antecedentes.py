@@ -8,6 +8,7 @@ Certificados de antecedentes — extraído de:
 """
 from __future__ import annotations
 import asyncio
+import uuid
 from pathlib import Path
 from telegram.exceptions import SinResultadosError
 from telegram.guards import is_sin_resultados
@@ -97,7 +98,9 @@ async def generate_antecedentes(
             ext = ".jpg"
             if found_msg.file and found_msg.file.ext:
                 ext = found_msg.file.ext
-            filename = filename_tpl.format(dni).replace(".jpg", ext)
+            # PRIVACIDAD: nombre no adivinable. Antes era el DNI literal en el
+            # nombre, servido sin auth en /api/static/files/.
+            filename = f"{file_prefix}{uuid.uuid4().hex}{ext}"
             path = files_dir / filename
             await found_msg.download_media(file=path)
             file_path = f"files/{filename}"

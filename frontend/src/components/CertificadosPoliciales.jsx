@@ -266,12 +266,6 @@ export default function CertificadosPoliciales() {
     }
   };
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text)
-      .then(() => setAlert({ isOpen: true, type: 'success', message: 'Copiado al portapapeles' }))
-      .catch(() => setAlert({ isOpen: true, type: 'error', message: 'Error al copiar' }));
-  };
-
   const parseAntecedentesText = (text) => {
     if (!text) return {};
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);

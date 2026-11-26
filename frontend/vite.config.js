@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'Bot DNI Web App',
         short_name: 'Bot DNI',
         description: 'Plataforma para consultas y certificados',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#020617',
+        background_color: '#020617',
         display: 'standalone',
         icons: [
           {

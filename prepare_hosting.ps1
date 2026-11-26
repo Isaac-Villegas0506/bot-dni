@@ -15,12 +15,10 @@ New-Item -ItemType Directory -Path "$HostingDir/backend/static/files" | Out-Null
 New-Item -ItemType File -Path "$HostingDir/backend/static/images/.keep" | Out-Null
 New-Item -ItemType File -Path "$HostingDir/backend/static/files/.keep" | Out-Null
 
-# 2. Configurar Frontend para Producción (useProxy = true)
-$AppJsxPath = "frontend/src/App.jsx"
-$OriginalContent = Get-Content $AppJsxPath -Raw
-$ProdContent = $OriginalContent -replace "const useProxy = false;", "const useProxy = true;"
-Set-Content -Path $AppJsxPath -Value $ProdContent
-Write-Host "Frontend configurado para Producción (useProxy = true)." -ForegroundColor Cyan
+# 2. Verificar que el Frontend usa rutas relativas de API
+# (el frontend ya no tiene un flag "useProxy"; en producción usa VITE_API_URL
+#  o el proxy PHP del hosting. Ver frontend/src/utils/api.js)
+Write-Host "Frontend: API resuelta por VITE_API_URL / proxy PHP." -ForegroundColor Cyan
 
 # 3. Construir Frontend
 Write-Host "Compilando Frontend..." -ForegroundColor Cyan
@@ -36,12 +34,15 @@ Copy-Item -Path "frontend/dist/*" -Destination $HostingDir -Recurse
 Write-Host "Copiando Backend..." -ForegroundColor Cyan
 Copy-Item -Path "backend/*.py" -Destination "$HostingDir/backend"
 Copy-Item -Path "backend/requirements.txt" -Destination "$HostingDir/backend"
-# Copiar auth.py si existe
-if (Test-Path "backend/auth.py") { Copy-Item -Path "backend/auth.py" -Destination "$HostingDir/backend" }
-# Copiar .env (pero ojo, lleva credenciales locales, el user debe revisar)
-if (Test-Path "backend/.env") { Copy-Item -Path "backend/.env" -Destination "$HostingDir/backend" }
-# Copiar credenciales de Firebase
-if (Test-Path "backend/serviceAccountKey.json") { Copy-Item -Path "backend/serviceAccountKey.json" -Destination "$HostingDir/backend" }
+Copy-Item -Path "backend/config" -Destination "$HostingDir/backend" -Recurse
+Copy-Item -Path "backend/telegram" -Destination "$HostingDir/backend" -Recurse
+Copy-Item -Path "backend/parser.py" -Destination "$HostingDir/backend"
+# SEGURIDAD: NO copiar secretos a la carpeta de despliegue.
+# Antes se copiaban backend/.env y backend/serviceAccountKey.json, que acababan
+# en el hosting compartido. Ahora se incluye solo la plantilla y los secretos se
+# suben aparte (SFTP) por el operador.
+if (Test-Path "backend/.env.example") { Copy-Item -Path "backend/.env.example" -Destination "$HostingDir/backend/.env.example" }
+Write-Host "  (backend/.env y serviceAccountKey.json NO se copian: súbelos por SFTP)" -ForegroundColor Yellow
 # Copiar carpeta static si existe (imágenes cacheadas, logo)
 if (Test-Path "backend/static") { Copy-Item -Path "backend/static" -Destination "$HostingDir/backend" -Recurse }
 

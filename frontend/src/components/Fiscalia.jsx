@@ -1,5 +1,5 @@
 import { useSettings } from '../context/settingsContextValue';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,18 +62,23 @@ function TxtViewer({ url, className }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    // El fetch ya es asíncrono: el setLoading(true) síncrono se elimina y el
+    // estado de carga inicial (true) se reutiliza al cambiar de url.
+    let cancelled = false;
     fetch(url)
       .then(r => r.text())
       .then(text => {
+        if (cancelled) return;
         setContent(text);
         setLoading(false);
       })
       .catch(err => {
+        if (cancelled) return;
         console.error(err);
         setContent('Error al cargar el archivo de texto.');
         setLoading(false);
       });
+    return () => { cancelled = true; };
   }, [url]);
 
   return (
@@ -122,7 +127,7 @@ export default function Fiscalia() {
 
   const { getCost } = useCreditCosts();
 
-  const options = [
+  const options = useMemo(() => [
     {
       id: 'fiscalia_dni',
       title: 'Casos fiscales de un DNI',
@@ -183,7 +188,7 @@ export default function Fiscalia() {
         'Partes involucradas'
       ]
     }
-  ];
+  ], [getCost]);
 
   useEffect(() => {
     if (generatedData) {

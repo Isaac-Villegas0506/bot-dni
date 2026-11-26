@@ -11,7 +11,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
     const [mode, setMode] = useState(initialMode);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [fullName, setFullName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [verificationSent, setVerificationSent] = useState(false);
@@ -22,7 +21,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
             setError(null);
             setEmail('');
             setPassword('');
-            setFullName('');
             setVerificationSent(false);
         }
     }, [isOpen, initialMode]);

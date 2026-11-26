@@ -1,5 +1,5 @@
 import { useSettings } from '../context/settingsContextValue';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -108,7 +108,7 @@ export default function Vehiculos() {
 
   const { getCost } = useCreditCosts();
 
-  const options = [
+  const options = useMemo(() => [
     {
       id: 'record',
       title: 'Récord Vehicular',
@@ -124,7 +124,7 @@ export default function Vehiculos() {
         'Documento en formato PDF si está disponible'
       ]
     }
-  ];
+  ], [getCost]);
 
   const location = useLocation();
   const hasAutoTriggered = useRef(false);
@@ -156,7 +156,7 @@ export default function Vehiculos() {
         hasAutoTriggered.current = false;
       }
     }
-  }, [selectedOption, targetId, view]);
+  }, [selectedOption, targetId, view, handleGenerate]);
 
   const openHelp = (e, opt) => {
     e.stopPropagation();

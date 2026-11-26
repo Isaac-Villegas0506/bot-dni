@@ -6,6 +6,7 @@ Consulta de récord vehicular — extraído de BotClient.query_record()
 from __future__ import annotations
 import asyncio
 import re
+import uuid
 from pathlib import Path
 from telegram.exceptions import SinResultadosError
 from telegram.guards import is_sin_resultados
@@ -94,7 +95,8 @@ async def query_record(client, target: str, static_base_dir: Path) -> dict:
             if message.media:
                 files_dir = static_base_dir / "files"
                 files_dir.mkdir(parents=True, exist_ok=True)
-                filename = f"RECORD_{target}.pdf"
+                # PRIVACIDAD: nombre no adivinable (antes incluía la placa/DNI).
+                filename = f"RECORD_{uuid.uuid4().hex}.pdf"
                 abs_path = files_dir / filename
                 await message.download_media(file=abs_path)
                 file_path_rel = f"files/{filename}"

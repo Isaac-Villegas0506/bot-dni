@@ -82,7 +82,7 @@ class Database:
             try:
                 cursor.execute("SELECT verification_code FROM users LIMIT 1")
                 cursor.fetchall() # Consume result
-            except:
+            except Exception:
                 print("⚠️  Adding OTP columns to users table...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN verification_code VARCHAR(10)")
@@ -95,7 +95,7 @@ class Database:
             try:
                 cursor.execute("SELECT last_premium_search FROM users LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding last_premium_search column to users table...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN last_premium_search TIMESTAMP NULL")
@@ -106,7 +106,7 @@ class Database:
             try:
                 cursor.execute("SELECT credits FROM users LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding credits column to users table...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN credits INT DEFAULT 0")
@@ -117,7 +117,7 @@ class Database:
             try:
                 cursor.execute("SELECT last_daily_credit FROM users LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding last_daily_credit column to users table...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN last_daily_credit TIMESTAMP NULL")
@@ -128,7 +128,7 @@ class Database:
             try:
                 cursor.execute("SELECT unlimited_until FROM users LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding unlimited_until/unlimited_started_at columns to users...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN unlimited_until TIMESTAMP NULL")
@@ -140,7 +140,7 @@ class Database:
             try:
                 cursor.execute("SELECT referral_code FROM users LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding referral_code and referred_by columns to users...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN referral_code VARCHAR(20) UNIQUE")
@@ -152,7 +152,7 @@ class Database:
             try:
                 cursor.execute("SELECT has_bought_promo FROM users LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding has_bought_promo column to users...")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN has_bought_promo BOOLEAN DEFAULT FALSE")
@@ -180,7 +180,7 @@ class Database:
             try:
                 cursor.execute("SELECT device FROM search_history LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️  Adding new columns to search_history and making user_id nullable...")
                 try:
                     cursor.execute("ALTER TABLE search_history ALTER COLUMN user_id DROP NOT NULL")
@@ -217,7 +217,7 @@ class Database:
             try:
                 cursor.execute("SELECT bot_type FROM bots LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 try:
                     cursor.execute("ALTER TABLE bots ADD COLUMN bot_type VARCHAR(50) DEFAULT 'dni'")
                 except Exception as e:
@@ -260,7 +260,7 @@ class Database:
             try:
                 cursor.execute("SELECT user_notified FROM promo_requests LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️ Adding user_notified column to promo_requests...")
                 try:
                     cursor.execute("ALTER TABLE promo_requests ADD COLUMN user_notified BOOLEAN DEFAULT FALSE")
@@ -271,7 +271,7 @@ class Database:
             try:
                 cursor.execute("SELECT frequency_minutes FROM announcements LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 print("⚠️ Adding frequency_minutes column to announcements...")
                 try:
                     cursor.execute("ALTER TABLE announcements ADD COLUMN frequency_minutes INT DEFAULT 60")
@@ -390,7 +390,7 @@ class Database:
             try:
                 cursor.execute("SELECT unlimited_days FROM credit_purchases LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 try:
                     cursor.execute("ALTER TABLE credit_purchases ADD COLUMN unlimited_days INT NULL")
                     cursor.execute("ALTER TABLE credit_purchases ADD COLUMN unlimited_expires_at TIMESTAMP NULL")
@@ -415,7 +415,7 @@ class Database:
             try:
                 cursor.execute("SELECT unlimited_days FROM credit_packages LIMIT 1")
                 cursor.fetchall()
-            except:
+            except Exception:
                 try:
                     cursor.execute("ALTER TABLE credit_packages ADD COLUMN unlimited_days INT NULL")
                 except Exception as e:
@@ -532,7 +532,7 @@ class Database:
                 data = result['data']
                 return data if isinstance(data, dict) else json.loads(data)
             return None
-        except: return None
+        except Exception: return None
 
     async def save_dni(self, dni, data):
         await self._ensure_connection()
@@ -661,32 +661,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
-
-    async def remove_credits(self, user_id, amount):
-        await self._ensure_connection()
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("UPDATE users SET credits = GREATEST(0, credits - %s) WHERE id = %s", (amount, user_id))
-            self.conn.commit()
-            cursor.close()
-            return True
-        except: return False
-
-    async def log_credit_change(self, user_id, amount, reason, admin_email='sistema'):
-        await self._ensure_connection()
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                INSERT INTO credit_log (user_id, amount, reason, admin_email)
-                VALUES (%s, %s, %s, %s)
-            """, (user_id, amount, reason, admin_email))
-            self.conn.commit()
-            cursor.close()
-            return True
-        except Exception as e:
-            print(f"Error log_credit_change: {e}")
-            return False
+        except Exception: return False
 
     async def get_credit_log(self, user_id, limit=50):
         await self._ensure_connection()
@@ -717,7 +692,7 @@ class Database:
             user = cursor.fetchone()
             cursor.close()
             return user
-        except: return None
+        except Exception: return None
 
     async def create_user(self, email, password_hash, full_name, ip_address=None, verification_code=None):
         await self._ensure_connection()
@@ -779,7 +754,7 @@ class Database:
             user = cursor.fetchone()
             cursor.close()
             return user
-        except: return None
+        except Exception: return None
 
     async def create_firebase_user(self, email, firebase_uid, full_name, avatar_url, ip_address=None):
         await self._ensure_connection()
@@ -834,7 +809,7 @@ class Database:
                     self.conn.commit()
                     cursor.close()
                     return code
-                except:
+                except Exception:
                     self.conn.rollback()
             cursor.close()
             return None
@@ -850,7 +825,7 @@ class Database:
             user = cursor.fetchone()
             cursor.close()
             return user
-        except: return None
+        except Exception: return None
 
     async def process_referral(self, new_user_id, referral_code):
         if not referral_code: return False
@@ -939,7 +914,7 @@ class Database:
                 if isinstance(r['created_at'], datetime): r['created_at'] = r['created_at'].strftime("%Y-%m-%d %H:%M:%S")
                 if isinstance(r['reviewed_at'], datetime): r['reviewed_at'] = r['reviewed_at'].strftime("%Y-%m-%d %H:%M:%S")
             return res
-        except: return []
+        except Exception: return []
 
     async def update_promo_request_status(self, req_id, status, admin_id):
         await self._ensure_connection()
@@ -954,7 +929,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return res['user_id'] if res else None
-        except: return None
+        except Exception: return None
 
     async def get_promo_history(self, user_id):
         await self._ensure_connection()
@@ -971,7 +946,7 @@ class Database:
                 if isinstance(r['created_at'], datetime): r['created_at'] = r['created_at'].strftime("%Y-%m-%d %H:%M:%S")
                 if isinstance(r['reviewed_at'], datetime): r['reviewed_at'] = r['reviewed_at'].strftime("%Y-%m-%d %H:%M:%S")
             return res
-        except: return []
+        except Exception: return []
 
     async def acknowledge_promo(self, req_id, user_id):
         await self._ensure_connection()
@@ -985,7 +960,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
 
     # --- History Methods ---
     async def log_search(self, user_id, term, type, ip, device=None, browser=None, os=None, user_agent=None):
@@ -998,7 +973,7 @@ class Database:
             """, (user_id, term, type, ip, device, browser, os, user_agent))
             self.conn.commit()
             cursor.close()
-        except: pass
+        except Exception: pass
 
     async def get_user_history(self, user_id, limit=50, search_type=None):
         await self._ensure_connection()
@@ -1024,7 +999,7 @@ class Database:
                 if isinstance(r['created_at'], datetime):
                     r['created_at'] = r['created_at'].strftime("%Y-%m-%d %H:%M:%S")
             return res
-        except: return []
+        except Exception: return []
 
     # --- Admin Methods ---
 
@@ -1096,7 +1071,7 @@ class Database:
             res = cursor.fetchall()
             cursor.close()
             return res
-        except: return []
+        except Exception: return []
 
     async def get_all_users(self, limit=50, offset=0):
         await self._ensure_connection()
@@ -1115,7 +1090,7 @@ class Database:
                  if isinstance(u['created_at'], datetime): u['created_at'] = u['created_at'].strftime("%Y-%m-%d %H:%M:%S")
                  if isinstance(u['last_login'], datetime): u['last_login'] = u['last_login'].strftime("%Y-%m-%d %H:%M:%S")
             return users
-        except: return []
+        except Exception: return []
 
     async def update_user_status(self, user_id, status):
         # status: 'active', 'banned'
@@ -1126,7 +1101,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
 
     async def toggle_premium(self, user_id, is_premium: bool):
         await self._ensure_connection()
@@ -1136,7 +1111,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
         
     async def ban_ip(self, ip, reason="Admin ban"):
         await self._ensure_connection()
@@ -1146,7 +1121,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
 
     async def get_active_announcements(self):
          await self._ensure_connection()
@@ -1171,7 +1146,7 @@ class Database:
             res = cursor.fetchall()
             cursor.close()
             return res
-         except: return []
+         except Exception: return []
 
     async def create_announcement(self, title, message, user_id, frequency_minutes=60):
         await self._ensure_connection()
@@ -1183,7 +1158,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
 
     async def toggle_announcement_status(self, id, is_active):
         await self._ensure_connection()
@@ -1193,7 +1168,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
         
     # --- Notificaciones Específicas por Usuario ---
     async def create_user_notification(self, user_id, title, message):
@@ -1384,7 +1359,7 @@ class Database:
             result = cursor.fetchone()
             cursor.close()
             return result is not None
-        except: return False
+        except Exception: return False
 
     async def get_user_by_ip(self, ip):
         """Returns the first user registered from this IP, or None."""
@@ -1398,7 +1373,7 @@ class Database:
             result = cursor.fetchone()
             cursor.close()
             return result
-        except: return None
+        except Exception: return None
 
     async def ban_ip_for_user(self, user_id, reason='Admin ban'):
         """Read user's last_ip and add it to banned_ips."""
@@ -1472,7 +1447,7 @@ class Database:
             self.conn.commit()
             cursor.close()
             return True
-        except: return False
+        except Exception: return False
 
     # ─── Credit Cost Methods ──────────────────────────────────────────────────
 
@@ -1565,35 +1540,6 @@ class Database:
     # ------------------------------------------------------------------ #
     #  Credit Purchases                                                    #
     # ------------------------------------------------------------------ #
-
-    async def create_credit_purchase(self, user_id, plan_key, plan_label,
-                                     amount_soles, credits_to_assign,
-                                     is_premium_plan, payment_method, receipt_url,
-                                     unlimited_days=None):
-        await self._ensure_connection()
-        try:
-            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
-            unlimited_expires_at = None
-            if unlimited_days and unlimited_days > 0:
-                unlimited_expires_at = datetime.utcnow() + timedelta(days=unlimited_days)
-            cursor.execute("""
-            INSERT INTO credit_purchases
-                (user_id, plan_key, plan_label, amount_soles, credits_to_assign,
-                 is_premium_plan, unlimited_days, unlimited_expires_at,
-                 payment_method, receipt_image_url, status, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
-            RETURNING id
-            """, (user_id, plan_key, plan_label, amount_soles, credits_to_assign,
-                   is_premium_plan, unlimited_days, unlimited_expires_at,
-                   payment_method, receipt_url))
-            self.conn.commit()
-            row = cursor.fetchone()
-            purchase_id = row['id'] if row else None
-            cursor.close()
-            return purchase_id
-        except Exception as e:
-            print(f"Error create_credit_purchase: {e}")
-            return None
 
     async def ensure_default_costs(self):
         """Ensures all default tool costs exist in the DB."""

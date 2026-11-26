@@ -9,6 +9,7 @@ Generadores de DNI Virtual — extraído de:
 from __future__ import annotations
 import asyncio
 import re
+import uuid
 from pathlib import Path
 from parser import parse_bot_response
 from telegram.exceptions import SinResultadosError
@@ -138,7 +139,8 @@ async def _generate_dni_virtual(
         images_dir.mkdir(parents=True, exist_ok=True)
         image_paths = []
         for i, (msg, label) in enumerate([(frontal_msg, "frontal"), (reverso_msg, "reverso")]):
-            filename = f"{file_prefix}_{label}_{dni}.png"
+            # PRIVACIDAD: nombre no adivinable (antes incluía el DNI).
+            filename = f"{file_prefix}_{label}_{uuid.uuid4().hex}.png"
             path = images_dir / filename
             await msg.download_media(file=path)
             image_paths.append(f"images/{filename}")

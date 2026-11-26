@@ -124,7 +124,7 @@ async def query_metadata(
 
     if found_pdf:
         import uuid
-        pdf_filename = f"metadata_{dni}_{uuid.uuid4().hex[:6]}.pdf"
+        pdf_filename = f"metadata_{uuid.uuid4().hex}.pdf"
         out_dir = static_base_dir / "files"
         out_dir.mkdir(parents=True, exist_ok=True)
         pdf_path = out_dir / pdf_filename

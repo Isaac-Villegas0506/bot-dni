@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import re
+import uuid
 from pathlib import Path
 from parser import parse_bot_response
 from telegram.exceptions import SinResultadosError
@@ -69,7 +70,10 @@ async def _generate_c4(
             files_dir = static_base_dir / "files"
             files_dir.mkdir(parents=True, exist_ok=True)
             ext = "jpg" if getattr(media_msg, "photo", None) else "pdf"
-            filename = f"{file_prefix}_{dni}.{ext}"
+            # PRIVACIDAD: nombre no adivinable. Antes era "{prefijo}_{dni}.{ext}",
+            # servido sin auth en /api/static/files/ → cualquiera con el DNI
+            # podía descargar la ficha de otra persona.
+            filename = f"{file_prefix}_{uuid.uuid4().hex}.{ext}"
             path = files_dir / filename
             await media_msg.download_media(file=path)
             file_path = f"files/{filename}"

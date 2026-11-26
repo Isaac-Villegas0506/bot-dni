@@ -992,23 +992,6 @@ function AuthRequiredModal({ onClose }) {
   );
 }
 
-// ─── Operator logo mapping from /logos folder ────────────────────────────────
-const OPERATOR_LOGOS = {
-  CLARO: '/logos/Claro.png',
-  MOVISTAR: '/logos/Movistar.png',
-  ENTEL: '/logos/Entel.png',
-  BITEL: '/logos/bitel.png',
-};
-
-function getOperatorLogo(operador) {
-  if (!operador) return null;
-  const u = operador.toUpperCase();
-  for (const [key, path] of Object.entries(OPERATOR_LOGOS)) {
-    if (u.includes(key)) return path;
-  }
-  return null;
-}
-
 function buildTxtVerificador(data) {
   const SEP = '='.repeat(50);
   const lines = [`VERIFICADOR DE OPERADORA`, SEP, ''];
@@ -1037,7 +1020,6 @@ function downloadTxtVerificador(data) {
 // ─── VerificadorResult component ──────────────────────────────────────────────
 function VerificadorResult({ data, onBack }) {
   const style = getOperatorStyle(data.operador);
-  const logoSrc = getOperatorLogo(data.operador);
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [exitCountDown, setExitCountDown] = useState(5);

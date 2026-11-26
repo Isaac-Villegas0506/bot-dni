@@ -18,7 +18,6 @@ import { useLoading } from './context/LoadingContext';
 import { createPortal } from 'react-dom';
 import MobileNav from './components/MobileNav';
 import PromoModal from './components/PromoModal';
-import { useSettings } from './context/settingsContextValue';
 
 import { Suspense, lazy } from 'react';
 
@@ -75,7 +74,6 @@ export default function App() {
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
 
     const isAdminRoute = location.pathname === '/admin';
-    const { isFeatureEnabled } = useSettings();
     const [showPromoModal, setShowPromoModal] = useState(false);
 
     // Dark mode effect
@@ -94,37 +92,30 @@ export default function App() {
     }, [location.search]);
 
     // Lógica para mostrar los Banners dinámicos (carrusel)
+    // Solo se programa el timer en la home; el cierre se resuelve derivando del
+    // estado (isPromoVisible) en lugar de hacer setState síncrono en el efecto.
+    const isPromoAllowed = location.pathname === '/' && isLoggedIn && Boolean(user);
+
     useEffect(() => {
-        let syncTimer;
-        
-        // Solo mostrar en la página de inicio (Home)
-        if (location.pathname !== '/') {
-            setShowPromoModal(false);
-            return;
+        if (!isPromoAllowed) return;
+
+        // Si ya se mostró en la última hora, no lo mostramos de nuevo
+        const lastShownStr = localStorage.getItem('last_banner_shown_time');
+        if (lastShownStr) {
+            const lastShown = parseInt(lastShownStr, 10);
+            const oneHour = 60 * 60 * 1000;
+            if (Date.now() - lastShown < oneHour) return;
         }
 
-        // Solo mostramos el carrusel a usuarios logueados
-        if (isLoggedIn && user) {
-            const lastShownStr = localStorage.getItem('last_banner_shown_time');
-            if (lastShownStr) {
-                const lastShown = parseInt(lastShownStr, 10);
-                const oneHour = 60 * 60 * 1000;
-                // Si ya se mostró en la última hora, no lo mostramos de nuevo
-                if (Date.now() - lastShown < oneHour) {
-                    return;
-                }
-            }
+        const syncTimer = setTimeout(() => {
+            setShowPromoModal(true);
+        }, 1500); // 1.5s de retraso para que cargue la app primero
 
-            syncTimer = setTimeout(() => {
-                setShowPromoModal(true);
-            }, 1500); // 1.5s de retraso para que cargue la app primero
-
-        } else {
-            setShowPromoModal(false);
-        }
-        
         return () => clearTimeout(syncTimer);
-    }, [isLoggedIn, user, location.pathname]);
+    }, [isPromoAllowed]);
+
+    // El modal solo puede estar abierto si sigue siendo una ruta permitida
+    const isPromoVisible = showPromoModal && isPromoAllowed;
 
     // Compatibilidad con Sidebar/Header que aún usan nombres de vista legacy
     const handleViewChange = (newView) => {
@@ -198,7 +189,7 @@ export default function App() {
             
             {/* User Notifications */}
             <PromoModal 
-                isOpen={showPromoModal} 
+                isOpen={isPromoVisible} 
                 onClose={() => {
                     setShowPromoModal(false);
                     localStorage.setItem('last_banner_shown_time', Date.now().toString());
