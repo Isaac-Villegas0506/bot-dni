@@ -37,10 +37,12 @@ frontend/public/guidelines/*
 frontend/public/payments/receipts/*
 !frontend/public/payments/receipts/placeholder.jpg
 
-# Scripts de pruebas y fixes temporales
-test_*.py
-fix_*.py
-patch_*.py
+# Scripts de pruebas y fixes temporales (solo en la raíz; los tests reales
+# de backend/tests/unit/ SI se versionan)
+/test_*.py
+/test_*.js
+/fix_*.py
+/patch_*.py
 AUDITORIA_*.md
 REPORTE_*.md
 brain/
