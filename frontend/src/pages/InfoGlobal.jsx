@@ -34,6 +34,14 @@ export default function InfoGlobal() {
     const [exitCountDown, setExitCountDown] = useState(5);
     const autoSearchTriggered = useRef(false);
 
+    // El proveedor (/seekerpdf) devuelve muchos menos campos que antes: solo
+    // DNI y estado. Antes se pintaban 6 tarjetas con "No registrado" cada una.
+    // Con este helper se oculta la tarjeta y, si no queda ninguna, la seccion.
+    const tieneDato = (v) => v !== undefined && v !== null
+        && String(v).trim() !== ''
+        && String(v).trim().toUpperCase() !== 'N/A'
+        && String(v).trim().toUpperCase() !== 'NO REGISTRADO';
+
     // Auto-scroll a resultados
     useEffect(() => {
         if (view === 'result') {
@@ -207,7 +215,11 @@ export default function InfoGlobal() {
                             </div>
                         </div>
 
-                        {/* Tarjeta de Datos Estructurados */}
+                        {/* Datos Personales: solo si hay alguno */}
+                        {(tieneDato(result.datos?.nombre) || tieneDato(result.datos?.sexo) ||
+                          tieneDato(result.datos?.nacimiento) || tieneDato(result.datos?.edad) ||
+                          tieneDato(result.datos?.estado_civil) || tieneDato(result.datos?.caducidad_dni)) && (
+                        <>
                         <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-200 dark:border-slate-700 mt-4">
                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <span className="material-icons-round text-blue-500">person</span>
@@ -216,33 +228,50 @@ export default function InfoGlobal() {
                         </div>
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                {tieneDato(result.datos?.nombre) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre Completo</p>
-                                    <p className="font-semibold text-lg">{result.datos.nombre || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Nombre completo</p>
+                                    <p className="font-semibold text-lg">{result.datos.nombre}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.sexo) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sexo</p>
-                                    <p className="font-semibold text-lg">{result.datos.sexo || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Sexo</p>
+                                    <p className="font-semibold text-lg">{result.datos.sexo}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.nacimiento) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha de Nacimiento</p>
-                                    <p className="font-semibold text-lg">{result.datos.nacimiento || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Fecha de nacimiento</p>
+                                    <p className="font-semibold text-lg">{result.datos.nacimiento}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.edad) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Edad</p>
-                                    <p className="font-semibold text-lg">{result.datos.edad || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Edad</p>
+                                    <p className="font-semibold text-lg">{result.datos.edad}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.estado_civil) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Estado Civil</p>
-                                    <p className="font-semibold text-lg">{result.datos.estado_civil || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Estado civil</p>
+                                    <p className="font-semibold text-lg">{result.datos.estado_civil}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.caducidad_dni) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Caducidad DNI</p>
-                                    <p className="font-semibold text-lg">{result.datos.caducidad_dni || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Caducidad DNI</p>
+                                    <p className="font-semibold text-lg">{result.datos.caducidad_dni}</p>
                                 </div>
+                                )}
                             </div>
                         </div>
+                        </>
+                        )}
 
+                        {/* Ubicacion: solo si hay alguno */}
+                        {(tieneDato(result.datos?.direccion) || tieneDato(result.datos?.distrito) || tieneDato(result.datos?.provincia)) && (
+                        <>
                         <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-y border-slate-200 dark:border-slate-700">
                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <span className="material-icons-round text-blue-500">location_on</span>
@@ -251,47 +280,60 @@ export default function InfoGlobal() {
                         </div>
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {tieneDato(result.datos?.direccion) && (
                                 <div className="md:col-span-3 space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Dirección</p>
-                                    <p className="font-semibold text-lg">{result.datos.direccion || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Dirección</p>
+                                    <p className="font-semibold text-lg">{result.datos.direccion}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.distrito) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Distrito</p>
-                                    <p className="font-semibold text-lg">{result.datos.distrito || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Distrito</p>
+                                    <p className="font-semibold text-lg">{result.datos.distrito}</p>
                                 </div>
+                                )}
+                                {tieneDato(result.datos?.provincia) && (
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Provincia</p>
-                                    <p className="font-semibold text-lg">{result.datos.provincia || 'No registrado'}</p>
+                                    <p className="text-xs font-bold text-slate-400">Provincia</p>
+                                    <p className="font-semibold text-lg">{result.datos.provincia}</p>
                                 </div>
+                                )}
                             </div>
                         </div>
+                        </>
+                        )}
 
+                        {/* Telefonos: solo si hay alguno. Antes se pintaba el
+                            bloque con el mensaje "no se encontraron". */}
+                        {Array.isArray(result.datos?.telefonos) && result.datos.telefonos.length > 0 && (
+                        <>
                         <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-y border-slate-200 dark:border-slate-700">
                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <span className="material-icons-round text-blue-500">phone_android</span>
-                                Teléfonos Asociados
+                                Teléfonos asociados
                             </h3>
                         </div>
                         <div className="p-6">
-                            {result.datos.telefonos && result.datos.telefonos.length > 0 ? (
-                                <div className="flex flex-wrap gap-4">
-                                    {result.datos.telefonos.map((tel, idx) => (
-                                        <div key={idx} className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                                <span className="material-icons-round text-blue-600 dark:text-blue-400">phone</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-black text-lg text-slate-800 dark:text-white leading-tight">{tel.numero}</p>
-                                                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{tel.operadora}</p>
-                                            </div>
+                            <div className="flex flex-wrap gap-4">
+                                {result.datos.telefonos.map((tel, idx) => (
+                                    <div key={idx} className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                            <span className="material-icons-round text-blue-600 dark:text-blue-400">phone</span>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-slate-500 italic">No se encontraron teléfonos asociados.</p>
-                            )}
+                                        <div>
+                                            <p className="font-black text-lg text-slate-800 dark:text-white leading-tight">{tel.numero}</p>
+                                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{tel.operadora}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
+                        </>
+                        )}
 
+                        {/* Denuncias: solo si el dato viene informado */}
+                        {tieneDato(result.datos?.denuncias) && (
+                        <>
                         <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-y border-slate-200 dark:border-slate-700">
                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <span className="material-icons-round text-red-500">gavel</span>
@@ -305,7 +347,7 @@ export default function InfoGlobal() {
                                 </div>
                                 <div>
                                     <p className="font-black text-2xl">{result.datos.denuncias}</p>
-                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Denuncias Registradas</p>
+                                    <p className="text-sm font-bold text-slate-500">Denuncias registradas</p>
                                 </div>
                             </div>
                             {parseInt(result.datos.denuncias) > 0 && (
@@ -314,6 +356,8 @@ export default function InfoGlobal() {
                                 </p>
                             )}
                         </div>
+                        </>
+                        )}
 
                         {/* Visor de PDF embebido */}
                         {result.pdf_url && (

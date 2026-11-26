@@ -89,14 +89,38 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
             const JsPDF = await loadJsPDF();
             const pdf = new JsPDF({ unit: 'pt', format: 'a4' });
             const W = pdf.internal.pageSize.getWidth();
+            const H = pdf.internal.pageSize.getHeight();
             const M = 48;          // margen
             let y = M;
+
+            // Foto del titular si el proveedor la devolvio. Se carga antes de
+            // maquetar para reservar su hueco a la derecha de la cabecera.
+            let foto = null;
+            if (result.imagen_url) {
+                try {
+                    foto = await loadImgDataUrl(getApiUrl(result.imagen_url));
+                } catch (e) {
+                    console.warn('No se pudo cargar la foto para el PDF', e);
+                }
+            }
+            const FOTO_W = 84;
+            const FOTO_H = 110;
+            const tituloAncho = foto ? W - M * 2 - FOTO_W - 16 : W - M * 2;
 
             // El PDF salia EN BLANCO: se creaba el documento y se guardaba sin
             // escribir ni una linea. Aqui se vuelca el resultado real.
             pdf.setFont('helvetica', 'bold');
             pdf.setFontSize(16);
             pdf.text('CONSULTA DNI', M, y);
+            if (foto) {
+                try {
+                    pdf.addImage(foto, 'JPEG', W - M - FOTO_W, M - 4, FOTO_W, FOTO_H);
+                    pdf.setDrawColor(210);
+                    pdf.rect(W - M - FOTO_W, M - 4, FOTO_W, FOTO_H);
+                } catch (e) {
+                    console.warn('addImage fallo', e);
+                }
+            }
             y += 26;
 
             pdf.setFont('helvetica', 'normal');
@@ -134,7 +158,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
             ].filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== '' && String(v).trim() !== 'N/A');
 
             for (const [label, valor] of campos) {
-                if (y > pdf.internal.pageSize.getHeight() - M) {
+                if (y > H - M) {
                     pdf.addPage();
                     y = M;
                 }
@@ -145,7 +169,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(11);
                 pdf.setTextColor(0);
-                const lineas = pdf.splitTextToSize(String(valor), W - M * 2);
+                const lineas = pdf.splitTextToSize(String(valor), tituloAncho);
                 pdf.text(lineas, M, y + 13);
                 y += 13 + lineas.length * 13 + 8;
             }
@@ -156,7 +180,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
             pdf.text(
                 `Generado el ${new Date().toLocaleString('es-PE')}`,
                 M,
-                pdf.internal.pageSize.getHeight() - 24,
+                H - 24,
             );
 
             pdf.save(`dni_${result.documento || 'consulta'}.pdf`);
