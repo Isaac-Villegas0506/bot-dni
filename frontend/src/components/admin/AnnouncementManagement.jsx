@@ -58,14 +58,14 @@ export default function AnnouncementManagement() {
     const handleDelete = async () => {
         if (!modal.idToDelete) return;
         const token = localStorage.getItem('token');
-        await fetch(`/api/admin/announcements/${modal.idToDelete}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        await fetch(getApiUrl(`/api/admin/announcements/${modal.idToDelete}`), { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         setModal({ isOpen: false, idToDelete: null });
         loadAnn();
     };
 
     const toggleStatus = async (ann) => {
         const token = localStorage.getItem('token');
-        await fetch(`/api/admin/announcements/${ann.id}/status`, {
+        await fetch(getApiUrl(`/api/admin/announcements/${ann.id}/status`), {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_active: !ann.is_active })

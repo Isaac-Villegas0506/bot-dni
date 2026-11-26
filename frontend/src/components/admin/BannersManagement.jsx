@@ -83,7 +83,7 @@ export default function BannersManagement() {
     const toggleActive = async (id, currentStatus) => {
         const token = localStorage.getItem('token');
         try {
-            await fetch(`/api/admin/banners/${id}`, {
+            await fetch(getApiUrl(`/api/admin/banners/${id}`), {
                 method: 'PUT',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -101,7 +101,7 @@ export default function BannersManagement() {
         if (!confirm('¿Estás seguro de eliminar este banner?')) return;
         const token = localStorage.getItem('token');
         try {
-            await fetch(`/api/admin/banners/${id}`, {
+            await fetch(getApiUrl(`/api/admin/banners/${id}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

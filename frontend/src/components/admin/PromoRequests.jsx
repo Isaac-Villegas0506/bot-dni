@@ -38,7 +38,7 @@ export default function PromoRequests() {
         setUpdating(reqId);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/admin/promos/${reqId}/status`, {
+            const res = await fetch(getApiUrl(`/api/admin/promos/${reqId}/status`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

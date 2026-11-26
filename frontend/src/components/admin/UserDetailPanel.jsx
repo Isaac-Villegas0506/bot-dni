@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AlertModal from '../AlertModal';
 import { formatLimaDate, formatLimaTime } from './utils';
 import ConfirmationModal from './ConfirmationModal';
+import { getApiUrl } from '../../utils/api';
 
 const HIST_CATEGORIES_PANEL = [
     { id: null, label: 'Todos', icon: 'apps' },
@@ -208,7 +209,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
         setLoading(true);
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`/api/admin/users/${userId}/detail`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl(`/api/admin/users/${userId}/detail`), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setDetail(await res.json());
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
@@ -222,7 +223,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
         setBanIpLoading(true);
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`/api/admin/users/${userId}/ban-ip`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Admin ban', also_ban_account: true }) });
+            const res = await fetch(getApiUrl(`/api/admin/users/${userId}/ban-ip`), { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Admin ban', also_ban_account: true }) });
             const data = await res.json();
             if (res.ok) { setAlert({ isOpen: true, type: 'success', title: '🚫 IP Baneada', message: `IP ${data.ip} bloqueada.` }); loadDetail(); onUpdate(); }
             else setAlert({ isOpen: true, type: 'error', title: 'Error', message: data.detail || 'Error al banear.' });

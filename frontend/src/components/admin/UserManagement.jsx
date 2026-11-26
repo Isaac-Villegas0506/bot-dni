@@ -47,7 +47,7 @@ export default function UserManagement() {
         }
         const newStatus = user.status === 'active' ? 'banned' : 'active';
         const token = localStorage.getItem('token');
-        await fetch(`/api/admin/users/${user.id}/status`, {
+        await fetch(getApiUrl(`/api/admin/users/${user.id}/status`), {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
@@ -57,7 +57,7 @@ export default function UserManagement() {
 
     const handleTogglePremium = async (user) => {
         const token = localStorage.getItem('token');
-        await fetch(`/api/admin/users/${user.id}/premium`, {
+        await fetch(getApiUrl(`/api/admin/users/${user.id}/premium`), {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_premium: !user.is_premium })

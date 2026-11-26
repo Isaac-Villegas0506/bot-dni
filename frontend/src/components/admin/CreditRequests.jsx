@@ -216,7 +216,7 @@ export default function CreditRequests() {
         try {
             const opts = { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } };
             if (actionStr === 'reject') { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify({ reason }); }
-            const res = await fetch(`/api/admin/purchases/${id}/${actionStr}`, opts);
+            const res = await fetch(getApiUrl(`/api/admin/purchases/${id}/${actionStr}`), opts);
             if (res.ok) {
                 fetchPurchases();
                 if (actionStr === 'reject') setRejectModal({ isOpen: false, purchaseId: null, reason: '' });

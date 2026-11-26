@@ -59,14 +59,14 @@ export default function BotManagement() {
 
     const handleUpdateType = async (bot, newBotType) => {
         const token = localStorage.getItem('token');
-        await fetch(`/api/admin/bots/${encodeURIComponent(bot.username)}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ bot_type: newBotType }) });
+        await fetch(getApiUrl(`/api/admin/bots/${encodeURIComponent(bot.username)}`), { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ bot_type: newBotType }) });
         setEditingBot(null); loadBots();
     };
 
     const handleDelete = async () => {
         if (!modal.bot) return;
         const token = localStorage.getItem('token');
-        await fetch(`/api/admin/bots/${encodeURIComponent(modal.bot.username)}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        await fetch(getApiUrl(`/api/admin/bots/${encodeURIComponent(modal.bot.username)}`), { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         setModal({ isOpen: false, bot: null }); loadBots();
     };
 

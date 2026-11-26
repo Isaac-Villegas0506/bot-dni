@@ -1,3 +1,4 @@
+import SkeletonSection from './Skeleton';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getApiUrl } from '../../utils/api';
@@ -99,8 +100,8 @@ export default function SettingsManagement() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 gap-3">
-                <div className="w-8 h-8 border-2 border-slate-200 border-t-primary dark:border-t-primary-dark rounded-full animate-spin" />
+            <div className="w-full max-w-4xl mx-auto">
+                <SkeletonSection rows={4} />
             </div>
         );
     }

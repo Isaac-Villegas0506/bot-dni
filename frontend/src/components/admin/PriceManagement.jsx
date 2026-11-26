@@ -192,7 +192,7 @@ export default function PriceManagement() {
         setSavingCost(prev => ({ ...prev, [optionId]: true }));
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`/api/admin/credits/costs/${optionId}`, {
+            const res = await fetch(getApiUrl(`/api/admin/credits/costs/${optionId}`), {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cost: costs[optionId]?.cost ?? 1 })
@@ -206,7 +206,7 @@ export default function PriceManagement() {
         setSavingPackage(prev => ({ ...prev, [pkg.id]: true }));
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`/api/admin/credit-packages/${pkg.id}`, {
+            const res = await fetch(getApiUrl(`/api/admin/credit-packages/${pkg.id}`), {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: pkg.name, price_soles: Number(pkg.price_soles), credits: Number(pkg.credits), is_premium: Boolean(pkg.is_premium), is_active: Boolean(pkg.is_active), unlimited_days: pkg.unlimited_days ? Number(pkg.unlimited_days) : null })
