@@ -37,35 +37,44 @@ from telegram.bitx_parser import (
 from telegram.exceptions import SinResultadosError
 
 # ── Configuración de comandos ────────────────────────────────────────────────
-# (comando, espera_inicial_segundos, max_reintentos_polling, etiqueta)
-# Los tiempos salen de medir el bot real: /dniv y /seekerpdf tardan 30-55 s.
+# (comando, tiempo_maximo_segundos, etiqueta)
+# `timeout` es el techo de espera total, no una espera fija: el bucle sondea
+# cada POLL_INTERVAL y corta en cuanto llega el resultado. Los valores salen de
+# medir el bot real (los más lentos: /dniv ~106 s, /seekerpdf ~99 s).
 BOT_COMMANDS: dict[str, dict] = {
     # RENIEC
-    "dni":              {"cmd": "/dni",   "wait": 12, "tries": 12, "label": "RENIEC ONLINE"},
-    "dni_premium":      {"cmd": "/dnif",  "wait": 15, "tries": 14, "label": "RENIEC FULL BIOMETRIA"},
-    "dni_azul":         {"cmd": "/dniv",  "wait": 25, "tries": 20, "label": "DNI VIRTUAL (AZUL)"},
-    "dni_electronico":  {"cmd": "/dnivel","wait": 25, "tries": 20, "label": "DNI ELECTRONICO"},
-    "dni_amarillo":     {"cmd": "/dniva", "wait": 20, "tries": 16, "label": "DNI AMARILLO"},
+    "dni":              {"cmd": "/dni",   "timeout": 60,  "label": "RENIEC ONLINE"},
+    "dni_premium":      {"cmd": "/dnif",  "timeout": 120, "label": "RENIEC FULL BIOMETRIA"},
+    "dni_azul":         {"cmd": "/dniv",  "timeout": 210, "label": "DNI VIRTUAL (AZUL)"},
+    "dni_electronico":  {"cmd": "/dnivel","timeout": 210, "label": "DNI ELECTRONICO"},
+    "dni_amarillo":     {"cmd": "/dniva", "timeout": 150, "label": "DNI AMARILLO"},
     # C4
-    "c4_azul":          {"cmd": "/c4a",   "wait": 15, "tries": 14, "label": "C4A AZUL"},
-    "c4_inscripcion":   {"cmd": "/c4i",   "wait": 15, "tries": 14, "label": "C4A INSCRIPCION"},
+    "c4_azul":          {"cmd": "/c4a",   "timeout": 120, "label": "C4A AZUL"},
+    "c4_inscripcion":   {"cmd": "/c4i",   "timeout": 120, "label": "C4A INSCRIPCION"},
     # Familiares / hogar
-    "hogar":            {"cmd": "/hogar", "wait": 15, "tries": 14, "label": "SISFOH HOGAR"},
-    "arbol_texto":      {"cmd": "/ag",    "wait": 15, "tries": 14, "label": "ARBOL GENEALOGICO"},
-    "arbol_visual":     {"cmd": "/agv",   "wait": 18, "tries": 16, "label": "ARBOL VISUAL"},
-    "arbol_visual_pdf": {"cmd": "/agvpdf","wait": 20, "tries": 18, "label": "ARBOL VISUAL PDF"},
+    "hogar":            {"cmd": "/hogar", "timeout": 120, "label": "SISFOH HOGAR"},
+    "arbol_texto":      {"cmd": "/ag",    "timeout": 120, "label": "ARBOL GENEALOGICO"},
+    "arbol_visual":     {"cmd": "/agv",   "timeout": 150, "label": "ARBOL VISUAL"},
+    "arbol_visual_pdf": {"cmd": "/agvpdf","timeout": 180, "label": "ARBOL VISUAL PDF"},
     # Telefonía
-    "fonos":            {"cmd": "/fonos", "wait": 12, "tries": 12, "label": "LINEAS POR DNI"},
-    "telp":             {"cmd": "/telp",  "wait": 12, "tries": 12, "label": "TITULAR DE LINEA"},
+    "fonos":            {"cmd": "/fonos", "timeout": 60,  "label": "LINEAS POR DNI"},
+    "telp":             {"cmd": "/telp",  "timeout": 60,  "label": "TITULAR DE LINEA"},
     # Seeker / metadata
-    "seekerpdf":        {"cmd": "/seekerpdf", "wait": 30, "tries": 24, "label": "SEEKER PDF"},
-    "seeker_texto":     {"cmd": "/seeker",    "wait": 25, "tries": 20, "label": "SEEKER TEXTO"},
+    "seekerpdf":        {"cmd": "/seekerpdf", "timeout": 210, "label": "SEEKER PDF"},
+    "seeker_texto":     {"cmd": "/seeker",    "timeout": 180, "label": "SEEKER TEXTO"},
     # Denuncias
-    "denuncias":        {"cmd": "/denuncias",    "wait": 15, "tries": 14, "label": "DENUNCIAS DNI"},
-    "denuncias_placa":  {"cmd": "/pladenuncias", "wait": 15, "tries": 14, "label": "DENUNCIAS PLACA"},
+    "denuncias":        {"cmd": "/denuncias",    "timeout": 120, "label": "DENUNCIAS DNI"},
+    "denuncias_placa":  {"cmd": "/pladenuncias", "timeout": 120, "label": "DENUNCIAS PLACA"},
     # Facial (envía foto, no texto)
-    "facial":           {"cmd": "/reco",  "wait": 20, "tries": 18, "label": "REPORTE FACIAL"},
+    "facial":           {"cmd": "/reco",  "timeout": 150, "label": "REPORTE FACIAL"},
 }
+
+# Sondeo de la respuesta. El bot suele contestar en 2-15 s; se consulta cada
+# 1.5 s en vez de dormir el `wait` completo. STABLE_CYCLES = cuántos ciclos
+# seguidos sin mensajes nuevos se toleran antes de dar la respuesta por cerrada
+# (el bot a veces parte el resultado en varios mensajes).
+POLL_INTERVAL = 1.5
+STABLE_CYCLES = 2
 
 # Prefijos de archivo que devuelve el bot → carpeta destino y extensión
 _FILE_KINDS = {
@@ -236,8 +245,7 @@ async def run_command(
         raise ValueError(f"Comando de BitxData desconocido: {command_key}")
 
     comando = cfg["cmd"]
-    espera = cfg["wait"]
-    intentos = cfg["tries"]
+    timeout = cfg["timeout"]
     etiqueta = cfg["label"]
 
     # Serializamos TODA la conversación con el bot: los mensajes de comandos
@@ -252,24 +260,35 @@ async def run_command(
             texto = f"{comando} {argument}".strip() if argument else comando
             sent = await client.send_message(bot_username, texto)
 
-        await asyncio.sleep(espera)
-
         # ── Polling de la respuesta ──────────────────────────────────────────
+        # Antes había un sleep fijo de 12-30 s antes de mirar y luego sondeos
+        # cada 3 s: aunque el bot respondiera en 3 s, /fonos tardaba >=45 s y
+        # /dniv >=82 s. Ahora se consulta cada POLL_INTERVAL y se corta en
+        # cuanto llega el resultado definitivo.
         result = BitxResult()
         visto: set[int] = set()
         texto_final = ""
         progreso_visto = False
+        ultimo_msg_id = sent.id
+        quietos = 0          # ciclos seguidos sin mensajes nuevos
+        inicio = asyncio.get_event_loop().time()
+        primer_msg_en = None   # para medir la latencia real del bot
 
-        for intento in range(intentos):
-            print(f"🔄 [BITX] {etiqueta} intento {intento + 1}/{intentos}...")
+        while asyncio.get_event_loop().time() - inicio < timeout:
+            nuevos = 0
 
             async for msg in client.iter_messages(
-                bot_username, limit=20, min_id=sent.id, reverse=True
+                bot_username, limit=20, min_id=ultimo_msg_id, reverse=True
             ):
                 if msg.id in visto:
                     continue
                 visto.add(msg.id)
+                ultimo_msg_id = max(ultimo_msg_id, msg.id)
+                nuevos += 1
                 texto = msg.text or ""
+                if primer_msg_en is None:
+                    primer_msg_en = asyncio.get_event_loop().time() - inicio
+                    print(f"   ⏱️  primer mensaje del bot a los {primer_msg_en:.1f}s")
 
                 # 1. Mensaje de "generando..." → seguir esperando
                 if is_progress_message(texto):
@@ -299,8 +318,7 @@ async def run_command(
                         else:
                             result.files.append(ruta)
 
-                # 4. Texto con datos → parsear y acumular
-                #    (el facial no trae campos ➮, solo una frase + PDF)
+                # 4. Texto con datos → parsear y acumular                #    (el facial no trae campos ➮, solo una frase + PDF)
                 if texto and ("➮" in texto or (msg.media and texto.strip())):
                     # Mismo filtro por DNI para el texto
                     if argument and re.search(r"\d{8}", texto) \
@@ -313,12 +331,24 @@ async def run_command(
                             texto_final = texto
                             result.data = dict(parsed)
 
-            # Criterio de fin: tenemos texto parseado o al menos un archivo
+            # ── Criterio de fin ──────────────────────────────────────────────
+            # El bot manda el resultado en varios mensajes (texto + 1-2 fotos o
+            # un PDF). Antes se esperaba a "progreso_visto o 2 archivos", lo que
+            # forzaba sondeos de más. Ahora:
+            #   - texto parseado + al menos un archivo -> listo
+            #   - sin mensajes nuevos durante STABLE_CYCLES ciclos tras haber
+            #     recibido algo -> se considera terminado
+            if texto_final and (result.files or result.photos):
+                break
             if texto_final or result.files or result.photos:
-                if progreso_visto or (result.files or len(result.photos) >= 2):
-                    break
+                if nuevos == 0:
+                    quietos += 1
+                    if quietos >= STABLE_CYCLES:
+                        break
+                else:
+                    quietos = 0
 
-            await asyncio.sleep(3)
+            await asyncio.sleep(POLL_INTERVAL)
 
         if not texto_final and not result.files and not result.photos:
             raise Exception(

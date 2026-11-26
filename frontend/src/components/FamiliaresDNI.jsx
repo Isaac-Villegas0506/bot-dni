@@ -504,7 +504,38 @@ export default function FamiliaresDNI() {
       }
 
       if (isTxt) {
-        const parsed = parsePersonas(data.raw_text);
+        // /hogar (SISFOH) ya entrega `integrantes` estructurados; antes se
+        // ignoraban y se re-parseaba el texto con parsePersonas, que entiende
+        // el formato del arbol antiguo y convertia "[ DATOS DE LA VIVIENDA ]"
+        // y "INTEGRANTE [1]" en relaciones absurdas.
+        const hogar = data.data || {};
+        const integrantes = Array.isArray(hogar.integrantes) ? hogar.integrantes : [];
+        const parsed = integrantes.length
+          ? {
+              titular: null,
+              familiares: integrantes.map((it) => {
+                // "30/05/1997 (Edad: 29)" -> fnac + edad
+                const m = String(it.nacimiento || '').match(/^(.*?)(?:\s*\(Edad:\s*(\d+)\))?$/);
+                return {
+                  dni: it.dni || '',
+                  nombres: it.nombre || it.nombres || '',
+                  fnac: (m?.[1] || '').trim(),
+                  edad: m?.[2] || '',
+                  genero: it.sexo || it.genero || '',
+                  relacion: '',
+                  is_titular: false,
+                };
+              }),
+              vivienda: {
+                clasificacion: hogar.clasificacion || '',
+                codigo_hogar: hogar.codigo_hogar || '',
+                ubicacion: hogar.ubicacion || '',
+                direccion: hogar.direccion || '',
+                total_integrantes: hogar.total_integrantes || integrantes.length,
+              },
+            }
+          : { ...parsePersonas(data.raw_text), vivienda: null };
+
         setGeneratedData({
           dni,
           type: selectedOption,
@@ -655,12 +686,12 @@ export default function FamiliaresDNI() {
             <span className="material-icons-round text-4xl">check</span>
           </div>
           <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6">
-            ÁRBOL FAMILIAR GENERADO CON ÉXITO
+            {generatedData.parsed?.vivienda ? 'REPORTE DEL HOGAR GENERADO CON ÉXITO' : 'ÁRBOL FAMILIAR GENERADO CON ÉXITO'}
           </h3>
 
           {/* ── TEXTO RESULT VIEW ── */}
           {isTextoResult && (() => {
-            const { titular, familiares, foundTotal } = generatedData.parsed ?? {};
+            const { titular, familiares, foundTotal, vivienda } = generatedData.parsed ?? {};
             const groups = groupFamiliares(familiares ?? []);
             const displayTotal = foundTotal || familiares?.length || 0;
 
@@ -690,9 +721,41 @@ export default function FamiliaresDNI() {
                 </div>
               </div>
             );
-
             return (
               <div className="w-full mb-6">
+                {/* Datos de la vivienda (SISFOH): el bot los entrega y antes
+                    se descartaban; solo se veian las personas sueltas. */}
+                {vivienda && (vivienda.clasificacion || vivienda.codigo_hogar || vivienda.ubicacion || vivienda.direccion) && (
+                  <div className="mb-5 rounded-xl border border-primary/25 bg-primary/5 p-4 dark:border-primary-dark/30 dark:bg-primary-dark/10">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="material-icons-round text-primary dark:text-primary-dark text-base">home</span>
+                      <span className="text-xs font-extrabold text-slate-600 dark:text-slate-300">Datos de la vivienda</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 text-sm sm:grid-cols-2">
+                      {vivienda.clasificacion && (
+                        <div><span className="text-xs text-slate-400">Clasificación</span>
+                          <p className="font-bold text-slate-800 dark:text-white">{vivienda.clasificacion}</p></div>
+                      )}
+                      {vivienda.codigo_hogar && (
+                        <div><span className="text-xs text-slate-400">Código de hogar</span>
+                          <p className="font-mono font-bold text-slate-800 dark:text-white">{vivienda.codigo_hogar}</p></div>
+                      )}
+                      {vivienda.ubicacion && (
+                        <div><span className="text-xs text-slate-400">Ubicación</span>
+                          <p className="font-bold text-slate-800 dark:text-white">{vivienda.ubicacion}</p></div>
+                      )}
+                      {vivienda.total_integrantes && (
+                        <div><span className="text-xs text-slate-400">Total integrantes</span>
+                          <p className="font-bold text-slate-800 dark:text-white">{vivienda.total_integrantes}</p></div>
+                      )}
+                      {vivienda.direccion && (
+                        <div className="sm:col-span-2"><span className="text-xs text-slate-400">Dirección</span>
+                          <p className="font-bold text-slate-800 dark:text-white">{vivienda.direccion}</p></div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Titular header / "Familiares de:" */}
                 {titular && (
                   <div className="mb-5">
@@ -710,7 +773,9 @@ export default function FamiliaresDNI() {
                 <div className="flex items-center gap-2 px-1 mb-3">
                   <span className="material-icons-round text-slate-400 text-sm">group</span>
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    {displayTotal} familiar{displayTotal !== 1 ? 'es' : ''} encontrado{displayTotal !== 1 ? 's' : ''}
+                    {vivienda
+                      ? `${displayTotal} integrante${displayTotal !== 1 ? 's' : ''} del hogar`
+                      : `${displayTotal} familiar${displayTotal !== 1 ? 'es' : ''} encontrado${displayTotal !== 1 ? 's' : ''}`}
                   </span>
                 </div>
 
