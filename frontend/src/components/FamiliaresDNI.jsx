@@ -709,15 +709,28 @@ export default function FamiliaresDNI() {
                     </span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-sm">
-                  {p.nombres && <div><span className="text-slate-400 text-xs">Nombres</span><p className="font-bold text-slate-800 dark:text-white truncate">{p.nombres}</p></div>}
-                  {p.apellidos && <div><span className="text-slate-400 text-xs">Apellidos</span><p className="font-bold text-slate-800 dark:text-white truncate">{p.apellidos}</p></div>}
-                  {p.dni && <div><span className="text-slate-400 text-xs">DNI</span><p className="font-bold text-slate-800 dark:text-white font-mono">{p.dni}</p></div>}
-                  {p.edad && <div><span className="text-slate-400 text-xs">Edad</span><p className="font-bold text-slate-800 dark:text-white">{p.edad}</p></div>}
-                  {p.genero && <div><span className="text-slate-400 text-xs">Género</span><p className="font-bold text-slate-800 dark:text-white">{p.genero}</p></div>}
-                  {p.fnac && <div><span className="text-slate-400 text-xs">F. Nac.</span><p className="font-bold text-slate-800 dark:text-white">{p.fnac}</p></div>}
-                  {p.verificacion && <div><span className="text-slate-400 text-xs">Verificación</span><p className={`font-bold text-xs uppercase ${p.verificacion === 'ALTA' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>{p.verificacion}</p></div>}
-                  {p.relacion && !isHeader && <div><span className="text-slate-400 text-xs">Relación</span><p className="font-bold text-slate-800 dark:text-white text-xs">{p.relacion}</p></div>}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  {/* Nombres y apellidos ocupan las dos columnas y pueden
+                      partirse en varias lineas: con truncate se cortaban
+                      ("LUPACA CALISAYA JHONATAN...") y no se leia el nombre. */}
+                  {p.nombres && (
+                    <div className="col-span-2">
+                      <span className="block text-[11px] text-slate-400">Nombres</span>
+                      <p className="break-words font-bold leading-snug text-slate-800 dark:text-white">{p.nombres}</p>
+                    </div>
+                  )}
+                  {p.apellidos && (
+                    <div className="col-span-2">
+                      <span className="block text-[11px] text-slate-400">Apellidos</span>
+                      <p className="break-words font-bold leading-snug text-slate-800 dark:text-white">{p.apellidos}</p>
+                    </div>
+                  )}
+                  {p.dni && <div><span className="block text-[11px] text-slate-400">DNI</span><p className="font-mono font-bold text-slate-800 dark:text-white">{p.dni}</p></div>}
+                  {p.edad && <div><span className="block text-[11px] text-slate-400">Edad</span><p className="font-bold text-slate-800 dark:text-white">{p.edad}</p></div>}
+                  {p.genero && <div><span className="block text-[11px] text-slate-400">Género</span><p className="font-bold text-slate-800 dark:text-white">{p.genero}</p></div>}
+                  {p.fnac && <div><span className="block text-[11px] text-slate-400">F. Nac.</span><p className="font-bold text-slate-800 dark:text-white">{p.fnac}</p></div>}
+                  {p.verificacion && <div><span className="block text-[11px] text-slate-400">Verificación</span><p className={`font-bold text-xs uppercase ${p.verificacion === 'ALTA' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>{p.verificacion}</p></div>}
+                  {p.relacion && !isHeader && <div><span className="block text-[11px] text-slate-400">Relación</span><p className="text-xs font-bold text-slate-800 dark:text-white">{p.relacion}</p></div>}
                 </div>
               </div>
             );
@@ -750,7 +763,7 @@ export default function FamiliaresDNI() {
                       )}
                       {vivienda.direccion && (
                         <div className="sm:col-span-2"><span className="text-xs text-slate-400">Dirección</span>
-                          <p className="font-bold text-slate-800 dark:text-white">{vivienda.direccion}</p></div>
+                          <p className="break-words font-bold leading-snug text-slate-800 dark:text-white">{vivienda.direccion}</p></div>
                       )}
                     </div>
                   </div>
@@ -798,52 +811,29 @@ export default function FamiliaresDNI() {
                   ))}
                 </div>
 
-                {/* TXT download with Premium Pulse animation */}
-                <div className="mt-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 flex flex-col items-center">
-                  <div className="w-full relative group">
-                    <motion.div
-                      initial={{ opacity: 0.5, scale: 1 }}
-                      animate={{
-                        opacity: [0.5, 0.8, 0.5],
-                        scale: [1, 1.05, 1]
-                      }}
-                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                      className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={async () => {
-                        if (generatedData.file_path) {
-                          const filename = `Arbol_Completo_${generatedData.dni}.txt`;
-                          await forceDownload(getApiUrl(generatedData.file_path), filename);
-                        } else {
-                          downloadTxtFile(generatedData.dni, generatedData.parsed);
-                        }
-                        setHasDownloaded(true);
-                      }}
-                      className="relative w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black shadow-2xl flex items-center justify-center gap-3 overflow-hidden"
-                    >
-                      {/* Shimmer effect */}
-                      <motion.div
-                        animate={{ x: ['-100%', '200%'] }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                      />
-
-                      <motion.span
-                        animate={{ y: [0, 3, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                        className="material-icons-round text-2xl"
-                      >
-                        file_download
-                      </motion.span>
-                      <span className="text-sm">Descargar Árbol Completo (.txt)</span>
-                    </motion.button>
-                  </div>
-                  <p className="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-3 font-medium flex items-center gap-1.5">
-                    <span className="material-icons-round text-sm text-violet-500">info</span>
-                    Recomendado: Obtenga los <span className="text-violet-600 dark:text-violet-400 font-bold">{displayTotal} registros</span> oficiales ahora.
+                {/* Descarga del TXT. Antes tenia tres animaciones infinitas a la
+                    vez (blur pulsante + shimmer + icono rebotando): distraia y
+                    forzaba repintados continuos. Ahora es un boton sobrio con
+                    el mismo estilo que el resto de la app. */}
+                <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700/50 dark:bg-slate-800/50">
+                  <button
+                    onClick={async () => {
+                      if (generatedData.file_path) {
+                        const filename = `Reporte_Hogar_${generatedData.dni}.txt`;
+                        await forceDownload(getApiUrl(generatedData.file_path), filename);
+                      } else {
+                        downloadTxtFile(generatedData.dni, generatedData.parsed);
+                      }
+                      setHasDownloaded(true);
+                    }}
+                    className="btn-primary-minimal w-full px-4 text-sm"
+                  >
+                    <span className="material-icons-round text-xl" aria-hidden="true">download</span>
+                    <span>Descargar reporte completo (.txt)</span>
+                  </button>
+                  <p className="flex items-center gap-1.5 text-center text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    <span className="material-icons-round text-sm" aria-hidden="true">info</span>
+                    Incluye los {displayTotal} {vivienda ? 'integrantes' : 'registros'} del reporte.
                   </p>
                 </div>
               </div>
@@ -858,11 +848,13 @@ export default function FamiliaresDNI() {
                 <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {generatedData.parsedFields.map((item, idx) => (
-                      <div key={idx} className="flex items-center text-sm gap-2">
-                        <span className="material-icons-round text-slate-400 text-base">{item.icon}</span>
-                        <span className="font-bold text-slate-500 dark:text-slate-400 w-20 shrink-0">{item.label}</span>
-                        <span className="text-slate-400 mx-1">:</span>
-                        <span className="font-bold text-slate-800 dark:text-white truncate">{item.value}</span>
+                      <div key={idx} className="flex items-start text-sm gap-2">
+                        <span className="material-icons-round mt-0.5 text-slate-400 text-base">{item.icon}</span>
+                        <span className="w-20 shrink-0 font-bold text-slate-500 dark:text-slate-400">{item.label}</span>
+                        <span className="text-slate-400">:</span>
+                        {/* break-words en vez de truncate: las direcciones
+                            largas se cortaban con "..." y se perdia el dato. */}
+                        <span className="min-w-0 break-words font-bold text-slate-800 dark:text-white">{item.value}</span>
                       </div>
                     ))}
                   </div>
