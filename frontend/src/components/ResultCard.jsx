@@ -88,7 +88,78 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
         try {
             const JsPDF = await loadJsPDF();
             const pdf = new JsPDF({ unit: 'pt', format: 'a4' });
-            pdf.save(`dni_${result.documento}.pdf`);
+            const W = pdf.internal.pageSize.getWidth();
+            const M = 48;          // margen
+            let y = M;
+
+            // El PDF salia EN BLANCO: se creaba el documento y se guardaba sin
+            // escribir ni una linea. Aqui se vuelca el resultado real.
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(16);
+            pdf.text('CONSULTA DNI', M, y);
+            y += 26;
+
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(10);
+            pdf.setTextColor(110);
+            pdf.text(`DNI ${result.documento || ''}`, M, y);
+            pdf.setTextColor(0);
+            y += 8;
+            pdf.setDrawColor(200);
+            pdf.line(M, y, W - M, y);
+            y += 22;
+
+            const campos = [
+                ['Nombres', result.nombres],
+                ['Apellidos', result.apellidos],
+                ['Documento', result.documento],
+                ['Género', result.genero],
+                ['Fecha de nacimiento', result.fecha_nacimiento],
+                ['Edad', result.edad],
+                ['Estado civil', result.estado_civil],
+                ['Grado de instrucción', result.grado_instruccion || result.instruccion],
+                ['Estatura', result.estatura],
+                ['Padre', result.padre],
+                ['Madre', result.madre],
+                ['Nacimiento', [result.nacimiento_departamento, result.nacimiento_provincia, result.nacimiento_distrito].filter(Boolean).join(' / ')],
+                ['Domicilio', [result.domicilio_departamento || result.departamento, result.domicilio_provincia || result.provincia, result.domicilio_distrito || result.distrito].filter(Boolean).join(' / ')],
+                ['Dirección', result.direccion],
+                ['Fecha de emisión', result.fecha_emision],
+                ['Fecha de inscripción', result.fecha_inscripcion],
+                ['Fecha de caducidad', result.fecha_caducidad],
+                ['Restricción', result.restriccion],
+                ['Ubigeo RENIEC', result.ubigeo_reniec],
+                ['Ubigeo INEI', result.ubigeo_inei],
+                ['Ubigeo SUNAT', result.ubigeo_sunat],
+            ].filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== '' && String(v).trim() !== 'N/A');
+
+            for (const [label, valor] of campos) {
+                if (y > pdf.internal.pageSize.getHeight() - M) {
+                    pdf.addPage();
+                    y = M;
+                }
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(9);
+                pdf.setTextColor(110);
+                pdf.text(String(label).toUpperCase(), M, y);
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(11);
+                pdf.setTextColor(0);
+                const lineas = pdf.splitTextToSize(String(valor), W - M * 2);
+                pdf.text(lineas, M, y + 13);
+                y += 13 + lineas.length * 13 + 8;
+            }
+
+            // Pie
+            pdf.setFontSize(8);
+            pdf.setTextColor(140);
+            pdf.text(
+                `Generado el ${new Date().toLocaleString('es-PE')}`,
+                M,
+                pdf.internal.pageSize.getHeight() - 24,
+            );
+
+            pdf.save(`dni_${result.documento || 'consulta'}.pdf`);
         } catch (e) {
             console.error('Error generating PDF:', e);
         }
@@ -470,14 +541,18 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 {result.apellidos}
                             </p>
 
-                            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto md:mx-0">
-                                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">DNI</p>
-                                    <div className="flex items-center justify-center md:justify-start gap-2">
-                                        <p className="font-mono font-bold text-primary dark:text-primary-dark text-lg md:text-xl">{result.documento}</p>
+                            {/* DNI y Género: mismas alturas y alineación a la
+                                izquierda en ambas tarjetas. Antes Género iba
+                                centrado y el botón de copiar (44px) descuadraba
+                                la altura de la de DNI. */}
+                            <div className="grid w-full max-w-sm grid-cols-2 gap-3 md:mx-0 md:max-w-md md:gap-4">
+                                <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                                    <p className="mb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">DNI</p>
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="font-mono font-bold text-primary dark:text-primary-dark text-base md:text-xl">{result.documento}</p>
                                         <button
                                             onClick={() => handleCopyDNI(result.documento)}
-                                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-primary dark:hover:text-primary-dark transition-[color,transform] active:scale-90 rounded-lg"
+                                            className="-mr-1.5 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-[color,transform] hover:text-primary active:scale-90 dark:hover:text-primary-dark"
                                             aria-label="Copiar DNI"
                                             title="Copiar DNI"
                                         >
@@ -485,11 +560,9 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                         </button>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Género</p>
-                                    <div className="flex items-center justify-center md:justify-start">
-                                        <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{result.genero}</p>
-                                    </div>
+                                <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                                    <p className="mb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Género</p>
+                                    <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{result.genero || '—'}</p>
                                 </div>
                             </div>
                         </div>
@@ -533,7 +606,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
-                            <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-dark/15">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-dark/15">
                                 <span className="material-icons-round text-primary dark:text-primary-dark text-2xl">face</span>
                             </div>
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Datos Personales</h3>
@@ -591,9 +664,11 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 </div>
                             )}
                             {(result.padre || result.madre) && (
-                                <div className="mt-4">
-                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Filiación</p>
-                                    <div className="grid grid-cols-1 gap-3">
+                                <div className="mt-5">
+                                    <p className="mb-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400">Filiación</p>
+                                    {/* Padre y madre lado a lado en pantallas anchas:
+                                        antes iban en una sola columna y se apilaban. */}
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between mb-2">
                                                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Padre</p>
@@ -632,22 +707,24 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
 
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full flex flex-col">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
-                            <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-dark/15">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-dark/15">
                                 <span className="material-icons-round text-primary dark:text-primary-dark text-2xl">home</span>
                             </div>
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Domicilio</h3>
                         </div>
-                        <div className="space-y-6 flex-1">
-                            <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
+                        <div className="flex flex-1 flex-col gap-4">
+                            {/* Ubigeo: 3 columnas ya desde móvil; con 1 columna se
+                                apilaban y dejaban el bloque muy alto. */}
+                            <div className="grid grid-cols-3 gap-2 text-center">
                                 <LocationBox label="Dpto" value={result.departamento} />
                                 <LocationBox label="Prov" value={result.provincia} />
                                 <LocationBox label="Dist" value={result.distrito} />
                             </div>
-                            <div className="pt-2 flex-1 flex flex-col justify-center">
-                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Dirección Completa</p>
-                                <div className="flex items-start space-x-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:bg-primary/5 dark:hover:bg-primary-dark/10 transition-colors">
-                                    <span className="material-icons-round text-red-500 mt-0.5">place</span>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base leading-relaxed">
+                            <div className="flex flex-col">
+                                <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Dirección completa</p>
+                                <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-primary/5 dark:border-slate-700/50 dark:bg-slate-800/40 dark:hover:bg-primary-dark/10">
+                                    <span className="material-icons-round mt-0.5 shrink-0 text-red-500">place</span>
+                                    <p className="font-semibold leading-relaxed text-slate-800 dark:text-slate-200 text-sm md:text-base">
                                         {result.direccion || 'No registrada'}
                                     </p>
                                 </div>
@@ -658,7 +735,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                     {searchType === 'premium' && hasRegistro && (
                         <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                             <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
-                                <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-dark/15">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-dark/15">
                                     <span className="material-icons-round text-primary dark:text-primary-dark text-2xl">description</span>
                                 </div>
                                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">Información de Registro</h3>
