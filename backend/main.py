@@ -2071,3 +2071,30 @@ async def delete_banner(
     if not success:
         raise HTTPException(500, "Error eliminando el banner")
     return {"status": "success"}
+
+# ─── Campañas de email (envío masivo reanudable) ─────────────────────────────
+# El envío corre en el servidor como tarea de fondo, en tandas de 50. Si el
+# proceso se reinicia (deploy), email_log marca lo ya enviado y /start continúa
+# donde quedó sin repetir a nadie.
+import email_campaign  # noqa: E402
+
+
+@app.post("/api/admin/email/campaign/start")
+async def start_email_campaign(user: dict = Depends(get_current_user)):
+    if not user or user.get("role") != "admin":
+        raise HTTPException(403, "Acceso denegado")
+    return await email_campaign.iniciar()
+
+
+@app.get("/api/admin/email/campaign/status")
+async def email_campaign_status(user: dict = Depends(get_current_user)):
+    if not user or user.get("role") != "admin":
+        raise HTTPException(403, "Acceso denegado")
+    return email_campaign.estado_actual()
+
+
+@app.post("/api/admin/email/campaign/stop")
+async def stop_email_campaign(user: dict = Depends(get_current_user)):
+    if not user or user.get("role") != "admin":
+        raise HTTPException(403, "Acceso denegado")
+    return await email_campaign.detener()
