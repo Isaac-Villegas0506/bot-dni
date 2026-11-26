@@ -9,7 +9,6 @@ import { getApiUrl } from '../utils/api';
 import SearchBar from '../components/SearchBar';
 import ResultCard from '../components/ResultCard';
 import AlertModal from '../components/AlertModal';
-import ModalLoading from '../components/ModalLoading';
 import SearchOptionModal from '../components/SearchOptionModal';
 import AnnouncementModal from '../components/AnnouncementModal';
 
@@ -173,13 +172,13 @@ export default function Home({ darkMode }) {
                         <div
                             key={i}
                             onClick={() => setOptionModal({ isOpen: true, targetUser: item })}
-                            className="bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 transition-colors duration-150 flex justify-between items-center group"
+                            className="bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer hover:border-primary dark:hover:border-primary-dark transition-colors duration-150 flex justify-between items-center group"
                         >
                             <div>
                                 <p className="font-semibold text-slate-900 dark:text-white">{item.nombre_completo}</p>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">{item.documento}{item.edad ? ` · ${item.edad} años` : ''}</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">{item.documento}{item.edad ? `, ${item.edad} años` : ''}</p>
                             </div>
-                            <div className="flex h-11 w-7 shrink-0 items-center justify-end text-slate-400 transition-colors duration-150 group-hover:text-blue-600 dark:text-slate-500 dark:group-hover:text-blue-400">
+                            <div className="flex h-11 w-7 shrink-0 items-center justify-end text-slate-400 transition-colors duration-150 group-hover:text-primary dark:text-slate-500 dark:group-hover:text-primary-dark">
                                 <span className="material-icons-round text-xl">chevron_right</span>
                             </div>
                         </div>
@@ -241,7 +240,7 @@ export default function Home({ darkMode }) {
                     className="btn-primary-minimal w-full px-8 py-4 sm:w-auto"
                 >
                     <span className="material-icons-round text-xl">redeem</span>
-                    <span className="font-bold text-sm sm:text-base tracking-wide">Ganar Créditos Gratis</span>
+                    <span className="font-bold text-sm sm:text-base">Ganar Créditos Gratis</span>
                 </button>
 
                 <button

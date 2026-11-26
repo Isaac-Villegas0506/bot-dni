@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { getApiUrl } from '../utils/api';
-import ModalLoading from '../components/ModalLoading';
+import { useLoading } from '../context/LoadingContext';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import AlertModal from '../components/AlertModal';
 import { OptionCard, ResultPanel, BackButton } from '../components/ui/ConsultSurface';
 import HelpModal from '../components/HelpModal';
@@ -21,10 +21,10 @@ const option = {
 
 export default function InfoGlobal() {
     const { user, token, openLoginModal } = useAuth();
+    const { showLoading, hideLoading, registerAbort } = useLoading();
     const [view, setView] = useState('selection');
     const [showInputModal, setShowInputModal] = useState(false);
     const [dni, setDni] = useState('');
-    const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [alertMessage, setAlertMessage] = useState(null);
     const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
@@ -76,19 +76,19 @@ export default function InfoGlobal() {
         }
 
         setShowInputModal(false);
-        setLoading(true);
+        showLoading(null, 'metadata');
         setAlertMessage(null);
         autoSearchTriggered.current = false; // reset for next time
 
         try {
-            const response = await fetch(getApiUrl('/api/metadata'), {
+            const response = await queryFetch(getApiUrl('/api/metadata'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ dni: targetDni })
-            });
+            }, { timeoutMs: QUERY_TIMEOUTS.metadata, registerAbort });
 
             const data = await response.json();
 
@@ -102,19 +102,18 @@ export default function InfoGlobal() {
                 } else {
                     setAlertMessage(data.detail || 'Error al buscar información.');
                 }
-                setLoading(false);
                 return;
             }
 
             setResult(data);
             setHasDownloaded(false);
             setView('result');
-        } catch {
-            setAlertMessage('Error de conexión con el servidor.');
+        } catch (e) {
+            setAlertMessage(e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión con el servidor.');
         } finally {
-            setLoading(false);
+            hideLoading();
         }
-    }, [dni, user, token, openLoginModal]);
+    }, [dni, user, token, openLoginModal, showLoading, hideLoading, registerAbort]);
 
     const handleDniChange = (e) => {
         const val = e.target.value.replace(/\D/g, '').slice(0, 8);
@@ -457,7 +456,6 @@ export default function InfoGlobal() {
                 document.body
             )}
 
-            {loading && <ModalLoading loading={loading} />}
             <AlertModal isOpen={!!alertMessage} message={alertMessage} onClose={() => setAlertMessage(null)} />
         </div>
     );

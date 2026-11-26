@@ -6,6 +6,7 @@
    en --color-surface-60 / --color-surface-30 / --color-accent-10.
    waive: 1 (--font-display conserva la pila del sistema: es la identidad del producto)
    waive: 74 (escala slate de Tailwind: es la paleta de la marca, no un default)
+   waive: 7b (card-light #FFFFFF: superficie blanca Apple sobre slate, es la marca)
    answered: 26b (todos los controles tienen :active vía sus utilidades)
 */
 @import "tailwindcss";

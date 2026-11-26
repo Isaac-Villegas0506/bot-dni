@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import { useCreditCosts } from '../hooks/useCredits';
 import PdfViewer from '../components/PdfViewer';
 import UploadGuidelinesModal from '../components/UploadGuidelinesModal';
@@ -14,7 +14,7 @@ import { createPortal } from 'react-dom';
 export default function Facial() {
     const location = useLocation();
     const { user, token, refreshUser, openLoginModal } = useAuth();
-    const { showLoading, hideLoading } = useLoading();
+    const { showLoading, hideLoading, registerAbort } = useLoading();
     const { getCost, loading: costsLoading } = useCreditCosts();
     const cost = getCost('busqueda_facial', 3);
     
@@ -163,18 +163,18 @@ export default function Facial() {
         }
 
         try {
-            showLoading(null, 'reniec');
+            showLoading(null, 'facial');
 
             const formData = new FormData();
             formData.append('image', selectedFile);
 
-            const res = await fetch(getApiUrl('/api/facial/search'), {
+            const res = await queryFetch(getApiUrl('/api/facial/search'), {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
                 body: formData
-            });
+            }, { timeoutMs: QUERY_TIMEOUTS.facial, registerAbort });
 
             const data = await res.json();
             if (!res.ok) {
@@ -192,7 +192,9 @@ export default function Facial() {
 
         } catch (error) {
             console.error(error);
-            if (error.status === 404 || error.status === 400 || error.message.includes('Créditos insuficientes')) {
+            if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+                toast.error(getQueryErrorMessage(error));
+            } else if (error.status === 404 || error.status === 400 || error.message.includes('Créditos insuficientes')) {
                 setAlert({ isOpen: true, type: 'error', message: error.message });
             } else {
                 toast.error(error.message);
@@ -268,7 +270,7 @@ export default function Facial() {
                     <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-amber-600 rounded-full blur opacity-30 animate-pulse"></div>
                     <div className="relative bg-white dark:bg-slate-900 border border-yellow-200 dark:border-yellow-700/30 px-6 py-2 rounded-full flex items-center justify-center gap-3">
                         <span className="material-icons-round text-yellow-500 text-xl animate-bounce">face</span>
-                        <span className="font-black text-sm uppercase tracking-widest bg-gradient-to-r from-yellow-600 to-amber-600 dark:from-yellow-400 dark:to-amber-500 bg-clip-text text-transparent">Búsqueda Facial RENIEC</span>
+                        <span className="font-black text-sm bg-gradient-to-r from-yellow-600 to-amber-600 dark:from-yellow-400 dark:to-amber-500 bg-clip-text text-transparent">Búsqueda Facial RENIEC</span>
                     </div>
                 </div>
                 <h1 className="mt-6 text-3xl sm:text-4xl font-black text-slate-800 dark:text-white tracking-tight">
@@ -296,7 +298,7 @@ export default function Facial() {
                     >
                         {!previewUrl ? (
                             <div 
-                                className="w-full max-w-md border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-yellow-500 dark:hover:border-yellow-500 transition-all group"
+                                className="w-full max-w-md border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-yellow-500 dark:hover:border-yellow-500 transition-colors group"
                                 onDragOver={handleDragOver}
                                 onDrop={handleDrop}
                                 onClick={() => {
@@ -329,7 +331,7 @@ export default function Facial() {
                                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                     <button 
                                         onClick={clearFile}
-                                        className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-colors"
+                                        className="absolute top-2 right-2 h-11 w-11 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-colors"
                                     >
                                         <span className="material-icons-round text-sm">close</span>
                                     </button>
@@ -337,7 +339,7 @@ export default function Facial() {
                                 
                                 <button
                                     onClick={handleSearch}
-                                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg shadow-yellow-500/30 transition-all flex items-center justify-center gap-2"
+                                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-yellow-500/30 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <span className="material-icons-round">manage_search</span>
                                     INICIAR BÚSQUEDA{costsLoading ? '' : ` (${cost} crédito${cost !== 1 ? 's' : ''})`}
@@ -386,7 +388,7 @@ export default function Facial() {
                                 {/* PDF Preview — funciona en desktop y móvil */}
                                 {pdfBlobUrl && (
                                     <div className="w-full flex flex-col items-center">
-                                        <h3 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">Vista Previa del Informe</h3>
+                                        <h3 className="text-xs font-bold text-slate-500 mb-3">Vista Previa del Informe</h3>
                                         <PdfViewer
                                             url={pdfBlobUrl}
                                             height="500px"
@@ -412,7 +414,7 @@ export default function Facial() {
                                                     <div className="w-12 h-12 rounded-full border-4 border-green-500 flex items-center justify-center text-xs font-black text-green-600 dark:text-green-400 bg-white dark:bg-slate-900 shadow-sm">
                                                         {match.percentage}
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Similitud</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 mt-1">Similitud</span>
                                                 </div>
                                             </div>
                                         ))
@@ -429,7 +431,7 @@ export default function Facial() {
                                     {pdfBlobUrl && (
                                         <button
                                             onClick={downloadPdf}
-                                            className="w-full sm:w-2/3 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                                            className="w-full sm:w-2/3 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                                         >
                                             <span className="material-icons-round text-red-500">picture_as_pdf</span>
                                             DESCARGAR INFORME PDF
@@ -479,7 +481,7 @@ export default function Facial() {
                                     <button 
                                         onClick={confirmExit}
                                         disabled={exitCountDown > 0}
-                                        className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+                                        className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
                                     >
                                         {exitCountDown > 0 ? (
                                             <>

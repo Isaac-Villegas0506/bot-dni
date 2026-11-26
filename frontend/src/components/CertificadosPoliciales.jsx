@@ -8,14 +8,14 @@ import { useCreditCosts } from '../hooks/useCredits';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
 export default function CertificadosPoliciales() {
   const { isFeatureEnabled } = useSettings();
   const { user, openLoginModal } = useAuth();
-  const { loading, showLoading, hideLoading } = useLoading();
+  const { loading, showLoading, hideLoading, registerAbort } = useLoading();
   const [view, setView] = useState(() => sessionStorage.getItem('certificados_view') || 'selection'); // 'selection' | 'result'
   const [selectedOption, setSelectedOption] = useState(null);
   const [showInputModal, setShowInputModal] = useState(false);
@@ -149,15 +149,16 @@ export default function CertificadosPoliciales() {
         'antecedentes_judiciales': '/api/judiciales/antjud'
       };
       const endpoint = endpoints[selectedOption.id];
+      const timeoutKey = selectedOption.id.replace('antecedentes_', '');
 
-      const res = await fetch(endpoint, {
+      const res = await queryFetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ dni })
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS[timeoutKey] || QUERY_TIMEOUTS.policiales, registerAbort });
 
       const data = await res.json();
 
@@ -184,11 +185,11 @@ export default function CertificadosPoliciales() {
       setView('result');
       setHasDownloaded(false);
     } catch (err) {
-      setAlert({ isOpen: true, type: 'error', message: err.message });
+      setAlert({ isOpen: true, type: 'error', message: getQueryErrorMessage(err) });
     } finally {
       hideLoading();
     }
-  }, [dni, selectedOption, user, openLoginModal, showLoading, hideLoading]);
+  }, [dni, selectedOption, user, openLoginModal, showLoading, hideLoading, registerAbort]);
 
   // Auto-search when DNI reaches 8 digits in the input modal.
   // Declared AFTER handleGenerate to avoid TDZ on the dep array.
@@ -327,11 +328,11 @@ export default function CertificadosPoliciales() {
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800"
         >
-          <div className="p-8 flex flex-col items-center relative">
+          <div className="p-4 sm:p-6 md:p-8 flex flex-col items-center relative">
             {/* Back button (Arrow) */}
             <button
               onClick={handleBackClick}
-              className="absolute top-6 left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
+              className="absolute top-4 left-4 sm:top-6 sm:left-6 flex min-h-[44px] min-w-[44px] items-center justify-center shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
               title="Volver"
             >
               <span className="material-icons-round">arrow_back</span>
@@ -342,7 +343,7 @@ export default function CertificadosPoliciales() {
               <span className="material-icons-round text-4xl">check</span>
             </div>
 
-            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 tracking-wide text-center">
+            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 text-center">
               CERTIFICADO GENERADO CON ÉXITO
             </h3>
 
@@ -385,7 +386,7 @@ export default function CertificadosPoliciales() {
               </div>
             ) : generatedData.data?.raw_text && (
               <div className="w-full mb-8 overflow-x-auto custom-scrollbar flex justify-center bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
-                <div ref={certificateRef} className="w-full min-w-[340px] max-w-[500px] bg-white p-6 sm:p-8 border-4 border-double border-slate-300 relative overflow-hidden text-slate-900 shadow-sm" style={{ fontFamily: 'monospace' }}>
+                <div ref={certificateRef} className="w-full min-w-0 max-w-[500px] bg-white p-6 sm:p-8 border-4 border-double border-slate-300 relative overflow-hidden text-slate-900 shadow-sm" style={{ fontFamily: 'monospace' }}>
                   {/* Background watermark icon */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                      <span className="material-icons-round text-[250px]">{generatedData.type.icon}</span>
@@ -422,10 +423,10 @@ export default function CertificadosPoliciales() {
             )}
 
             {/* Buttons */}
-            <div className="flex flex-row w-full gap-3">
+            <div className="flex flex-col sm:flex-row w-full gap-3 mt-2">
               <button
                 onClick={downloadResult}
-                className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-lg"
+                className="btn-primary-minimal flex-1 px-4 text-sm sm:text-lg"
               >
                 <span className="material-icons-round">download</span>
                 {generatedData.file_path ? 'Descargar Certificado' : 'Descargar Imagen'}
@@ -433,7 +434,7 @@ export default function CertificadosPoliciales() {
 
               <button
                 onClick={handleBackClick}
-                className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                className="btn-secondary-minimal flex-1 px-4 text-sm"
               >
                 Volver
               </button>
@@ -468,7 +469,7 @@ export default function CertificadosPoliciales() {
                   onChange={(e) => setDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
                   onKeyDown={(e) => e.key === 'Enter' && dni.length === 8 && handleGenerate()}
                   placeholder="DNI (8 dígitos)"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
                   autoFocus
                 />
 
@@ -482,7 +483,7 @@ export default function CertificadosPoliciales() {
                   <button
                     onClick={handleGenerate}
                     disabled={!dni || dni.length !== 8}
-                    className={`flex-1 min-h-[44px] rounded-lg font-bold text-white transition-colors ${!dni || dni.length !== 8 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    className={`flex-1 min-h-[44px] rounded-lg font-bold text-white transition-colors ${!dni || dni.length !== 8 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'
                       }`}
                   >
                     Consultar

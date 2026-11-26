@@ -10,7 +10,6 @@ import Header from './components/Header';
 import SearchOptionModal from './components/SearchOptionModal';
 import AnnouncementModal from './components/AnnouncementModal';
 import UserNotificationModal from './components/UserNotificationModal';
-import InfoGlobalPage from './pages/InfoGlobal';
 import AuthModal from './components/AuthModal';
 import WelcomeModal from './components/WelcomeModal';
 import ModalLoading from './components/ModalLoading';
@@ -18,6 +17,7 @@ import { useLoading } from './context/LoadingContext';
 import { createPortal } from 'react-dom';
 import MobileNav from './components/MobileNav';
 import PromoModal from './components/PromoModal';
+import TermsModal from './components/TermsModal';
 
 import { Suspense, lazy } from 'react';
 
@@ -36,7 +36,8 @@ const AdminPage = lazy(() => import('./pages/Admin'));
 const TermsPage = lazy(() => import('./pages/Terms'));
 const FacialPage = lazy(() => import('./pages/Facial'));
 const ReferidosPage = lazy(() => import('./pages/Referidos'));
-import TermsModal from './components/TermsModal';
+// InfoGlobal se importaba de forma estatica (430 lineas en el bundle inicial)
+const InfoGlobalPage = lazy(() => import('./pages/InfoGlobal'));
 
 // --- PARCHE GLOBAL PARA FETCH ---
 const originalFetch = window.fetch;
@@ -68,7 +69,7 @@ export default function App() {
         openLoginModal, openRegisterModal,
     } = useAuth();
 
-    const { loading, message, loadingType, showDonation, closeDonation } = useLoading();
+    const { loading, message, loadingType, startedAt, showDonation, closeDonation, cancelLoading } = useLoading();
     const { notifications, markAsRead } = useNotifications();
 
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
@@ -204,12 +205,14 @@ export default function App() {
             )}
 
             {createPortal(
-                <ModalLoading 
-                    loading={loading} 
-                    customMessage={message} 
+                <ModalLoading
+                    loading={loading}
+                    customMessage={message}
                     loadingType={loadingType}
-                    showDonation={showDonation} 
-                    onClose={closeDonation} 
+                    startedAt={startedAt}
+                    showDonation={showDonation}
+                    onClose={closeDonation}
+                    onCancel={cancelLoading}
                 />,
                 document.body
             )}

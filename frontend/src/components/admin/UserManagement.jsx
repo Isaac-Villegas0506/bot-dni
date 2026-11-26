@@ -4,6 +4,7 @@ import AlertModal from '../AlertModal';
 import ConfirmationModal from './ConfirmationModal';
 import { formatLimaDate, formatLimaTime } from './utils';
 import UserDetailPanel from './UserDetailPanel';
+import { getApiUrl } from '../../utils/api';
 
 // ─── Skeleton Component ───────────────────────────────────────────────────
 function TableSkeleton() {
@@ -17,13 +18,13 @@ function TableSkeleton() {
 }
 
 export default function UserManagement() {
-    const [users, setUsers]               = useState([]);
-    const [loading, setLoading]           = useState(false);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const [searchQuery, setSearchQuery]   = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('todos'); // 'todos', 'premium', 'admin', 'banned'
-    const [modal, setModal]               = useState({ isOpen: false, title: '', message: '', type: 'warning', action: null });
-    const [alert, setAlert]               = useState({ isOpen: false, type: 'info', title: '', message: '' });
+    const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'warning', action: null });
+    const [alert, setAlert] = useState({ isOpen: false, type: 'info', title: '', message: '' });
 
     useEffect(() => { loadUsers(); }, []);
 
@@ -31,7 +32,7 @@ export default function UserManagement() {
         setLoading(true);
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch('/api/admin/users?limit=100', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl('/api/admin/users?limit=100'), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             setUsers(data);
         } catch (e) { console.error(e); } finally { setLoading(false); }
@@ -71,17 +72,17 @@ export default function UserManagement() {
         });
 
         if (activeFilter === 'premium') list = list.filter(u => u.is_premium);
-        if (activeFilter === 'admin')   list = list.filter(u => u.role === 'admin');
-        if (activeFilter === 'banned')  list = list.filter(u => u.status !== 'active');
+        if (activeFilter === 'admin') list = list.filter(u => u.role === 'admin');
+        if (activeFilter === 'banned') list = list.filter(u => u.status !== 'active');
 
         return list;
     }, [users, searchQuery, activeFilter]);
 
     const FILTER_CHIPS = [
-        { id: 'todos',   label: 'Todos',    icon: 'group' },
-        { id: 'premium', label: 'Premium',  icon: 'star' },
-        { id: 'admin',   label: 'Admins',   icon: 'admin_panel_settings' },
-        { id: 'banned',  label: 'Baneados', icon: 'block' },
+        { id: 'todos', label: 'Todos', icon: 'group' },
+        { id: 'premium', label: 'Premium', icon: 'star' },
+        { id: 'admin', label: 'Admins', icon: 'admin_panel_settings' },
+        { id: 'banned', label: 'Baneados', icon: 'block' },
     ];
 
     return (
@@ -96,26 +97,26 @@ export default function UserManagement() {
                         <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Gestión de Usuarios</h2>
                         <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-sm">Administra roles, estados y accesos.</p>
                     </div>
-                    <div className="hidden sm:flex bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full font-black text-sm">
+                    <div className="hidden sm:flex bg-primary/15 dark:bg-primary-dark/20 text-primary dark:text-primary-dark px-3 py-1 rounded-full font-black text-sm">
                         {users.length}
                     </div>
                 </div>
                 
                 <div className="flex flex-row items-center gap-2 w-full lg:w-auto mt-2 lg:mt-0">
                     <div className="relative flex-1 lg:min-w-[320px] group w-full">
-                        <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors group-focus-within:text-blue-500">search</span>
+                        <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors group-focus-within:text-primary">search</span>
                         <input
                             type="text"
                             placeholder="Nombre o correo..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full pl-11 pr-4 h-[46px] bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-blue-500 outline-none text-[13px] font-bold dark:text-white transition-all shadow-sm"
+                            className="w-full pl-11 pr-4 h-[46px] bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-primary outline-none text-[13px] font-bold dark:text-white transition shadow-sm"
                         />
                     </div>
                     <button 
                         onClick={loadUsers} 
                         title="Actualizar" 
-                        className={`w-[46px] h-[46px] shrink-0 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-90 ${loading ? 'animate-spin' : ''}`}
+                        className={`w-[46px] h-[46px] shrink-0 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm active:scale-90 ${loading ? 'animate-spin' : ''}`}
                     >
                         <span className="material-icons-round text-slate-400">refresh</span>
                     </button>
@@ -136,7 +137,7 @@ export default function UserManagement() {
                             role="tab"
                             aria-selected={isActive}
                             onClick={() => setActiveFilter(chip.id)}
-                            className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 rounded-full text-xs md:text-sm font-bold transition-all border-2
+                            className={`snap-start shrink-0 min-h-[44px] flex items-center gap-2 px-4 rounded-full text-xs md:text-sm font-bold transition border-2
                                 ${isActive
                                     ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-md'
                                     : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}
@@ -152,7 +153,7 @@ export default function UserManagement() {
             <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative">
                 <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
                     <table className="w-full text-left border-collapse min-w-[860px]">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest">
+                        <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 text-[10px] font-black ">
                             <tr>
                                 <th className="px-5 py-4 flex items-center gap-2">
                                     <span className="material-icons-round text-[14px]">person</span>
@@ -211,7 +212,7 @@ export default function UserManagement() {
                                         </div>
                                     </td>
                                     <td className="px-5 py-4">
-                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest ring-1 ring-inset transition-colors
+                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ring-1 ring-inset transition-colors
                                             ${u.status === 'active' 
                                                 ? 'bg-emerald-50 text-emerald-600 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20' 
                                                 : 'bg-red-50 text-red-600 ring-red-600/20 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/20'}`}>
@@ -221,7 +222,7 @@ export default function UserManagement() {
                                     <td className="px-5 py-4">
                                         <div className="flex flex-col gap-1 items-start">
                                             {u.role === 'admin' && (
-                                                <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded uppercase tracking-tighter mb-1">
+                                                <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded tracking-tighter mb-1">
                                                     Administrador
                                                 </span>
                                             )}
@@ -246,13 +247,13 @@ export default function UserManagement() {
                                     </td>
                                     <td className="px-5 py-4 text-right">
                                         <div className="flex justify-end items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => setSelectedUserId(u.id)} title="Gestionar" className="w-9 h-9 flex items-center justify-center shrink-0 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded-xl transition-all active:scale-90">
+                                            <button onClick={() => setSelectedUserId(u.id)} title="Gestionar" className="w-9 h-9 flex items-center justify-center shrink-0 hover:bg-primary/10 dark:hover:bg-primary-dark/15 text-primary rounded-xl transition active:scale-90">
                                                 <span className="material-icons-round text-[20px]">tune</span>
                                             </button>
-                                            <button onClick={() => confirmAction('Membresía', `¿${u.is_premium ? 'Quitar' : 'Otorgar'} Premium a ${u.full_name}?`, () => handleTogglePremium(u), 'info')} title="Membresía" className="w-9 h-9 flex items-center justify-center shrink-0 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 rounded-xl transition-all active:scale-90">
+                                            <button onClick={() => confirmAction('Membresía', `¿${u.is_premium ? 'Quitar' : 'Otorgar'} Premium a ${u.full_name}?`, () => handleTogglePremium(u), 'info')} title="Membresía" className="w-9 h-9 flex items-center justify-center shrink-0 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 rounded-xl transition active:scale-90">
                                                 <span className="material-icons-round text-[20px]">{u.is_premium ? 'star_border' : 'star'}</span>
                                             </button>
-                                            <button onClick={() => confirmAction(u.status === 'active' ? 'Banear' : 'Activar', u.status === 'active' ? `¿Banear a ${u.full_name}?` : `¿Activar a ${u.full_name}?`, () => handleToggleStatus(u), u.status === 'active' ? 'danger' : 'warning')} title={u.status === 'active' ? 'Banear' : 'Reactivar'} className={`w-9 h-9 flex items-center justify-center shrink-0 rounded-xl transition-all active:scale-90 ${u.status === 'active' ? 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400' : 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-400'}`}>
+                                            <button onClick={() => confirmAction(u.status === 'active' ? 'Banear' : 'Activar', u.status === 'active' ? `¿Banear a ${u.full_name}?` : `¿Activar a ${u.full_name}?`, () => handleToggleStatus(u), u.status === 'active' ? 'danger' : 'warning')} title={u.status === 'active' ? 'Banear' : 'Reactivar'} className={`w-9 h-9 flex items-center justify-center shrink-0 rounded-xl transition active:scale-90 ${u.status === 'active' ? 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400' : 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-400'}`}>
                                                 <span className="material-icons-round text-[20px]">{u.status === 'active' ? 'block' : 'check_circle'}</span>
                                             </button>
                                         </div>
@@ -289,19 +290,19 @@ export default function UserManagement() {
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{u.full_name || 'Sin nombre'}</p>
-                                <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase
+                                <span className={`px-2 py-0.5 rounded text-[9px] font-black  
                                     ${u.status === 'active' 
                                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
                                         : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                                     {u.status === 'active' ? 'Activo' : 'Baneado'}
                                 </span>
                                 {u.is_premium && (
-                                    <span className="px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                    <span className="px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                                         Premium
                                     </span>
                                 )}
                                 {u.role === 'admin' && (
-                                    <span className="px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase bg-slate-900 text-white dark:bg-white dark:text-slate-900">
+                                    <span className="px-2 py-0.5 rounded text-[9px] font-black bg-slate-900 text-white dark:bg-white dark:text-slate-900">
                                         Admin
                                     </span>
                                 )}
@@ -314,14 +315,14 @@ export default function UserManagement() {
                             <button
                                 onClick={() => setSelectedUserId(u.id)}
                                 aria-label={`Gestionar ${u.full_name || u.email}`}
-                                className="w-11 h-11 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 active:scale-90 transition-all"
+                                className="w-11 h-11 flex items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-dark/15 text-primary active:scale-90 transition"
                             >
                                 <span className="material-icons-round text-[20px]" aria-hidden="true">tune</span>
                             </button>
                             <button
                                 onClick={() => confirmAction(u.status === 'active' ? 'Banear' : 'Activar', u.status === 'active' ? `¿Banear a ${u.full_name}?` : `¿Activar a ${u.full_name}?`, () => handleToggleStatus(u), u.status === 'active' ? 'danger' : 'warning')}
                                 aria-label={u.status === 'active' ? `Banear a ${u.full_name || u.email}` : `Reactivar a ${u.full_name || u.email}`}
-                                className={`w-11 h-11 flex items-center justify-center rounded-xl active:scale-90 transition-all ${u.status === 'active' ? 'bg-red-50 dark:bg-red-900/20 text-red-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500'}`}
+                                className={`w-11 h-11 flex items-center justify-center rounded-xl active:scale-90 transition ${u.status === 'active' ? 'bg-red-50 dark:bg-red-900/20 text-red-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500'}`}
                             >
                                 <span className="material-icons-round text-[20px]" aria-hidden="true">{u.status === 'active' ? 'block' : 'check_circle'}</span>
                             </button>

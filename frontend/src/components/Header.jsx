@@ -43,7 +43,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                 {/* Left: User Avatar (Mobile Only) */}
                 <div className="flex md:hidden items-center justify-center shrink-0">
                     {user ? (
-                        <button onClick={() => navigate('/tienda')} className="w-11 h-11 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-colors shrink-0">
+                        <button onClick={() => navigate('/tienda')} className="w-11 h-11 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-primary dark:text-primary-dark font-bold text-base overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-colors shrink-0">
                             {user.avatar_url ? (
                                 <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
@@ -51,7 +51,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
                             )}
                         </button>
                     ) : (
-                        <button onClick={openLoginModal} className="min-h-[44px] rounded-lg bg-blue-600 px-3 text-sm font-bold text-white hover:bg-blue-700 transition-colors focus-ring">
+                        <button onClick={openLoginModal} className="min-h-[44px] rounded-lg bg-primary px-3 text-sm font-bold text-white hover:bg-primary-hover transition-colors focus-ring">
                             Ingresar
                         </button>
                     )}
@@ -59,7 +59,7 @@ export default function Header({ setView, darkMode, setDarkMode, onBack }) {
 
                 {/* Center: Version Badge */}
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700 tracking-wide">
+                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700">
                         v2.0.2                    </span>
                 </div>
 

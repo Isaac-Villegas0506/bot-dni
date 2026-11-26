@@ -66,12 +66,13 @@ export default function Modal({
                 <DialogPanel
                     transition
                     className={`relative w-full ${sizeCls} bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-700
-                        max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-2rem)] overflow-y-auto outline-none
+                        max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-2rem)] overflow-y-auto overscroll-contain outline-none
                         transition duration-200 ease-out
                         data-[closed]:opacity-0 data-[closed]:scale-95 data-[closed]:translate-y-4
+                        motion-reduce:transition-none motion-reduce:data-[closed]:translate-y-0 motion-reduce:data-[closed]:scale-100
                         ${isSheet
-                            ? 'rounded-t-lg sm:rounded-lg max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom))]'
-                            : 'rounded-lg my-4 sm:my-0'
+                            ? 'rounded-t-xl sm:rounded-xl max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom))]'
+                            : 'rounded-xl my-4 sm:my-0'
                         }
                         ${panelClassName}`}
                 >

@@ -87,7 +87,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
             <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl relative group">
                 <form
                     onSubmit={handleSubmit}
-                    className="relative flex items-center bg-white dark:bg-card-dark rounded-lg border border-slate-200 dark:border-slate-700 group-focus-within:border-blue-400 dark:group-focus-within:border-blue-500 transition-colors duration-150"
+                    className="relative flex items-center bg-white dark:bg-card-dark rounded-lg border border-slate-200 dark:border-slate-700 group-focus-within:border-primary dark:group-focus-within:border-primary-dark transition-colors duration-150"
                 >
                     {searchMode === 'dni' ? (
                         <input
@@ -113,7 +113,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
                     <button
                         type="submit"
                         disabled={loading}
-                        className="absolute right-2 sm:right-2.5 min-h-[44px] min-w-[44px] rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center focus-ring"
+                        className="absolute right-2 sm:right-2.5 min-h-[44px] min-w-[44px] rounded-lg bg-slate-900 dark:bg-primary hover:bg-slate-700 dark:hover:bg-primary-hover text-white transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center focus-ring"
                         aria-label="Buscar"
                     >
                         {loading ? (
@@ -135,7 +135,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
                     className="flex justify-center gap-5 mt-5"
                 >
                     {[
-                        { value: 'basic', label: 'Datos básicos', dotColor: 'bg-blue-500', ringColor: 'border-blue-500', textActive: 'text-slate-800 dark:text-slate-100', textInactive: 'text-slate-500 dark:text-slate-400', feature: 'option_dni_gratis' },
+                        { value: 'basic', label: 'Datos básicos', dotColor: 'bg-primary', ringColor: 'border-primary', textActive: 'text-slate-800 dark:text-slate-100', textInactive: 'text-slate-500 dark:text-slate-400', feature: 'option_dni_gratis' },
                         { value: 'premium', label: 'Datos premium', dotColor: 'bg-amber-500', ringColor: 'border-amber-500', textActive: 'text-amber-600 dark:text-amber-400', textInactive: 'text-slate-500 dark:text-slate-400', feature: 'option_dni_premium' },
                     ].filter(opt => isFeatureEnabled(opt.feature)).map(({ value, label, dotColor, ringColor, textActive, textInactive }) => {
                         const isActive = searchDni.searchType === value;
@@ -152,7 +152,7 @@ export default function SearchBar({ searchMode, setSearchMode, searchDni, search
                                     onChange={() => searchDni.setSearchType(value)}
                                     className="sr-only"
                                 />
-                                <span className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${isActive ? ringColor : 'border-slate-300 dark:border-slate-600 group-hover:border-slate-400'}`}>
+                                <span className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center transition-colors duration-150 ${isActive ? ringColor : 'border-slate-300 dark:border-slate-600 group-hover:border-slate-400'}`}>
                                     {isActive && <span className={`w-2 h-2 rounded-full ${dotColor}`} />}
                                 </span>
                                 <span className={`text-sm font-medium transition-colors duration-150 ${isActive ? textActive : textInactive}`}>

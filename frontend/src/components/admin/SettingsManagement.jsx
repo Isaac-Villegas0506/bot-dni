@@ -100,7 +100,7 @@ export default function SettingsManagement() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
-                <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-slate-200 border-t-primary dark:border-t-primary-dark rounded-full animate-spin" />
             </div>
         );
     }
@@ -113,13 +113,13 @@ export default function SettingsManagement() {
                 <div className="flex items-center gap-2 p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                     <button
                         onClick={() => { setModalTab('tabs'); setSearchQuery(''); }}
-                        className={`flex-1 py-2.5 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${modalTab === 'tabs' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`flex-1 py-2.5 px-4 rounded-lg text-xs font-black transition ${modalTab === 'tabs' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Pestañas Principales
                     </button>
                     <button
                         onClick={() => setModalTab('tools')}
-                        className={`flex-1 py-2.5 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${modalTab === 'tools' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`flex-1 py-2.5 px-4 rounded-lg text-xs font-black transition ${modalTab === 'tools' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Herramientas ({Object.keys(PRICE_LABELS).length})
                     </button>
@@ -136,7 +136,7 @@ export default function SettingsManagement() {
                                 placeholder="Buscar herramientas por nombre, categoría o ID..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400"
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400"
                             />
                         </div>
                     </div>
@@ -146,7 +146,7 @@ export default function SettingsManagement() {
                     {modalTab === 'tabs' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(settingsList).filter(([k]) => k.startsWith('feature_') || k === 'promo_pack_active').map(([key, setting]) => (
-                                <div key={key} className="flex flex-col p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-colors group">
+                                <div key={key} className="flex flex-col p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-primary dark:hover:border-primary transition-colors group">
                                     <div className="flex items-start justify-between gap-3 mb-4">
                                         <div className="min-w-0">
                                             <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">{setting.label || key}</h3>
@@ -161,7 +161,7 @@ export default function SettingsManagement() {
                                     </div>
                                     <div className="mt-auto flex items-center gap-2">
                                         <span className={`w-2 h-2 rounded-full ${setting.value ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-400'}`} />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{setting.value ? 'Visible' : 'Oculto'}</span>
+                                        <span className="text-[10px] font-bold text-slate-500">{setting.value ? 'Visible' : 'Oculto'}</span>
                                     </div>
                                 </div>
                             ))}
@@ -193,7 +193,7 @@ export default function SettingsManagement() {
                                 return Object.entries(groupedTools).sort(([a], [b]) => a.localeCompare(b)).map(([cat, tools]) => (
                                     <div key={cat} className="mb-8 last:mb-0">
                                         <div className="flex items-center gap-3 mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
-                                            <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">{cat}</h4>
+                                            <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 ">{cat}</h4>
                                             <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-bold">
                                                 {tools.length}
                                             </span>
@@ -203,14 +203,14 @@ export default function SettingsManagement() {
                                                 const key = `option_${id}`;
                                                 const isActive = settingsList[key] ? settingsList[key].value : true;
                                                 return (
-                                                    <div key={key} className={`flex flex-col p-5 border rounded-2xl transition-colors group ${isActive ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75 grayscale-[0.5]'}`}>
+                                                    <div key={key} className={`flex flex-col p-5 border rounded-2xl transition-colors group ${isActive ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-primary shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75 grayscale-[0.5]'}`}>
                                                         <div className="flex items-start justify-between gap-4 mb-4">
                                                             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 text-slate-600 dark:text-slate-300">
                                                                 <span className="material-icons-round text-2xl">{meta.icon}</span>
                                                             </div>
                                                             <button
                                                                 onClick={() => handleToggleSetting(key, isActive)}
-                                                                className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none shadow-inner border border-black/5 ${isActive ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                                                className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none shadow-inner border border-black/5 ${isActive ? 'bg-primary/100' : 'bg-slate-300 dark:bg-slate-700'}`}
                                                             >
                                                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${isActive ? 'translate-x-6' : 'translate-x-1'}`} />
                                                             </button>
@@ -235,7 +235,7 @@ export default function SettingsManagement() {
                 <div className="p-4 md:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-b-[inherit] flex justify-end">
                     <button
                         onClick={() => setShowModulesModal(false)}
-                        className="w-full md:w-auto px-8 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold active:scale-95 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        className="w-full md:w-auto px-8 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold active:scale-95 transition shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                     >
                         <span className="material-icons-round text-xl">check_circle</span>
                         Cerrar Gestor
@@ -255,14 +255,14 @@ export default function SettingsManagement() {
             />
 
             <div>
-                <h2 className="text-xl md:text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent uppercase tracking-tight">Configuración Avanzada</h2>
+                <h2 className="text-xl md:text-2xl font-black text-primary dark:text-primary-dark">Configuración Avanzada</h2>
                 <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs md:text-sm font-medium">Control maestro del sistema, caché y módulos de la plataforma.</p>
             </div>
 
             {/* Maintenance Mode Card */}
             <motion.div 
                 layout
-                className={`p-4 md:p-8 rounded-2xl md:rounded-[2rem] border-2 transition-all duration-500 relative overflow-hidden group
+                className={`p-4 md:p-8 rounded-2xl md:rounded-[2rem] border-2 transition duration-500 relative overflow-hidden group
                     ${maintenance
                         ? 'bg-red-50 dark:bg-red-900/10 border-red-500 dark:border-red-900 shadow-2xl shadow-red-500/10'
                         : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm'}`}
@@ -283,14 +283,14 @@ export default function SettingsManagement() {
                         <div className="flex items-start justify-between gap-2 mb-1">
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <h3 className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Modo Mantenimiento</h3>
+                                    <h3 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">Modo Mantenimiento</h3>
                                     <AnimatePresence>
                                         {maintenance && (
                                             <motion.span 
                                                 initial={{ opacity: 0, scale: 0.5 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 exit={{ opacity: 0, scale: 0.5 }}
-                                                className="px-3 py-0.5 text-[9px] bg-red-600 text-white rounded-full font-black tracking-widest uppercase shadow-md"
+                                                className="px-3 py-0.5 text-[9px] bg-red-600 text-white rounded-full font-black shadow-md"
                                             >
                                                 Sistema Bloqueado
                                             </motion.span>
@@ -334,26 +334,26 @@ export default function SettingsManagement() {
                 
                 {/* Feature Toggles Button */}
                 <div className="space-y-4">
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest px-1">Módulos del Sistema</h3>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white px-1">Módulos del Sistema</h3>
                     <button
                         onClick={() => setShowModulesModal(true)}
-                        className="w-full flex items-center justify-between p-5 md:p-6 bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 group"
+                        className="w-full flex items-center justify-between p-5 md:p-6 bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-primary shadow-sm hover:shadow-md transition duration-200 group"
                     >
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center shrink-0">
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-primary-dark/15 text-primary flex items-center justify-center shrink-0">
                                 <span className="material-icons-round text-2xl">view_module</span>
                             </div>
                             <div className="text-left">
-                                <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">Gestionar Módulos y Opciones</h3>
+                                <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Gestionar Módulos y Opciones</h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Activa o desactiva pestañas enteras y funciones específicas.</p>
                             </div>
                         </div>
-                        <span className="material-icons-round text-slate-400 group-hover:text-blue-600 transition-colors">chevron_right</span>
+                        <span className="material-icons-round text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
                     </button>
                 </div>
                 {/* Maintenance Tools */}
                 <div className="space-y-4">
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest px-1">Herramientas de Mantenimiento</h3>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white px-1">Herramientas de Mantenimiento</h3>
                     <div className="space-y-3">
                         <button 
                             onClick={async () => {
@@ -372,13 +372,13 @@ export default function SettingsManagement() {
                                     }
                                 }
                             }}
-                            className="w-full p-4 md:p-5 rounded-2xl md:rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all text-left group"
+                            className="w-full p-4 md:p-5 rounded-2xl md:rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-primary hover:shadow-md transition text-left group"
                         >
                             <div className="flex items-center gap-3 md:gap-4 mb-2">
-                                <div className="w-10 h-10 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm group-hover:scale-110 transition-transform">
+                                <div className="w-10 h-10 rounded-xl md:rounded-2xl bg-primary/10 dark:bg-primary-dark/15 flex items-center justify-center text-primary dark:text-primary-dark shadow-sm group-hover:scale-110 transition-transform">
                                     <span className="material-icons-round">delete_sweep</span>
                                 </div>
-                                <h4 className="font-black text-xs uppercase tracking-widest text-slate-800 dark:text-white">Limpiar Caché de Archivos</h4>
+                                <h4 className="font-black text-xs text-slate-800 dark:text-white">Limpiar Caché de Archivos</h4>
                             </div>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Fuerza el borrado de PDFs, imágenes y TXTs generados para liberar espacio.</p>
                         </button>
@@ -388,7 +388,7 @@ export default function SettingsManagement() {
                                 <div className="w-10 h-10 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                     <span className="material-icons-round">settings_backup_restore</span>
                                 </div>
-                                <h4 className="font-black text-xs uppercase tracking-widest text-slate-500">Reiniciar Sesiones</h4>
+                                <h4 className="font-black text-xs text-slate-500">Reiniciar Sesiones</h4>
                             </div>
                             <p className="text-[11px] text-slate-400 font-medium">Cierra todas las sesiones activas en el sistema excepto la tuya. (Próximamente)</p>
                         </div>

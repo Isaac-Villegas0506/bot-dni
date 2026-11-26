@@ -1,19 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useSearchParamState } from '../../hooks/useSearchParamState';
+import { getApiUrl } from '../../utils/api';
 
-// ─── Module Imports ────────────────────────────────────────────────────────────
-import DashboardHome          from './DashboardHome';
-import UserManagement         from './UserManagement';
-import BotManagement          from './BotManagement';
-import AnnouncementManagement from './AnnouncementManagement';
-import PriceManagement        from './PriceManagement';
-import HistorialAdmin         from './HistorialAdmin';
-import CreditRequests         from './CreditRequests';
-import PromoRequests          from './PromoRequests';
-import SettingsManagement     from './SettingsManagement';
-import BannersManagement      from './BannersManagement';
+// ─── Secciones cargadas bajo demanda ──────────────────────────────────────────
+// Antes las 10 secciones se importaban de golpe: el chunk del panel pesaba
+// 171 KB aunque solo se abriera el dashboard. Ahora cada pestaña se descarga
+// la primera vez que se visita y queda cacheada por el navegador.
+import DashboardHome from './DashboardHome';
+
+const UserManagement         = lazy(() => import('./UserManagement'));
+const BotManagement          = lazy(() => import('./BotManagement'));
+const AnnouncementManagement = lazy(() => import('./AnnouncementManagement'));
+const PriceManagement        = lazy(() => import('./PriceManagement'));
+const HistorialAdmin         = lazy(() => import('./HistorialAdmin'));
+const CreditRequests         = lazy(() => import('./CreditRequests'));
+const PromoRequests          = lazy(() => import('./PromoRequests'));
+const SettingsManagement     = lazy(() => import('./SettingsManagement'));
+const BannersManagement      = lazy(() => import('./BannersManagement'));
+
+// Placeholder mientras llega el chunk de la sección
+function SectionSkeleton() {
+    return (
+        <div className="animate-pulse space-y-4" aria-hidden="true">
+            <div className="h-8 w-52 rounded-lg bg-slate-200 dark:bg-slate-800" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                ))}
+            </div>
+            <div className="h-64 rounded-xl bg-slate-200 dark:bg-slate-800" />
+        </div>
+    );
+}
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 const NAV_GROUPS = [
@@ -57,9 +77,9 @@ function NavButton({ active, onClick, icon, label }) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-[11px] font-black uppercase tracking-widest focus-ring
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 text-xs font-semibold focus-ring
                 ${active
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    ? 'bg-primary text-white shadow-md shadow-primary/30'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
                 }`}
         >
@@ -83,7 +103,7 @@ export default function AdminDashboard({ onBackToHome }) {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl('/api/admin/stats'), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setStats(await res.json());
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
@@ -110,7 +130,7 @@ export default function AdminDashboard({ onBackToHome }) {
             {/* ── Desktop Sidebar ─────────────────────────────────────────── */}
             <aside className="hidden md:flex w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-col shrink-0 z-20">
                 <div className="px-5 py-5 border-b border-slate-100 dark:border-slate-700 shrink-0">
-                    <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    <h2 className="text-lg font-bold text-primary dark:text-primary-dark">
                         Admin Panel
                     </h2>
                     <p className="text-[11px] text-slate-400 mt-0.5">v2.0.2 · Stable</p>
@@ -119,7 +139,7 @@ export default function AdminDashboard({ onBackToHome }) {
                 <nav className="flex-1 p-3 overflow-y-auto space-y-4">
                     {NAV_GROUPS.map((group, i) => (
                         <div key={i}>
-                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                            <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 px-3 mb-2">
                                 {group.title}
                             </p>
                             <div className="space-y-0.5">
@@ -162,7 +182,7 @@ export default function AdminDashboard({ onBackToHome }) {
 
                 {/* Mobile top bar */}
                 <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shrink-0">
-                    <h2 className="text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    <h2 className="text-base font-bold text-primary dark:text-primary-dark">
                         Admin Panel
                     </h2>
                     <button onClick={logout} className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
@@ -174,7 +194,7 @@ export default function AdminDashboard({ onBackToHome }) {
                 <div className="flex-1 overflow-y-auto p-3 md:p-6 pb-20 md:pb-6 scroll-smooth">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-full gap-3">
-                            <div className="w-10 h-10 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-10 h-10 border-2 border-slate-200 border-t-primary dark:border-t-primary-dark rounded-full animate-spin" />
                             <p className="text-sm text-slate-400">Cargando panel...</p>
                         </div>
                     ) : (
@@ -187,7 +207,9 @@ export default function AdminDashboard({ onBackToHome }) {
                                 transition={{ duration: 0.15 }}
                                 className="w-full max-w-full"
                             >
-                                {renderContent()}
+                                <Suspense fallback={<SectionSkeleton />}>
+                                    {renderContent()}
+                                </Suspense>
                             </motion.div>
                         </AnimatePresence>
                     )}
@@ -211,7 +233,7 @@ export default function AdminDashboard({ onBackToHome }) {
                                 <button
                                     key={id}
                                     onClick={() => id === 'menu' ? setShowMobileMenu(true) : setActiveTab(id)}
-                                    className={`flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors ${isActive ? 'text-blue-600 dark:text-blue-500' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                                    className={`flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors ${isActive ? 'text-primary dark:text-primary-dark' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
                                 >
                                     <span className={`material-icons-round text-2xl transition-transform ${isActive ? 'scale-110' : ''}`}>
                                         {icon}
@@ -255,7 +277,7 @@ export default function AdminDashboard({ onBackToHome }) {
                                 <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
                                     {NAV_GROUPS.map((group, i) => (
                                         <div key={i}>
-                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                                            <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 px-3 mb-2">
                                                 {group.title}
                                             </p>
                                             <div className="space-y-1">
@@ -266,9 +288,9 @@ export default function AdminDashboard({ onBackToHome }) {
                                                             setActiveTab(item.id);
                                                             setShowMobileMenu(false);
                                                         }}
-                                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors ${activeTab === item.id ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
+                                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors ${activeTab === item.id ? 'bg-primary/10 dark:bg-primary-dark/15 text-primary dark:text-primary-dark' : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'}`}
                                                     >
-                                                        <span className={`material-icons-round text-[22px] ${activeTab === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                                                        <span className={`material-icons-round text-[22px] ${activeTab === item.id ? 'text-primary dark:text-primary-dark' : 'text-slate-400 dark:text-slate-500'}`}>
                                                             {item.icon}
                                                         </span>
                                                         <span className="text-sm font-semibold">{item.label}</span>

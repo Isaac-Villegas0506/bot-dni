@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 
 export function useSearch() {
     const { token, setShowWelcomeModal, refreshUser } = useAuth();
-    const { loading, showLoading, hideLoading, showDonation, openDonation, closeDonation } = useLoading();
+    const { loading, showLoading, hideLoading, registerAbort, showDonation, openDonation, closeDonation } = useLoading();
 
     const [searchMode, setSearchMode] = useState(() => sessionStorage.getItem('searchMode') || 'dni');
     const [searchType, setSearchType] = useState(() => sessionStorage.getItem('searchType') || 'basic');
@@ -44,7 +44,7 @@ export function useSearch() {
             const url = type === 'premium'
                 ? getApiUrl(`/api/dni/${dniVal}?type=premium`)
                 : getApiUrl(`/api/dni/${dniVal}`);
-            const res = await fetch(url, { headers });
+            const res = await queryFetch(url, { headers }, { timeoutMs: QUERY_TIMEOUTS.reniec, registerAbort });
             const data = await res.json();
             if (!res.ok) {
                 if (res.status === 403 && data.detail?.includes('crédito')) throw new Error(data.detail);
@@ -61,7 +61,7 @@ export function useSearch() {
             setResult(data);
             if (token) refreshUser();
         } catch (e) {
-            setAlertMessage(e.message || 'Error en la búsqueda');
+            setAlertMessage(getQueryErrorMessage(e));
             if (e.message?.includes('Regístrate')) setShowWelcomeModal(true);
         } finally {
             hideLoading();
@@ -79,7 +79,7 @@ export function useSearch() {
             if (apM) p.append('ap_materno', apM);
             const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
             if (captchaToken) headers['X-Turnstile-Token'] = captchaToken;
-            const res = await fetch(getApiUrl(`/api/search/name?${p.toString()}`), { headers });
+            const res = await queryFetch(getApiUrl(`/api/search/name?${p.toString()}`), { headers }, { timeoutMs: QUERY_TIMEOUTS.reniec, registerAbort });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Error');
             if (Array.isArray(data)) {
@@ -91,7 +91,7 @@ export function useSearch() {
                 setTotalResults(data.total_count || data.resultados.length);
             }
         } catch (e) {
-            setAlertMessage(e.message || 'Error en la búsqueda');
+            setAlertMessage(getQueryErrorMessage(e));
         } finally {
             hideLoading();
         }

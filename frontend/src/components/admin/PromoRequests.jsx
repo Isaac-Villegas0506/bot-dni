@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from '../../utils/api';
 
 export default function PromoRequests() {
     const [requests, setRequests] = useState([]);
@@ -18,7 +19,7 @@ export default function PromoRequests() {
     const fetchRequests = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/admin/promos', {
+            const res = await fetch(getApiUrl('/api/admin/promos'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -65,7 +66,7 @@ export default function PromoRequests() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-xl md:text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent uppercase tracking-tight">
+                    <h2 className="text-xl md:text-2xl font-black text-primary dark:text-primary-dark">
                         Promociones TikTok
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm font-medium">Gestiona los videos enviados por la comunidad.</p>
@@ -82,7 +83,7 @@ export default function PromoRequests() {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 focus-ring ${
+                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition duration-200 focus-ring ${
                             activeTab === tab.id 
                             ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -98,7 +99,7 @@ export default function PromoRequests() {
 
             {loading ? (
                 <div className="flex justify-center py-10">
-                    <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-slate-200 border-t-primary dark:border-t-primary-dark rounded-full animate-spin" />
                 </div>
             ) : filteredRequests.length === 0 ? (
                 <div className="bg-white dark:bg-slate-800 p-10 rounded-3xl border border-slate-200 dark:border-slate-700 text-center">
@@ -111,7 +112,7 @@ export default function PromoRequests() {
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="font-bold text-slate-900 dark:text-white text-lg">{req.tiktok_username}</span>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                                         req.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                                         req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
                                         'bg-red-100 text-red-700'
@@ -126,7 +127,7 @@ export default function PromoRequests() {
                                     href={req.video_url} 
                                     target="_blank" 
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1 mt-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-sm font-semibold bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg"
+                                    className="inline-flex items-center gap-1 mt-1 text-primary dark:text-primary-dark hover:text-primary dark:hover:text-primary-dark hover:underline text-sm font-semibold bg-primary/10 dark:bg-primary-dark/15 px-3 py-1.5 rounded-lg"
                                 >
                                     <span className="material-icons-round text-[16px]">play_circle</span>
                                     Ver Video en TikTok
@@ -142,7 +143,7 @@ export default function PromoRequests() {
                                     <button 
                                         disabled={updating === req.id}
                                         onClick={() => setConfirmModal({ isOpen: true, reqId: req.id, status: 'approved' })}
-                                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 focus-ring"
+                                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition active:scale-95 disabled:opacity-50 flex items-center gap-2 focus-ring"
                                     >
                                         <span className="material-icons-round text-[18px]">check_circle</span>
                                         Aprobar (5 días)
@@ -150,7 +151,7 @@ export default function PromoRequests() {
                                     <button 
                                         disabled={updating === req.id}
                                         onClick={() => setConfirmModal({ isOpen: true, reqId: req.id, status: 'rejected' })}
-                                        className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 focus-ring"
+                                        className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition active:scale-95 disabled:opacity-50 flex items-center gap-2 focus-ring"
                                     >
                                         <span className="material-icons-round text-[18px]">cancel</span>
                                         Rechazar
@@ -201,7 +202,7 @@ export default function PromoRequests() {
                                 </button>
                                 <button
                                     onClick={executeUpdateStatus}
-                                    className={`flex-1 px-4 py-2.5 rounded-xl font-bold text-white shadow-md transition-all active:scale-95 ${
+                                    className={`flex-1 px-4 py-2.5 rounded-xl font-bold text-white shadow-md transition active:scale-95 ${
                                         confirmModal.status === 'approved' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
                                     }`}
                                 >

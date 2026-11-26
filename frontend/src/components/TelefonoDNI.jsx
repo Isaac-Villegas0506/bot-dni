@@ -8,6 +8,7 @@ import { useCreditCosts } from '../hooks/useCredits';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { toast } from 'sonner';
+import { queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import { OptionCard } from './ui/ConsultSurface';
 
 // ─── Option definitions ───────────────────────────────────────────────────────
@@ -1444,7 +1445,7 @@ function PlaceholderModal({ option, onClose }) {
                 value={inputValue}
                 onChange={handleInputChange}
                 disabled={loading}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary mb-4"
               />
               <div className="flex gap-3">
                 <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
@@ -1483,7 +1484,7 @@ function PlaceholderModal({ option, onClose }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function TelefonoDNI() {
   const { user, openLoginModal } = useAuth();
-  const { loading, showLoading, hideLoading } = useLoading();
+  const { loading, showLoading, hideLoading, registerAbort } = useLoading();
   const { getCost } = useCreditCosts();
   const [activeModal, setActiveModal] = useState(null);
 
@@ -1549,14 +1550,14 @@ export default function TelefonoDNI() {
         hideLoading();
         return;
       }
-      const res = await fetch('/api/telefono/numeros-dni', {
+      const res = await queryFetch('/api/telefono/numeros-dni', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ dni }),
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.telefonos, registerAbort });
       const data = await res.json();
 
       if (!res.ok) {
@@ -1575,12 +1576,12 @@ export default function TelefonoDNI() {
       }
 
       setResult({ dni: data.dni, rawText: data.raw_text });
-    } catch {
-      setAlert({ isOpen: true, type: 'error', message: 'Error de conexión. Verifique su internet e intente nuevamente.' });
+    } catch (e) {
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
       hideLoading();
     }
-  }, [hideLoading, openLoginModal, showLoading, user]);
+  }, [hideLoading, openLoginModal, showLoading, registerAbort, user]);
 
   const handleSubmitInfoLinea = useCallback(async (phone) => {
     if (!user) { openLoginModal(); return; }
@@ -1593,14 +1594,14 @@ export default function TelefonoDNI() {
         hideLoading();
         return;
       }
-      const res = await fetch('/api/telefono/info-linea', {
+      const res = await queryFetch('/api/telefono/info-linea', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ phone }),
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.telefonos, registerAbort });
       const data = await res.json();
 
       if (!res.ok) {
@@ -1621,12 +1622,12 @@ export default function TelefonoDNI() {
       }
 
       setInfoLineaResult({ phone: data.phone, rawText: data.raw_text });
-    } catch {
-      setAlert({ isOpen: true, type: 'error', message: 'Error de conexión. Verifique su internet e intente nuevamente.' });
+    } catch (e) {
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
       hideLoading();
     }
-  }, [hideLoading, openLoginModal, showLoading, user]);
+  }, [hideLoading, openLoginModal, showLoading, registerAbort, user]);
 
   const handleSubmitVerificador = useCallback(async (phone) => {
     if (!user) { openLoginModal(); return; }
@@ -1639,14 +1640,14 @@ export default function TelefonoDNI() {
         hideLoading();
         return;
       }
-      const res = await fetch('/api/telefono/verificador-operadora', {
+      const res = await queryFetch('/api/telefono/verificador-operadora', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ phone })
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.telefonos, registerAbort });
       const data = await res.json();
       if (!res.ok) {
         setAlert({ isOpen: true, type: 'warning', message: data.detail || 'No se pudo verificar la operadora.' });
@@ -1654,12 +1655,12 @@ export default function TelefonoDNI() {
         return;
       }
       setOperadoraResult(data);
-    } catch {
-      setAlert({ isOpen: true, type: 'error', message: 'Error de conexión.' });
+    } catch (e) {
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión.' });
     } finally {
       hideLoading();
     }
-  }, [hideLoading, openLoginModal, showLoading, user]);
+  }, [hideLoading, openLoginModal, showLoading, registerAbort, user]);
 
   const handleSubmitTitular = useCallback(async (phone) => {
     if (!user) { openLoginModal(); return; }
@@ -1672,17 +1673,14 @@ export default function TelefonoDNI() {
         hideLoading();
         return;
       }
-      const [res] = await Promise.all([
-        fetch('/api/telefono/titular', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ phone }),
-        }),
-        new Promise(resolve => setTimeout(resolve, 3000)),
-      ]);
+      const res = await queryFetch('/api/telefono/titular', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ phone }),
+      }, { timeoutMs: QUERY_TIMEOUTS.telefonos, registerAbort });
       const data = await res.json();
 
       if (!res.ok) {
@@ -1703,12 +1701,12 @@ export default function TelefonoDNI() {
       }
 
       setTitularResult({ phone: data.phone, rawText: data.raw_text });
-    } catch {
-      setAlert({ isOpen: true, type: 'error', message: 'Error de conexión. Verifique su internet e intente nuevamente.' });
+    } catch (e) {
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
       hideLoading();
     }
-  }, [hideLoading, openLoginModal, showLoading, user]);
+  }, [hideLoading, openLoginModal, showLoading, registerAbort, user]);
 
   const [helpModal, setHelpModal] = useState({ isOpen: false, title: '', description: '', details: [] });
 

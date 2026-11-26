@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import jsPDF from 'jspdf';
 import AlertModal from './AlertModal';
 import { BackButton } from './ui/ConsultSurface';
 import { getApiUrl } from '../utils/api';
@@ -75,12 +74,20 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
+    // jsPDF pesa ~350 KB y solo se necesita al pulsar "Descargar PDF".
+    // Antes se importaba arriba y viajaba en el chunk de Home siempre.
+    const loadJsPDF = async () => {
+        const mod = await import('jspdf');
+        return mod.default || mod.jsPDF;
+    };
+
     const handleDownloadPDF = async () => {
         if (searchType === 'premium') {
             return await generatePremiumC4PDF();
         }
         try {
-            const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const JsPDF = await loadJsPDF();
+            const pdf = new JsPDF({ unit: 'pt', format: 'a4' });
             pdf.save(`dni_${result.documento}.pdf`);
         } catch (e) {
             console.error('Error generating PDF:', e);
@@ -90,7 +97,8 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
     const generatePremiumC4PDF = async () => {
         try {
             setC4Loading(true);
-            const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const JsPDF = await loadJsPDF();
+            const pdf = new JsPDF({ unit: 'pt', format: 'a4' });
             const pageWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             
@@ -435,7 +443,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 role={result.imagen_url ? 'button' : undefined}
                                 tabIndex={result.imagen_url ? 0 : undefined}
                                 aria-label={result.imagen_url ? 'Ver foto ampliada' : undefined}
-                                className={`relative group rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 h-32 w-32 md:h-48 md:w-48 shrink-0 bg-slate-100 dark:bg-slate-800 ${result.imagen_url ? 'cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300' : ''}`}
+                                className={`relative group rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 h-32 w-32 md:h-48 md:w-48 shrink-0 bg-slate-100 dark:bg-slate-800 ${result.imagen_url ? 'cursor-pointer hover:border-primary dark:hover:border-primary-dark transition-colors duration-300' : ''}`}
                             >
                                 {result.imagen_url ? (
                                     <>
@@ -447,7 +455,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                         <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
                                     </>
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-5xl font-bold">
+                                    <div className="w-full h-full flex items-center justify-center bg-primary text-white text-5xl font-bold">
                                         {initials}
                                     </div>
                                 )}
@@ -466,10 +474,10 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                                     <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">DNI</p>
                                     <div className="flex items-center justify-center md:justify-start gap-2">
-                                        <p className="font-mono font-bold text-blue-700 dark:text-blue-400 text-lg md:text-xl">{result.documento}</p>
+                                        <p className="font-mono font-bold text-primary dark:text-primary-dark text-lg md:text-xl">{result.documento}</p>
                                         <button
                                             onClick={() => handleCopyDNI(result.documento)}
-                                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all active:scale-90 rounded-lg"
+                                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-primary dark:hover:text-primary-dark transition-[color,transform] active:scale-90 rounded-lg"
                                             aria-label="Copiar DNI"
                                             title="Copiar DNI"
                                         >
@@ -525,8 +533,8 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
-                            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                                <span className="material-icons-round text-blue-600 dark:text-blue-400 text-2xl">face</span>
+                            <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-dark/15">
+                                <span className="material-icons-round text-primary dark:text-primary-dark text-2xl">face</span>
                             </div>
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Datos Personales</h3>
                         </div>
@@ -599,7 +607,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base uppercase tracking-wide">{result.padre || 'No registrada'}</p>
+                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base uppercase">{result.padre || 'No registrada'}</p>
                                         </div>
                                         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between mb-2">
@@ -614,7 +622,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base uppercase tracking-wide">{result.madre || 'No registrada'}</p>
+                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base uppercase">{result.madre || 'No registrada'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -624,8 +632,8 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
 
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300 h-full flex flex-col">
                         <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
-                            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                                <span className="material-icons-round text-blue-600 dark:text-blue-400 text-2xl">home</span>
+                            <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-dark/15">
+                                <span className="material-icons-round text-primary dark:text-primary-dark text-2xl">home</span>
                             </div>
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Domicilio</h3>
                         </div>
@@ -637,7 +645,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                             </div>
                             <div className="pt-2 flex-1 flex flex-col justify-center">
                                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Dirección Completa</p>
-                                <div className="flex items-start space-x-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors">
+                                <div className="flex items-start space-x-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:bg-primary/5 dark:hover:bg-primary-dark/10 transition-colors">
                                     <span className="material-icons-round text-red-500 mt-0.5">place</span>
                                     <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base leading-relaxed">
                                         {result.direccion || 'No registrada'}
@@ -650,8 +658,8 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                     {searchType === 'premium' && hasRegistro && (
                         <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-lg p-5 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                             <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">
-                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
-                                    <span className="material-icons-round text-indigo-600 dark:text-indigo-400 text-2xl">description</span>
+                                <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-dark/15">
+                                    <span className="material-icons-round text-primary dark:text-primary-dark text-2xl">description</span>
                                 </div>
                                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">Información de Registro</h3>
                             </div>
@@ -720,7 +728,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                     <button
                         type="button"
                         onClick={onOpenDonation}
-                        className="group flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg transition-all duration-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm hover:shadow-md"
+                        className="group flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg transition-colors duration-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm hover:shadow-md"
                         style={{ border: '1.5px solid transparent', backgroundClip: 'padding-box', boxShadow: '0 0 0 1.5px #d946ef40, 0 2px 8px rgba(168,85,247,0.12)' }}
                     >
                         <span className="material-icons-round text-purple-500 text-lg group-hover:scale-110 transition-transform" aria-hidden="true">favorite</span>
@@ -764,7 +772,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                             e.stopPropagation();
                                             handleDownloadImage(previewData.url, previewData.filename);
                                         }}
-                                        className="min-w-[44px] min-h-[44px] bg-white/20 hover:bg-blue-600 text-white rounded-full transition-all backdrop-blur-md border border-white/20 active:scale-90 shadow-lg flex items-center justify-center"
+                                        className="min-w-[44px] min-h-[44px] bg-white/20 hover:bg-primary text-white rounded-full transition-[background-color,transform] backdrop-blur-md border border-white/20 active:scale-90 shadow-lg flex items-center justify-center"
                                         aria-label="Descargar imagen"
                                         title="Descargar Imagen"
                                     >
@@ -776,7 +784,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
                                             e.stopPropagation();
                                             setPreviewData(null);
                                         }}
-                                        className="min-w-[44px] min-h-[44px] bg-white/20 hover:bg-red-500 text-white rounded-full transition-all backdrop-blur-md border border-white/20 active:scale-90 shadow-lg flex items-center justify-center"
+                                        className="min-w-[44px] min-h-[44px] bg-white/20 hover:bg-red-500 text-white rounded-full transition-[background-color,transform] backdrop-blur-md border border-white/20 active:scale-90 shadow-lg flex items-center justify-center"
                                         aria-label="Cerrar vista previa"
                                         title="Cerrar"
                                     >
@@ -800,7 +808,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
 
 function LocationBox({ label, value }) {
     return (
-        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3 border border-slate-200 dark:border-slate-700/50 hover:border-blue-300 dark:hover:border-blue-500 transition-colors">
+        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3 border border-slate-200 dark:border-slate-700/50 hover:border-primary dark:hover:border-primary-dark transition-colors">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{label}</p>
             <p className="text-xs md:text-sm font-bold text-slate-900 dark:text-white truncate" title={value}>{value || '-'}</p>
         </div>
@@ -814,7 +822,7 @@ function BioImageCard({ label, url, onDownload, onPreview }) {
                 espaciadas, que lee como etiqueta generada) */}
             <p className="truncate text-center text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p>
             <div 
-                className={`group relative h-28 sm:h-32 md:h-36 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700/50 ${url ? 'cursor-pointer' : ''}`}
+                className={`group relative h-28 sm:h-32 md:h-36 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm transition-[box-shadow,border-color] hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700/50 ${url ? 'cursor-pointer' : ''}`}
             >
                 {url ? (
                     <>
@@ -826,7 +834,7 @@ function BioImageCard({ label, url, onDownload, onPreview }) {
                         <button 
                             type="button"
                             onClick={onPreview}
-                            className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-zoom-in z-0 w-full h-full border-none outline-none"
+                            className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-[background-color,opacity] flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-zoom-in z-0 w-full h-full border-none outline-none"
                         >
                             <span className="material-icons-round text-white text-3xl drop-shadow-md">zoom_in</span>
                         </button>
@@ -837,7 +845,7 @@ function BioImageCard({ label, url, onDownload, onPreview }) {
                                 e.preventDefault();
                                 onDownload();
                             }}
-                            className="absolute bottom-1.5 right-1.5 min-w-[44px] min-h-[44px] rounded-full bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all hover:bg-amber-500 hover:text-white z-10"
+                            className="absolute bottom-1.5 right-1.5 min-w-[44px] min-h-[44px] rounded-full bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform,background-color,color] hover:bg-amber-500 hover:text-white z-10"
                             aria-label={`Descargar ${label}`}
                             title="Descargar"
                         >

@@ -8,7 +8,7 @@ import { useCreditCosts } from '../hooks/useCredits';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
@@ -103,7 +103,7 @@ function TxtViewer({ url, className }) {
 export default function Fiscalia() {
   const { isFeatureEnabled } = useSettings();
   const { user, openLoginModal } = useAuth();
-  const { loading, showLoading, hideLoading } = useLoading();
+  const { loading, showLoading, hideLoading, registerAbort } = useLoading();
   const location = useLocation();
   const hasAutoTriggered = useRef(false);
   const [view, setView] = useState(() => sessionStorage.getItem('fiscalia_view') || 'selection'); // 'selection' | 'result'
@@ -263,14 +263,14 @@ export default function Fiscalia() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/fiscalia/search', {
+      const res = await queryFetch('/api/fiscalia/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ target: finalTargetId, type: selectedOption.id })
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.fiscalia, registerAbort });
 
       const data = await res.json();
       if (!res.ok) {
@@ -292,12 +292,12 @@ export default function Fiscalia() {
       setAlert({
         isOpen: true,
         type: 'error',
-        message: error.message
+        message: getQueryErrorMessage(error)
       });
     } finally {
       hideLoading();
     }
-  }, [user, openLoginModal, targetId, selectedOption, loading, showLoading, hideLoading]);
+  }, [user, openLoginModal, targetId, selectedOption, loading, showLoading, hideLoading, registerAbort]);
 
   const downloadPdf = async (filePath, index) => {
     try {
@@ -433,11 +433,11 @@ export default function Fiscalia() {
               )}
 
               {/* Buttons */}
-              <div className="flex flex-row w-full gap-3">
+              <div className="flex flex-col sm:flex-row w-full gap-3 mt-6">
                 {generatedData.archivos && generatedData.archivos.length > 0 && (
                   <button
                     onClick={() => downloadPdf(generatedData.archivos[0], 0)}
-                    className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
+                    className="btn-primary-minimal flex-1 px-4 text-lg"
                   >
                     <span className="material-icons-round">download</span>
                     Descargar {generatedData.archivos[0].endsWith('.txt') ? 'Documento TXT' : 'Antecedentes PDF'}
@@ -445,7 +445,7 @@ export default function Fiscalia() {
                 )}
                 <button
                   onClick={handleBackClick}
-                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                  className="btn-secondary-minimal flex-1 px-4 text-sm"
                 >
                   Volver
                 </button>
@@ -469,7 +469,7 @@ export default function Fiscalia() {
 
               {/* List of PDFs */}
               <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest">
+                <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4">
                   Archivos de Denuncias Generados
                 </h3>
                 {generatedData.archivos && generatedData.archivos.length > 0 ? (
@@ -512,7 +512,7 @@ export default function Fiscalia() {
 
                         <button
                           onClick={() => downloadPdf(filePath, idx)}
-                          className="mt-auto w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
+                          className="mt-auto w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-md"
                         >
                           <span className="material-icons-round text-base">download</span>
                           Descargar PDF
@@ -562,7 +562,7 @@ export default function Fiscalia() {
                   inputMode={['fiscalia_dni', 'fiscalia_ruc'].includes(selectedOption.id) ? 'numeric' : 'text'}
                   maxLength={selectedOption.id === 'fiscalia_dni' ? 8 : (selectedOption.id === 'fiscalia_ruc' ? 11 : 50)}
                   placeholder={selectedOption.placeholder}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-xs sm:text-sm md:text-lg text-center mb-6 text-slate-900 dark:text-white"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary outline-none transition-colors font-mono text-xs sm:text-sm md:text-lg text-center mb-6 text-slate-900 dark:text-white"
                   type="text"
                   value={targetId}
                   onChange={(e) => {
@@ -595,9 +595,9 @@ export default function Fiscalia() {
                   <button
                     onClick={handleGenerate}
                     disabled={!targetId || (selectedOption.id === 'fiscalia_dni' && targetId.length !== 8) || (selectedOption.id === 'fiscalia_ruc' && targetId.length !== 11)}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${!targetId || (selectedOption.id === 'fiscalia_dni' && targetId.length !== 8) || (selectedOption.id === 'fiscalia_ruc' && targetId.length !== 11)
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-colors shadow-lg flex items-center justify-center gap-2 ${!targetId || (selectedOption.id === 'fiscalia_dni' && targetId.length !== 8) || (selectedOption.id === 'fiscalia_ruc' && targetId.length !== 11)
                         ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+                        : 'bg-primary hover:bg-primary-hover shadow-primary/30'
                       }`}
                   >
                     <span className="material-icons-round text-sm">search</span>Consultar
@@ -640,7 +640,7 @@ export default function Fiscalia() {
                 <button
                   onClick={confirmExit}
                   disabled={exitCountDown > 0}
-                  className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+                  className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
                 >
                   {exitCountDown > 0 ? (
                     <>

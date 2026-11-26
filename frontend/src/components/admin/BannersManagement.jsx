@@ -1,3 +1,4 @@
+import { SkeletonCards } from './Skeleton';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getApiUrl } from '../../utils/api';
@@ -22,7 +23,7 @@ export default function BannersManagement() {
     const fetchBanners = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/admin/banners', {
+            const res = await fetch(getApiUrl('/api/admin/banners'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) throw new Error('Error cargando banners');
@@ -58,7 +59,7 @@ export default function BannersManagement() {
         formData.append('image_mobile', imageMobile);
 
         try {
-            const res = await fetch('/api/admin/banners', {
+            const res = await fetch(getApiUrl('/api/admin/banners'), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -123,12 +124,11 @@ export default function BannersManagement() {
                 </div>
                 <button 
                     onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl transition-colors"
                 >
                     <span className="material-icons-round text-[20px]">{showForm ? 'close' : 'add'}</span>
                     {showForm ? 'Cancelar' : 'Nuevo Banner'}
-                </button>
-            </div>
+                </button>            </div>
 
             {error && (
                 <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">
@@ -149,7 +149,7 @@ export default function BannersManagement() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Título (Opcional)</label>
+                                <label className="text-xs font-semibold text-slate-500">Título (Opcional)</label>
                                 <input 
                                     type="text" 
                                     value={title}
@@ -159,7 +159,7 @@ export default function BannersManagement() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ruta Destino</label>
+                                <label className="text-xs font-semibold text-slate-500">Ruta Destino</label>
                                 <select 
                                     value={targetUrl}
                                     onChange={e => setTargetUrl(e.target.value)}
@@ -178,7 +178,7 @@ export default function BannersManagement() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">Imagen PC (Desktop)</label>
+                                <label className="text-xs font-semibold text-slate-500 block">Imagen PC (Desktop)</label>
                                 <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors relative">
                                     <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'desktop')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
                                     <span className="material-icons-round text-3xl text-slate-400">desktop_windows</span>
@@ -189,7 +189,7 @@ export default function BannersManagement() {
                             </div>
                             
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">Imagen Celular (Mobile)</label>
+                                <label className="text-xs font-semibold text-slate-500 block">Imagen Celular (Mobile)</label>
                                 <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors relative">
                                     <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'mobile')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
                                     <span className="material-icons-round text-3xl text-slate-400">smartphone</span>
@@ -204,7 +204,7 @@ export default function BannersManagement() {
                             <button 
                                 type="submit" 
                                 disabled={isSubmitting}
-                                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-colors"
+                                className="px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors"
                             >
                                 {isSubmitting ? 'Subiendo...' : 'Guardar Banner'}
                             </button>
@@ -214,18 +214,22 @@ export default function BannersManagement() {
             </AnimatePresence>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {banners.length === 0 ? (
+                {loading ? (
+                    <div className="col-span-full">
+                        <SkeletonCards count={3} height="h-56" />
+                    </div>
+                ) : banners.length === 0 ? (
                     <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
                         <span className="material-icons-round text-4xl opacity-20 mb-2">image_not_supported</span>
                         <p>No hay banners configurados.</p>
                     </div>
                 ) : (
                     banners.map(banner => (
-                        <div key={banner.id} className={`bg-white dark:bg-slate-800 rounded-2xl border ${banner.is_active ? 'border-blue-200 dark:border-blue-900/50 ring-1 ring-blue-500/20' : 'border-slate-200 dark:border-slate-700 opacity-75'} overflow-hidden flex flex-col`}>
+                        <div key={banner.id} className={`bg-white dark:bg-slate-800 rounded-2xl border ${banner.is_active ? 'border-primary/20 dark:border-primary-dark/30 ring-1 ring-primary/20' : 'border-slate-200 dark:border-slate-700 opacity-75'} overflow-hidden flex flex-col`}>
                             <div className="relative aspect-video bg-slate-100 dark:bg-slate-900">
                                 <img src={getApiUrl(banner.image_url_desktop)} alt={banner.title} className="w-full h-full object-cover" />
                                 <div className="absolute top-2 right-2 flex gap-1">
-                                    <span className="bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
+                                    <span className="bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg ">
                                         PC
                                     </span>
                                 </div>
@@ -239,13 +243,13 @@ export default function BannersManagement() {
                                     {banner.title || 'Banner sin título'}
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-                                    Destino: <span className="text-blue-500 font-mono">{banner.target_url || '/'}</span>
+                                    Destino: <span className="text-primary font-mono">{banner.target_url || '/'}</span>
                                 </p>
                                 
                                 <div className="mt-auto pt-4 flex items-center justify-between gap-2">
                                     <button 
                                         onClick={() => toggleActive(banner.id, banner.is_active)}
-                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${banner.is_active ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-200'}`}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${banner.is_active ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-200'}`}
                                     >
                                         {banner.is_active ? 'Ocultar' : 'Mostrar'}
                                     </button>

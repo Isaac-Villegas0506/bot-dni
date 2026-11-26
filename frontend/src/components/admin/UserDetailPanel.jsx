@@ -5,16 +5,16 @@ import { formatLimaDate, formatLimaTime } from './utils';
 import ConfirmationModal from './ConfirmationModal';
 
 const HIST_CATEGORIES_PANEL = [
-    { id: null,         label: 'Todos',      icon: 'apps' },
-    { id: 'reniec',     label: 'RENIEC',     types: ['dni', 'dni_premium', 'name'] },
-    { id: 'generador',  label: 'Generador',  types: ['reniec_c4_azul', 'reniec_inscripcion', 'reniec_dni_azul', 'reniec_dni_amarillo'] },
+    { id: null, label: 'Todos', icon: 'apps' },
+    { id: 'reniec', label: 'RENIEC', types: ['dni', 'dni_premium', 'name'] },
+    { id: 'generador', label: 'Generador', types: ['reniec_c4_azul', 'reniec_inscripcion', 'reniec_dni_azul', 'reniec_dni_amarillo'] },
     { id: 'familiares', label: 'Familiares', types: ['familiares_pdf', 'familiares_texto'] },
-    { id: 'telefonos',  label: 'Teléfonos',  types: ['telefono_numeros_dni', 'telefono_info_linea', 'telefono_verificador', 'telefono_titular'] },
+    { id: 'telefonos', label: 'Teléfonos', types: ['telefono_numeros_dni', 'telefono_info_linea', 'telefono_verificador', 'telefono_titular'] },
 ];
 
 function CreditHistoryModal({ logs, onClose }) {
     const [searchAmount, setSearchAmount] = useState('');
-    const [filterDate, setFilterDate]     = useState('');
+    const [filterDate, setFilterDate] = useState('');
 
     const filteredLogs = useMemo(() => {
         let res = logs;
@@ -40,7 +40,7 @@ function CreditHistoryModal({ logs, onClose }) {
             >
                 <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
                     <h3 className="font-bold text-base flex items-center gap-2">
-                        <span className="material-icons-round text-blue-500 text-[20px]">receipt_long</span>
+                        <span className="material-icons-round text-primary text-[20px]">receipt_long</span>
                         Historial de Créditos
                     </h3>
                     <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
@@ -50,15 +50,15 @@ function CreditHistoryModal({ logs, onClose }) {
 
                 <div className="p-4 grid grid-cols-2 gap-3 shrink-0 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Buscar monto</label>
+                        <label className="text-[10px] font-bold text-slate-400 mb-1 block">Buscar monto</label>
                         <input type="text" placeholder="Ej: 5, -2, +10" value={searchAmount}
                             onChange={e => setSearchAmount(e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white" />
+                            className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary dark:text-white" />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Filtrar por fecha</label>
+                        <label className="text-[10px] font-bold text-slate-400 mb-1 block">Filtrar por fecha</label>
                         <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white" />
+                            className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary dark:text-white" />
                     </div>
                 </div>
 
@@ -132,18 +132,18 @@ function ManageCreditsModal({ user, onClose, onUpdate }) {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[85dvh] flex flex-col">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <h3 className="font-bold text-lg flex items-center gap-2 text-slate-900 dark:text-white"><span className="material-icons-round text-blue-500">settings_suggest</span>Gestionar Créditos</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-slate-900 dark:text-white"><span className="material-icons-round text-primary">settings_suggest</span>Gestionar Créditos</h3>
                     <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors"><span className="material-icons-round">close</span></button>
                 </div>
                 <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1">
                     <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-                        <button onClick={() => setAction('credits')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${action === 'credits' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500'}`}>Créditos</button>
-                        <button onClick={() => setAction('premium')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${action === 'premium' ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Membresía</button>
+                        <button onClick={() => setAction('credits')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${action === 'credits' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500'}`}>Créditos</button>
+                        <button onClick={() => setAction('premium')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${action === 'premium' ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Membresía</button>
                     </div>
                     {action === 'credits' ? (
                         <div className="space-y-4">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Cantidad</label>
+                                <label className="text-[10px] font-bold text-slate-400 mb-2 block">Cantidad</label>
                                 <div className="flex items-center gap-3">
                                     <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <span className="material-icons-round">remove</span>
@@ -155,23 +155,23 @@ function ManageCreditsModal({ user, onClose, onUpdate }) {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Motivo</label>
+                                <label className="text-[10px] font-bold text-slate-400 mb-2 block">Motivo</label>
                                 <input type="text" placeholder="Ej: Recarga manual..." value={reason} onChange={e => setReason(e.target.value)} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm dark:text-white" />
                             </div>
                             <div className="grid grid-cols-2 gap-3 pt-2">
                                 <button onClick={() => handleAction('remove_credits')} disabled={saving} className="py-3 rounded-2xl font-bold text-sm bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">Quitar</button>
-                                <button onClick={() => handleAction('add_credits')} disabled={saving} className="py-3 rounded-2xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20">Añadir</button>
+                                <button onClick={() => handleAction('add_credits')} disabled={saving} className="py-3 rounded-2xl font-bold text-sm bg-primary text-white shadow-lg shadow-primary/20">Añadir</button>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
-                                <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Estado Actual</p>
+                                <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">Estado Actual</p>
                                 <p className="font-bold text-slate-900 dark:text-white">{user.is_premium ? 'Premium Activo' : 'Usuario Estándar'}</p>
                                 {user.is_premium && user.unlimited_until && <p className="text-[10px] text-slate-500 mt-1 font-mono">Vence: {user.unlimited_until}</p>}
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Días</label>
+                                <label className="text-[10px] font-bold text-slate-400 mb-2 block">Días</label>
                                 <div className="flex items-center gap-3">
                                     <button onClick={() => setDays(Math.max(1, days - 1))} className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <span className="material-icons-round">remove</span>
@@ -195,11 +195,11 @@ function ManageCreditsModal({ user, onClose, onUpdate }) {
 }
 
 export default function UserDetailPanel({ userId, onClose, onUpdate }) {
-    const [detail, setDetail]               = useState(null);
-    const [loading, setLoading]             = useState(true);
-    const [banIpLoading, setBanIpLoading]   = useState(false);
-    const [histSearch, setHistSearch]       = useState('');
-    const [histFilter, setHistFilter]       = useState(null);
+    const [detail, setDetail] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [banIpLoading, setBanIpLoading] = useState(false);
+    const [histSearch, setHistSearch] = useState('');
+    const [histFilter, setHistFilter] = useState(null);
     const [showCreditModal, setShowCreditModal] = useState(false);
     const [showManageModal, setShowManageModal] = useState(false);
     const [alert, setAlert] = useState({ isOpen: false, type: 'info', title: '', message: '' });
@@ -242,9 +242,9 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
     if (!userId) return null;
 
     const CREDIT_BTN = [
-        { id: 'add',       label: '+ Créditos', active: 'bg-blue-600 text-white border-blue-600',    inactive: '' },
-        { id: 'remove',    label: '− Créditos', active: 'bg-red-500 text-white border-red-500',      inactive: '' },
-        { id: 'unlimited', label: '∞ Días',      active: 'bg-indigo-600 text-white border-indigo-600', inactive: '' },
+        { id: 'add', label: '+ Créditos', active: 'bg-primary text-white border-primary', inactive: '' },
+        { id: 'remove', label: '− Créditos', active: 'bg-red-500 text-white border-red-500', inactive: '' },
+        { id: 'unlimited', label: '∞ Días', active: 'bg-indigo-600 text-white border-indigo-600', inactive: '' },
     ];
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -268,7 +268,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
                 <div className="overflow-y-auto flex-1 p-4 sm:p-6">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-40 gap-3">
-                            <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-2 border-slate-200 border-t-primary dark:border-t-primary-dark rounded-full animate-spin" />
                             <p className="text-sm text-slate-400">Cargando usuario...</p>
                         </div>
                     ) : !detail ? (
@@ -279,7 +279,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
                                 {/* User Info */}
                                 <div className="md:order-2 bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md shrink-0">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold text-xl shadow-md shrink-0">
                                             {detail.full_name?.charAt(0)?.toUpperCase() || '?'}
                                         </div>
                                         <div className="min-w-0">
@@ -290,7 +290,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
                                     <div className="grid grid-cols-2 gap-2.5">
                                         {[
                                             { label: 'Estado', value: <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${detail.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{detail.status === 'active' ? '✓ Activo' : '✗ Baneado'}</span> },
-                                            { label: 'Créditos', value: <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{detail.is_premium ? '∞' : detail.credits ?? 0}</p> },
+                                            { label: 'Créditos', value: <p className="text-lg font-bold text-primary dark:text-primary-dark">{detail.is_premium ? '∞' : detail.credits ?? 0}</p> },
                                             { label: 'Membresía', value: 
                                                 <div className="flex flex-col">
                                                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold w-fit ${detail.is_premium ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
@@ -304,7 +304,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
                                             { label: 'Rol', value: <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{detail.role?.toUpperCase()}</span> },
                                         ].map(({ label, value }) => (
                                             <div key={label} className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-600">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 mb-1">{label}</p>
                                                 {value}
                                             </div>
                                         ))}
@@ -319,18 +319,18 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
                                 <div className="md:order-1 space-y-3">
                                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
                                         <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                            <div className="w-10 h-10 rounded-2xl bg-primary/10 dark:bg-primary-dark/20 flex items-center justify-center text-primary dark:text-primary-dark">
                                                 <span className="material-icons-round">toll</span>
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-slate-900 dark:text-white text-sm">Créditos y Membresía</h3>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Control Administrativo</p>
+                                                <p className="text-[10px] text-slate-400 font-bold ">Control Administrativo</p>
                                             </div>
                                         </div>
                                         
                                         <button 
                                             onClick={() => setShowManageModal(true)}
-                                            className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                            className="w-full py-3.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-lg shadow-primary/20 transition active:scale-[0.98] flex items-center justify-center gap-2"
                                         >
                                             <span className="material-icons-round text-[18px]">manage_accounts</span>
                                             Gestionar Créditos
@@ -358,10 +358,10 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
 
                                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                                         <h3 className="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2 text-sm">
-                                            <span className="material-icons-round text-blue-500 text-[18px]">receipt_long</span>
+                                            <span className="material-icons-round text-primary text-[18px]">receipt_long</span>
                                             Historial de Créditos
                                         </h3>
-                                        <button onClick={() => setShowCreditModal(true)} className="w-full py-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-1.5">
+                                        <button onClick={() => setShowCreditModal(true)} className="w-full py-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1.5">
                                             <span className="material-icons-round text-[16px]">open_in_new</span>
                                             Ver historial completo
                                         </button>
@@ -373,19 +373,19 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
-                                        <span className="material-icons-round text-blue-500 text-[18px]">history</span>
+                                        <span className="material-icons-round text-primary text-[18px]">history</span>
                                         Historial de Búsquedas
                                     </h3>
                                     <span className="text-xs text-slate-400">{filteredHistory.length} resultado{filteredHistory.length !== 1 ? 's' : ''}</span>
                                 </div>
                                 <div className="relative mb-3 group">
-                                    <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors group-focus-within:text-blue-500">search</span>
+                                    <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors group-focus-within:text-primary">search</span>
                                     <input type="text" value={histSearch} onChange={e => setHistSearch(e.target.value)} placeholder="Buscar en historial..."
-                                        className="w-full pl-11 pr-4 h-[44px] rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[13px] font-bold focus:border-blue-500 outline-none dark:text-white transition-all" />
+                                        className="w-full pl-11 pr-4 h-[44px] rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[13px] font-bold focus:border-primary outline-none dark:text-white transition" />
                                 </div>
                                 <div className="flex flex-wrap gap-1.5 mb-3">
                                     {HIST_CATEGORIES_PANEL.map(f => (
-                                        <button key={String(f.id)} onClick={() => setHistFilter(f.id)} className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${histFilter === f.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-600 hover:border-blue-400'}`}>
+                                        <button key={String(f.id)} onClick={() => setHistFilter(f.id)} className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition ${histFilter === f.id ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-600 hover:border-primary'}`}>
                                             {f.label}
                                         </button>
                                     ))}

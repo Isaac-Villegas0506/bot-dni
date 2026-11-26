@@ -1,5 +1,5 @@
 const iconTone = {
-    blue: 'bg-blue-600 text-white',
+    blue: 'bg-primary text-white',
     indigo: 'bg-indigo-600 text-white',
     emerald: 'bg-emerald-600 text-white',
     rose: 'bg-rose-600 text-white',
@@ -19,10 +19,10 @@ export function OptionCard({
     badge,
 }) {
     const iconClass = option.color || option.iconBg || iconTone[accent] || iconTone.blue;
-    const focusAccent = accent === 'violet' ? 'focus-visible:ring-violet-500' : 'focus-visible:ring-blue-500';
+    const focusAccent = accent === 'violet' ? 'focus-visible:ring-violet-500' : 'focus-visible:ring-primary';
     const hoverAccent = accent === 'violet'
         ? 'hover:border-violet-400 dark:hover:border-violet-500'
-        : 'hover:border-blue-400 dark:hover:border-blue-500';
+        : 'hover:border-primary dark:hover:border-primary-dark';
 
     const handleKeyDown = (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -43,7 +43,7 @@ export function OptionCard({
                 <button
                     type="button"
                     onClick={(event) => onHelp(event, option)}
-                    className="absolute right-2 top-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    className="absolute right-2 top-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                     aria-label={`Informacion sobre ${option.title}`}
                 >
                     <span className="material-icons-round text-[20px]">help_outline</span>
@@ -56,7 +56,7 @@ export function OptionCard({
                         <span className="material-icons-round text-2xl" aria-hidden="true">{option.icon}</span>
                     </div>
                     {(badge || option.isNew) && (
-                        <span className="absolute -right-3 -top-2 rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                        <span className="absolute -right-3 -top-2 rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[9px] font-black text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
                             {badge || 'Nuevo'}
                         </span>
                     )}
@@ -73,7 +73,7 @@ export function OptionCard({
                     <div className="min-w-0 font-bold text-amber-600 dark:text-amber-400">
                         <span className="truncate">{creditsLabel}</span>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1 text-[11px] font-black uppercase text-slate-400 transition-colors group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300">
+                    <div className="flex shrink-0 items-center gap-1 text-[11px] font-black text-slate-400 transition-colors group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300">
                         <span>{actionLabel}</span>
                     </div>
                 </div>
@@ -95,7 +95,7 @@ export function BackButton({ onClick, label = 'Regresar', className = '' }) {
         <button
             type="button"
             onClick={onClick}
-            className={`flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 ${className}`}
+            className={`flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 ${className}`}
         >
             <span className="material-icons-round text-[18px] text-slate-400" aria-hidden="true">arrow_back</span>
             {label && <span>{label}</span>}
@@ -105,7 +105,7 @@ export function BackButton({ onClick, label = 'Regresar', className = '' }) {
 
 export function ResultActionButton({ children, onClick, disabled = false, variant = 'primary', className = '' }) {
     const variants = {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700',
+        primary: 'bg-primary text-white hover:bg-primary-hover',
         dark: 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200',
         secondary: 'border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
         danger: 'bg-red-500 text-white hover:bg-red-600',
@@ -136,7 +136,7 @@ export function FieldList({ items, onCopy }) {
                                 <button
                                     type="button"
                                     onClick={() => onCopy(item.copyValue)}
-                                    className="flex min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-200 hover:text-blue-600 dark:hover:bg-slate-700"
+                                    className="flex min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-200 hover:text-primary dark:hover:bg-slate-700 dark:hover:text-primary-dark"
                                     aria-label={`Copiar ${item.label}`}
                                 >
                                     <span className="material-icons-round text-base">content_copy</span>

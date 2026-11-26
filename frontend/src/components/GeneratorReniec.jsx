@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import PdfViewer from './PdfViewer';
@@ -63,7 +63,7 @@ const options = [
 export default function GeneratorReniec() {
   const { isFeatureEnabled } = useSettings();
   const { user, openLoginModal } = useAuth();
-  const { loading, showLoading, hideLoading } = useLoading();
+  const { loading, showLoading, hideLoading, registerAbort } = useLoading();
   const [view, setView] = useState(() => sessionStorage.getItem('reniec_view') || 'selection'); // 'selection' | 'result'
   const [selectedOption, setSelectedOption] = useState(null);
   const [showInputModal, setShowInputModal] = useState(false);
@@ -173,14 +173,14 @@ export default function GeneratorReniec() {
         return;
       }
 
-      const res = await fetch(endpoint, {
+      const res = await queryFetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ dni })
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.generador, registerAbort });
 
       const data = await res.json();
 
@@ -218,11 +218,11 @@ export default function GeneratorReniec() {
 
     } catch (err) {
       console.error(err);
-      setAlert({ isOpen: true, type: 'error', message: err.message });
+      setAlert({ isOpen: true, type: 'error', message: getQueryErrorMessage(err) });
     } finally {
       hideLoading();
     }
-  }, [dni, selectedOption, user, getCost, canAfford, showLoading, hideLoading, openLoginModal]);
+  }, [dni, selectedOption, user, getCost, canAfford, showLoading, hideLoading, registerAbort, openLoginModal]);
 
   // Auto-trigger from state (e.g. from Premium Result Card).
   // 'options' is module-level (not a valid dep). hasAutoTriggered ref guards loops.
@@ -477,7 +477,7 @@ export default function GeneratorReniec() {
                     onClick={() => setPreviewImage({ url: getApiUrl(`/api/images/${generatedData.frontal.split('/').pop()}`), label: 'Anverso' })}
                     className="w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md cursor-zoom-in hover:opacity-90 transition-opacity active:scale-[0.98]"
                   >
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 pt-3 pb-1">Anverso</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-3 pt-3 pb-1">Anverso</p>
                     <img
                       src={getApiUrl(`/api/images/${generatedData.frontal.split('/').pop()}`)}
                       alt="DNI Anverso"
@@ -490,7 +490,7 @@ export default function GeneratorReniec() {
                     onClick={() => setPreviewImage({ url: getApiUrl(`/api/images/${generatedData.reverso.split('/').pop()}`), label: 'Reverso' })}
                     className="w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md cursor-zoom-in hover:opacity-90 transition-opacity active:scale-[0.98]"
                   >
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 pt-3 pb-1">Reverso</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-3 pt-3 pb-1">Reverso</p>
                     <img
                       src={getApiUrl(`/api/images/${generatedData.reverso.split('/').pop()}`)}
                       alt="DNI Reverso"
@@ -519,11 +519,11 @@ export default function GeneratorReniec() {
             )}
 
             {/* 3. Buttons */}
-            <div className="flex flex-row w-full gap-3">
+            <div className="flex flex-col sm:flex-row w-full gap-3 mt-6">
               {(generatedData.type?.id === 'virtual_azul' || generatedData.type?.id === 'amarillo' || generatedData.type?.id === 'virtual_electronico') ? (
                 <button
                   onClick={downloadImages}
-                  className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
+                  className="btn-primary-minimal flex-1 px-4 text-lg"
                 >
                   <span className="material-icons-round">download</span>
                   Descargar Imágenes
@@ -531,7 +531,7 @@ export default function GeneratorReniec() {
               ) : (
                 <button
                   onClick={downloadPdf}
-                  className="flex-1 py-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-lg"
+                  className="btn-primary-minimal flex-1 px-4 text-lg"
                 >
                   <span className="material-icons-round">download</span>
                   {generatedData.type?.id === 'inscripcion' ? 'Descargar Ficha' : (generatedData.type?.id === 'arbol' ? 'Descargar Árbol' : 'Descargar C4')}
@@ -540,7 +540,7 @@ export default function GeneratorReniec() {
 
               <button
                 onClick={handleBackClick}
-                className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
+                className="btn-secondary-minimal flex-1 px-4 text-sm"
               >
                 Volver
               </button>
@@ -577,7 +577,7 @@ export default function GeneratorReniec() {
                   value={dni}
                   onChange={(e) => setDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
                   placeholder="DNI (8 dígitos)"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary outline-none transition-colors font-mono text-lg text-center mb-6 text-slate-900 dark:text-white"
                   autoFocus
                 />
 
@@ -591,7 +591,7 @@ export default function GeneratorReniec() {
                   <button
                     onClick={handleGenerate}
                     disabled={!dni || dni.length !== 8}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg ${!dni || dni.length !== 8 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-colors shadow-lg ${!dni || dni.length !== 8 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover shadow-primary/30'
                       }`}
                   >
                     Generar
@@ -634,7 +634,7 @@ export default function GeneratorReniec() {
                   <button
                     onClick={confirmExit}
                     disabled={exitCountDown > 0}
-                    className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+                    className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
                   >
                     {exitCountDown > 0 ? (
                       <>
@@ -673,7 +673,7 @@ export default function GeneratorReniec() {
               >
                 <div className="w-full bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
                   <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                    <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">
+                    <h4 className="font-bold text-slate-700 dark:text-slate-300 text-xs">
                       DNI - {previewImage.label}
                     </h4>
                     <span className="text-[10px] font-black text-blue-500 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full uppercase">Vista HD</span>
@@ -688,14 +688,14 @@ export default function GeneratorReniec() {
                   <div className="p-4 flex gap-3 justify-center">
                     <button
                       onClick={() => forceDownload(previewImage.url, `DNI_${previewImage.label}_${generatedData.dni}.png`)}
-                      className="px-6 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center gap-2 text-sm"
+                      className="px-6 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition-colors flex items-center gap-2 text-sm"
                     >
                       <span className="material-icons-round text-sm">download</span>
                       Descargar esta cara
                     </button>
                     <button
                       onClick={() => setPreviewImage(null)}
-                      className="px-6 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm"
+                      className="px-6 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm"
                     >
                       Cerrar
                     </button>

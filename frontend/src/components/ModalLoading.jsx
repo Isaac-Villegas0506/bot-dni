@@ -7,10 +7,13 @@ import { Z_INDEX } from '../lib/zIndex';
 const getExpectedSeconds = (type, message) => {
     if (type === 'reniec') return 20;
     if (type === 'fiscalia') return 120; // Fiscalia can take a long time returning multiple cases
+    if (type === 'delitos') return 60;
     if (type === 'policiales' || type === 'judiciales' || type === 'penales') return 25;
     if (type === 'vehiculos') return 20;
     if (type === 'telefonos') return 20;
     if (type === 'familiares') return 60; // Often produces PDFs
+    if (type === 'metadata') return 60; // Info Global: reporte integrado en PDF
+    if (type === 'facial') return 60;
 
     if (!message) return 0;
     if (message.toUpperCase().includes('PDF')) return 60;
@@ -97,9 +100,9 @@ const ALL_LOADING_PHRASES = {
 
 const getRandomPhrase = (stageArray) => stageArray[Math.floor(Math.random() * stageArray.length)];
 
-export default function ModalLoading({ loading, showDonation, onClose, customMessage = null, loadingType = 'default' }) {
+export default function ModalLoading({ loading, showDonation, onClose, onCancel, customMessage = null, loadingType = 'default', startedAt = 0 }) {
     const [showQRViewer, setShowQRViewer] = useState(false);
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const [now, setNow] = useState(() => Date.now());
     const phrases = useMemo(
         () => ALL_LOADING_PHRASES[loadingType] || ALL_LOADING_PHRASES['default'],
         [loadingType],
@@ -114,27 +117,35 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
         return () => clearTimeout(syncTimer);
     }, [loading, showDonation]);
 
-    // Cronómetro: avanza elapsedTime mientras hay carga.
-    // Si la carga termina, el reset se hace dentro de los callbacks (setState
-    // asíncrono), nunca de forma síncrona en el cuerpo del efecto.
+    // Cada consulta arranca su cronómetro en cero (startedAt lo fija el
+    // contexto en showLoading); antes la segunda consulta heredaba el
+    // progreso y las frases de la anterior.
     useEffect(() => {
         if (!loading) return;
 
         const timer = setInterval(() => {
-            setElapsedTime(prev => prev + 1);
+            setNow(Date.now());
         }, 1000);
 
         return () => clearInterval(timer);
     }, [loading]);
 
-    // Rotación de frases según el tiempo transcurrido (estado derivado, sin setState)
-    const currentPhrase = useMemo(() => {
-        if (!loading) return phrases.stage1[0];
-        if (elapsedTime < 3) return getRandomPhrase(phrases.stage1);
-        if (elapsedTime < 8) return getRandomPhrase(phrases.stage2);
-        if (elapsedTime < 15) return getRandomPhrase(phrases.stage3);
-        return getRandomPhrase(phrases.stage4);
-    }, [loading, elapsedTime, phrases]);
+    const elapsedTime = loading ? Math.max(0, Math.floor((now - startedAt) / 1000)) : 0;
+
+    // Las etapas se escalan al tiempo esperado de cada consulta y la frase
+    // solo cambia al cambiar de etapa (antes se re-sortearía cada segundo).
+    const stage = useMemo(() => {
+        const base = totalSeconds > 0 ? totalSeconds : 15;
+        if (elapsedTime < base * 0.15) return 1;
+        if (elapsedTime < base * 0.4) return 2;
+        if (elapsedTime < base * 0.75) return 3;
+        return 4;
+    }, [elapsedTime, totalSeconds]);
+
+    const currentPhrase = useMemo(
+        () => getRandomPhrase(phrases[`stage${stage}`]),
+        [stage, phrases],
+    );
 
     const openQRViewer = () => setShowQRViewer(true);
     const handleQRKeyDown = (event) => {
@@ -177,10 +188,10 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                             <div className="flex flex-col items-center justify-center space-y-5 text-center md:border-r md:border-slate-200 md:pr-6 dark:md:border-slate-700">
                                 <div className="relative">
                                     <div className="h-20 w-20 rounded-full border-4 border-slate-200 dark:border-slate-700" aria-hidden="true" />
-                                    <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-blue-600 dark:border-t-blue-300" aria-hidden="true" />
+                                    <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-primary dark:border-t-primary-dark" aria-hidden="true" />
                                     {totalSeconds > 0 && (
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{Math.floor(progress)}%</span>
+                                            <span className="text-xl font-bold text-primary dark:text-primary-dark">{Math.floor(progress)}%</span>
                                         </div>
                                     )}
                                 </div>
@@ -209,12 +220,22 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                 {totalSeconds > 0 && (
                                     <div className="h-2 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800" aria-hidden="true">
                                         <motion.div
-                                            className="h-full bg-blue-600"
-                                            initial={{ width: '0%' }}
-                                            animate={{ width: `${progress}%` }}
+                                            className="h-full w-full origin-left bg-primary dark:bg-primary-dark"
+                                            initial={{ scaleX: 0 }}
+                                            animate={{ scaleX: progress / 100 }}
                                             transition={{ duration: 1, ease: 'linear' }}
                                         />
                                     </div>
+                                )}
+
+                                {onCancel && (
+                                    <button
+                                        type="button"
+                                        onClick={onCancel}
+                                        className="min-h-[44px] rounded-lg px-4 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                                    >
+                                        Cancelar consulta
+                                    </button>
                                 )}
                             </div>
 
@@ -224,9 +245,9 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     onClick={openQRViewer}
                                     onKeyDown={handleQRKeyDown}
                                     aria-label="Ver QR de donación ampliado"
-                                    className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900"
+                                    className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900"
                                 >
-                                    <img src="/yape-qr.png" alt="Código QR de donación por Yape" className="mx-auto h-40 w-40 object-contain" />
+                                    <img src="/yape-qr.png" alt="Código QR de donación por Yape" className="mx-auto h-28 w-28 object-contain md:h-40 md:w-40" />
                                 </button>
 
                                 <ModalSection className="w-full text-center">
@@ -238,7 +259,7 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     </p>
                                     <div className="rounded-lg border border-slate-200 bg-white p-3 text-left dark:border-slate-700 dark:bg-slate-900">
                                         <p className="text-sm font-bold text-slate-900 dark:text-white">YER** VIL.</p>
-                                        <span className="mt-2 inline-flex rounded-md bg-blue-600 px-2 py-0.5 text-xs font-bold uppercase text-white">Yape</span>
+                                        <span className="mt-2 inline-flex rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-white">Yape</span>
                                     </div>
                                 </ModalSection>
                             </div>
@@ -258,17 +279,17 @@ export default function ModalLoading({ loading, showDonation, onClose, customMes
                                     onClick={openQRViewer}
                                     onKeyDown={handleQRKeyDown}
                                     aria-label="Ver QR de donación ampliado"
-                                    className="mx-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900"
+                                    className="mx-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900"
                                 >
                                     <img src="/yape-qr.png" alt="Código QR de donación por Yape" className="h-48 w-48 object-contain md:h-64 md:w-64" />
                                 </button>
 
                                 <ModalSection className="space-y-4">
                                     <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Titular</p>
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Titular</p>
                                         <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">YER** VIL.</p>
                                     </div>
-                                    <span className="inline-flex rounded-md bg-blue-600 px-2.5 py-1 text-xs font-bold uppercase text-white">
+                                    <span className="inline-flex rounded-md bg-primary px-2.5 py-1 text-xs font-bold text-white">
                                         Yape
                                     </span>
                                     <p className="text-sm text-slate-500 dark:text-slate-400">

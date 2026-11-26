@@ -8,7 +8,7 @@ import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
@@ -338,7 +338,7 @@ function SharedModals({ showInputModal, selectedOption, dni, setDni, onCancel, o
             value={dni} onChange={e => setDni(e.target.value.replace(/\D/g, ''))}
             onKeyDown={e => e.key === 'Enter' && onGenerate()}
             placeholder="Ej: 72345678"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary mb-4"
             autoFocus
           />
           <div className="flex gap-3">
@@ -347,7 +347,7 @@ function SharedModals({ showInputModal, selectedOption, dni, setDni, onCancel, o
               Cancelar
             </button>
             <button onClick={onGenerate} disabled={dni.length !== 8}
-              className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${dni.length === 8 ? `${selectedOption.color} hover:opacity-90 ${selectedOption.colorShadow}` : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'}`}>
+              className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-colors shadow-lg flex items-center justify-center gap-2 ${dni.length === 8 ? `${selectedOption.color} hover:opacity-90 ${selectedOption.colorShadow}` : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'}`}>
               <span className="material-icons-round text-sm">search</span>
               Consultar
             </button>
@@ -362,7 +362,7 @@ function SharedModals({ showInputModal, selectedOption, dni, setDni, onCancel, o
 export default function FamiliaresDNI() {
   const { isFeatureEnabled } = useSettings();
   const { user, openLoginModal } = useAuth();
-  const { showLoading, hideLoading } = useLoading();
+  const { showLoading, hideLoading, registerAbort } = useLoading();
   const [view, setView] = useState(() => sessionStorage.getItem('familiares_view') || 'selection'); // 'selection' | 'result'
   const [alert, setAlert] = useState({ isOpen: false, type: 'info', message: '' });
   const [selectedOption, setSelectedOption] = useState(null);
@@ -462,7 +462,7 @@ export default function FamiliaresDNI() {
 
     setShowInputModal(false);
 
-    showLoading(null, 'reniec');
+    showLoading(null, 'familiares');
 
     try {
       const token = localStorage.getItem('token');
@@ -476,14 +476,14 @@ export default function FamiliaresDNI() {
       const isTxt = selectedOption?.id === 'familiares_texto';
       const endpoint = isTxt ? '/api/familiares/texto' : '/api/familiares/arbol_visual';
 
-      const res = await fetch(endpoint, {
+      const res = await queryFetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ dni }),
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.familiares, registerAbort });
 
       const data = await res.json();
 
@@ -529,6 +529,10 @@ export default function FamiliaresDNI() {
 
     } catch (err) {
       hideLoading();
+      if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+        setAlert({ isOpen: true, type: 'error', message: getQueryErrorMessage(err) });
+        return;
+      }
       const isWarning = err.message.includes('\u274c') || err.message.includes('No se encontraron');
       setAlert({ isOpen: true, type: isWarning ? 'warning' : 'error', message: err.message });
     } finally {
@@ -608,7 +612,7 @@ export default function FamiliaresDNI() {
                 <span className="material-icons-round text-sm">toll</span>
                 {getCost(opt.id)} crédito{getCost(opt.id) > 1 ? 's' : ''}
               </div>
-              <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-400 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-colors font-black">
+              <div className="flex items-center gap-1 text-[10px] text-slate-400 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-colors font-black">
                 Consultar
                 <span className="material-icons-round text-xs">arrow_forward</span>
               </div>
@@ -650,7 +654,7 @@ export default function FamiliaresDNI() {
           <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-emerald-500/30">
             <span className="material-icons-round text-4xl">check</span>
           </div>
-          <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 tracking-wide">
+          <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6">
             ÁRBOL FAMILIAR GENERADO CON ÉXITO
           </h3>
 
@@ -669,7 +673,7 @@ export default function FamiliaresDNI() {
                 {isHeader && (
                   <div className="flex items-center gap-2 mb-3">
                     <span className="material-icons-round text-violet-600 dark:text-violet-400 text-base">person_pin</span>
-                    <span className="text-xs font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-800 dark:text-violet-200">
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-800 dark:text-violet-200">
                       TITULAR
                     </span>
                   </div>
@@ -694,7 +698,7 @@ export default function FamiliaresDNI() {
                   <div className="mb-5">
                     <div className="flex items-center gap-2 mb-2 px-1">
                       <span className="material-icons-round text-violet-500 text-sm">family_restroom</span>
-                      <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400">
                         Familiares de:
                       </span>
                     </div>
@@ -717,7 +721,7 @@ export default function FamiliaresDNI() {
                       {/* Section label */}
                       <div className="flex items-center gap-2 mb-2">
                         <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400 px-2">{g.label}</span>
+                        <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 px-2">{g.label}</span>
                         <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                       </div>
                       <div className="space-y-2.5">
@@ -769,7 +773,7 @@ export default function FamiliaresDNI() {
                       >
                         file_download
                       </motion.span>
-                      <span className="tracking-wide uppercase text-sm">Descargar Árbol Completo (.txt)</span>
+                      <span className="text-sm">Descargar Árbol Completo (.txt)</span>
                     </motion.button>
                   </div>
                   <p className="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-3 font-medium flex items-center gap-1.5">
@@ -859,7 +863,7 @@ export default function FamiliaresDNI() {
                   <button
                     disabled={exitCountDown > 0}
                     onClick={resetView}
-                    className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+                    className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
                   >
                     {exitCountDown > 0 ? (
                       <>

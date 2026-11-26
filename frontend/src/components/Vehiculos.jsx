@@ -8,7 +8,7 @@ import { useCreditCosts } from '../hooks/useCredits';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
@@ -79,7 +79,7 @@ function parseRecord(rawText) {
 export default function Vehiculos() {
   const { isFeatureEnabled } = useSettings();
   const { user, openLoginModal } = useAuth();
-  const { loading, showLoading, hideLoading } = useLoading();
+  const { loading, showLoading, hideLoading, registerAbort } = useLoading();
   const [view, setView] = useState(() => sessionStorage.getItem('vehiculos_view') || 'selection');
   const [selectedOption, setSelectedOption] = useState(null);
   const [showInputModal, setShowInputModal] = useState(false);
@@ -148,16 +148,6 @@ export default function Vehiculos() {
     }
   }, [location.state, options]);
 
-  useEffect(() => {
-    if (hasAutoTriggered.current && selectedOption && targetId && view === 'selection') {
-      const isDni = /^\d{8}$/.test(targetId);
-      if (isDni) {
-        handleGenerate(targetId);
-        hasAutoTriggered.current = false;
-      }
-    }
-  }, [selectedOption, targetId, view, handleGenerate]);
-
   const openHelp = (e, opt) => {
     e.stopPropagation();
     setHelpModal({
@@ -202,14 +192,14 @@ export default function Vehiculos() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/vehiculos/record', {
+      const res = await queryFetch('/api/vehiculos/record', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ target: finalTargetId })
-      });
+      }, { timeoutMs: QUERY_TIMEOUTS.vehiculos, registerAbort });
 
       const data = await res.json();
       if (!res.ok) {
@@ -231,12 +221,22 @@ export default function Vehiculos() {
       setAlert({
         isOpen: true,
         type: 'error',
-        message: error.message
+        message: getQueryErrorMessage(error)
       });
     } finally {
       hideLoading();
     }
-  }, [user, openLoginModal, targetId, selectedOption, loading, showLoading, hideLoading]);
+  }, [user, openLoginModal, targetId, selectedOption, loading, showLoading, hideLoading, registerAbort]);
+
+  useEffect(() => {
+    if (hasAutoTriggered.current && selectedOption && targetId && view === 'selection') {
+      const isDni = /^\d{8}$/.test(targetId);
+      if (isDni) {
+        handleGenerate(targetId);
+        hasAutoTriggered.current = false;
+      }
+    }
+  }, [selectedOption, targetId, view, handleGenerate]);
 
   const downloadPdf = async () => {
     if (!generatedData?.file_path) return;
@@ -346,7 +346,7 @@ export default function Vehiculos() {
                 </div>
                 <button
                   onClick={downloadPdf}
-                  className="mt-4 w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
+                  className="mt-4 w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-md"
                 >
                   <span className="material-icons-round text-base">download</span>
                   Descargar PDF
@@ -370,7 +370,7 @@ export default function Vehiculos() {
               <div className="flex flex-col gap-6">
                 {generatedData.parsedRecord.map((group, gIndex) => (
                   <div key={gIndex} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
-                    <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-3 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-3 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                       <span className="material-icons-round text-[16px]">{group.icon}</span>
                       {group.title}
                     </h4>
@@ -379,7 +379,7 @@ export default function Vehiculos() {
                         <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 last:border-0 gap-1 sm:gap-4">
                           <div className="flex items-center gap-2">
                             <span className="material-icons-round text-slate-400 dark:text-slate-500 text-[16px]">{item.icon}</span>
-                            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">{item.label}</span>
+                            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px]">{item.label}</span>
                           </div>
                           <span className="font-medium text-[14px] text-slate-800 dark:text-white sm:text-right">{item.value}</span>
                         </div>
@@ -422,7 +422,7 @@ export default function Vehiculos() {
                   inputMode="numeric"
                   maxLength={8}
                   placeholder={selectedOption.placeholder}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg text-center mb-6 text-slate-900 dark:text-white uppercase"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary outline-none transition-colors font-mono text-lg text-center mb-6 text-slate-900 dark:text-white uppercase"
                   type="text"
                   value={targetId}
                   onChange={(e) => {
@@ -450,7 +450,7 @@ export default function Vehiculos() {
                   <button
                     onClick={handleGenerate}
                     disabled={!/^\d{8}$/.test(targetId)}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${!/^\d{8}$/.test(targetId)
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-colors shadow-lg flex items-center justify-center gap-2 ${!/^\d{8}$/.test(targetId)
                         ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
                         : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'
                       }`}
@@ -495,7 +495,7 @@ export default function Vehiculos() {
                 <button
                   onClick={confirmExit}
                   disabled={exitCountDown > 0}
-                  className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+                  className={`flex-1 py-3 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${exitCountDown > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
                 >
                   {exitCountDown > 0 ? (
                     <>

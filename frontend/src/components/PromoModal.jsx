@@ -93,7 +93,7 @@ export default function PromoModal({ isOpen, onClose }) {
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 z-50 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-colors"
+                    className="absolute top-3 right-3 z-50 h-11 w-11 md:h-11 md:w-11 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-colors"
                 >
                     <span className="material-icons-round text-lg md:text-xl">close</span>
                 </button>
@@ -133,13 +133,13 @@ export default function PromoModal({ isOpen, onClose }) {
                             <>
                                 <button 
                                     onClick={prevSlide}
-                                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <span className="material-icons-round">chevron_left</span>
                                 </button>
                                 <button 
                                     onClick={nextSlide}
-                                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <span className="material-icons-round">chevron_right</span>
                                 </button>
