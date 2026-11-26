@@ -129,6 +129,11 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
             pdf.text(`DNI ${result.documento || ''}`, M, y);
             pdf.setTextColor(0);
             y += 8;
+            // La foto termina en (M - 4 + FOTO_H). La regla horizontal se
+            // dibuja debajo de ella; antes iba en y=82 y la atravesaba.
+            if (foto) {
+                y = Math.max(y, M - 4 + FOTO_H + 12);
+            }
             pdf.setDrawColor(200);
             pdf.line(M, y, W - M, y);
             y += 22;

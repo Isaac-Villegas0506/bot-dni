@@ -38,7 +38,9 @@ export const getApiUrl = (path) => {
 // de forma síncrona; sin este límite un fetch colgado deja el modal para siempre).
 export const QUERY_TIMEOUTS = {
   reniec: 90_000,
-  generador: 120_000,
+  // /dniv y /dniva pueden superar 2 min cuando el bot encola respuestas.
+  // Con 120 s el frontend abortaba justo antes de recibir las imágenes.
+  generador: 240_000,
   fiscalia: 240_000,
   delitos: 120_000,
   policiales: 90_000,

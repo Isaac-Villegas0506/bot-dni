@@ -121,6 +121,9 @@ export default function GeneratorReniec() {
       return;
     }
     if (!dni || dni.length !== 8) return;
+    // Evita encolar el mismo comando varias veces al pulsar de nuevo mientras
+    // la consulta anterior sigue esperando al bot.
+    if (loading) return;
 
     // ─ Frontend credit guard (UX) ─
     const optId = selectedOption?.id;
@@ -139,9 +142,12 @@ export default function GeneratorReniec() {
 
     setShowInputModal(false);
 
-    // Custom loading for Arbol (50s countdown)
+    // El DNI virtual puede tardar ~2 min: el usuario debe saber que sigue
+    // procesándose y no que la página se congeló.
     if (selectedOption.id === 'arbol') {
       showLoading("Generando Árbol Genealógico... (Aprox. 50s)", 'reniec');
+    } else if (['virtual_azul', 'virtual_electronico', 'amarillo'].includes(selectedOption.id)) {
+      showLoading('Generando imágenes del DNI... puede tardar hasta 2 minutos', 'reniec');
     } else {
       showLoading(null, 'reniec');
     }
@@ -222,7 +228,7 @@ export default function GeneratorReniec() {
     } finally {
       hideLoading();
     }
-  }, [dni, selectedOption, user, getCost, canAfford, showLoading, hideLoading, registerAbort, openLoginModal]);
+  }, [dni, selectedOption, user, loading, getCost, canAfford, showLoading, hideLoading, registerAbort, openLoginModal]);
 
   // Auto-trigger from state (e.g. from Premium Result Card).
   // 'options' is module-level (not a valid dep). hasAutoTriggered ref guards loops.
