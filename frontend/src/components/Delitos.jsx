@@ -12,80 +12,84 @@ import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
+/**
+ * Parser de denuncias para el formato de BitxData:
+ *
+ *   ⟨ #BITX DATA BOT ⟩ ➟ DENUNCIAS (1-3/5)
+ *
+ *   • DENUNCIA N.-1 ➮ 00611140
+ *   • CONDICION ➮ [GP] OCURRENCIA DE CALLE NRO : 14
+ *   • F. HECHO ➮ 17/01/2011 15:20:00 HRS.
+ *
+ * Antes solo entendía "DENUNCIA #n" del proveedor anterior, así que el
+ * formato actual devolvía una lista vacía.
+ */
 function parseDenuncias(rawText) {
   if (!rawText) return [];
 
-  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  // "{campo} ➮ {valor}" (separador del bot, con posible markdown)
+  const FIELD_RE = /^[•·\-\s]*(.+?)\s*➮\s*(.*)$/;
+  const ICONS = [
+    [/N\.|NUMERO|NÚMERO/i, 'tag'],
+    [/CONDICION|CONDICIÓN/i, 'gavel'],
+    [/HECHO|FECHA/i, 'event'],
+    [/LUGAR|DIRECC/i, 'location_on'],
+    [/COMISAR/i, 'local_police'],
+    [/TIPO/i, 'category'],
+    [/DNI|NOMBRE/i, 'badge'],
+    [/PLACA/i, 'directions_car'],
+    [/DELITO|FALTA/i, 'report'],
+  ];
+
   const denuncias = [];
-  let currentDenuncia = null;
+  let actual = null;
 
-  for (const line of lines) {
-    // Remove emojis and formatting
-    let cleanLine = line.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
-    cleanLine = cleanLine.replace(/[*_`]/g, '').trim();
+  for (const rawLine of rawText.split('\n')) {
+    // Quita emojis, markdown y el encabezado del bot
+    let line = rawLine
+      .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
+      .replace(/[*`_]/g, '')
+      .trim();
+    if (!line) continue;
+    if (/^(CUENTA|USUARIO|CREDITOS|CRÉDITOS)\s*:/i.test(line)) continue;
+    if (/BITX|DATA BOT/i.test(line)) continue;
 
-    if (cleanLine.includes('INFOR DATA') || cleanLine.includes('DENUNCIA POLICIAL')) continue;
-    if (cleanLine.includes('CUENTA:') || cleanLine.includes('USUARIO:')) continue;
-    if (cleanLine.includes('CRÉDITOS :') || cleanLine.includes('Usuario :') || cleanLine.includes('La consulta se hizo')) continue;
-    if (cleanLine.startsWith('➤ #') || cleanLine.startsWith('#')) continue;
+    // "DENUNCIA N.-1 ➮ 00611140" abre una denuncia nueva
+    const esCabecera = /DENUNCIA\s*N/i.test(line);
+    const m = line.match(FIELD_RE);
 
-    if (/^\d+\.\s*(TIPO|PLACA)/.test(cleanLine) || cleanLine.match(/DENUNCIA #?\d+/) || cleanLine.includes('ANTECEDENTES PERSONALES -') || cleanLine.includes('SIDPLA SIDPOL')) {
-      if (currentDenuncia) denuncias.push(currentDenuncia);
-      currentDenuncia = [];
-
-      // Extract number if possible from the header itself
-      if (cleanLine.match(/DENUNCIA #?\d+\s*[-—]\s*(.+)/)) {
-        const m = cleanLine.match(/DENUNCIA #?\d+\s*[-—]\s*(N°)?\s*(.+)/);
-        if (m && m[2]) {
-          let val = m[2].trim();
-          if (val.match(/^\d+$/)) { // If it's just numbers, it's probably the DNI/Placa/Denuncia No.
-            currentDenuncia.push({ label: 'REF', value: val, icon: 'tag' });
-          }
-        }
+    if (esCabecera) {
+      if (actual) denuncias.push(actual);
+      actual = { campos: [] };
+      if (m) {
+        // "DENUNCIA N.-1" -> "1". El prefijo del bot es fijo, así que se toma
+        // el número final en lugar de recortar con un regex parcial.
+        const num = m[1].match(/(\d+)\s*$/)?.[1] || '';
+        actual.campos.push({
+          label: num ? `Denuncia N.° ${num}` : 'Denuncia',
+          value: m[2].trim(),
+          icon: 'tag',
+        });
+      } else {
+        actual.campos.push({ label: 'Denuncia', value: line, icon: 'tag' });
       }
-    } else if (!currentDenuncia && cleanLine.includes('ANTECEDENTES - ONLINE')) {
-      currentDenuncia = [];
-    } else if (!currentDenuncia && (cleanLine.includes('➔') || cleanLine.includes(':'))) {
-      currentDenuncia = [];
+      continue;
     }
 
-    if (currentDenuncia) {
-      let parts = cleanLine.split('➔');
-      let usedColon = false;
-      if (parts.length < 2) {
-        parts = cleanLine.split(':');
-        usedColon = true;
-      }
+    if (!m) continue;
+    if (!actual) actual = { campos: [] };
 
-      if (parts.length >= 2) {
-        let label = parts[0].replace(/^[➔▶\d.\s]+/, '').trim();
-        let value = parts.slice(1).join(usedColon ? ':' : '➔').trim();
-        if (value.startsWith('—')) value = value.substring(1).trim();
-        if (value.startsWith('-')) value = value.substring(1).trim();
+    const label = m[1].replace(/^[•·\-\s]+/, '').trim();
+    const value = m[2].trim();
+    if (!value) continue;
 
-        let icon = 'info';
-        const labelUpper = label.toUpperCase();
-        if (labelUpper.includes('TIPO')) icon = 'category';
-        else if (labelUpper.includes('DNI') || labelUpper.includes('NOMBRE') || labelUpper.includes('PADRE') || labelUpper.includes('MADRE')) icon = 'badge';
-        else if (labelUpper.includes('PLACA')) icon = 'directions_car';
-        else if (labelUpper.includes('LUGAR')) icon = 'location_on';
-        else if (labelUpper.includes('COMISARÍA') || labelUpper.includes('COMISARIA')) icon = 'local_police';
-        else if (labelUpper.includes('HECHO') || labelUpper.includes('FECHA') || labelUpper.includes('NACIMIENTO')) icon = 'event';
-        else if (labelUpper.includes('CLAVE')) icon = 'key';
-
-        currentDenuncia.push({ label, value, icon });
-      } else if (!cleanLine.match(/DENUNCIA #?\d+/) && cleanLine.length > 5 && !cleanLine.includes('➤ CONSULTADO POR')) {
-        // Standalone value line like "INTERVENCION POLICIALES"
-        if (currentDenuncia.length > 0 && currentDenuncia[0].label === 'REF') {
-          // Probably the description
-          currentDenuncia.push({ label: 'TIPO', value: cleanLine, icon: 'category' });
-        }
-      }
-    }
+    const icon = ICONS.find(([re]) => re.test(label))?.[1] || 'info';
+    actual.campos.push({ label, value, icon });
   }
-  if (currentDenuncia) denuncias.push(currentDenuncia);
 
-  return denuncias;
+  if (actual && actual.campos.length) denuncias.push(actual);
+  // El render espera un array de arrays ({label,value,icon}[] por denuncia).
+  return denuncias.map(d => d.campos);
 }
 
 export default function Delitos() {
@@ -248,8 +252,16 @@ export default function Delitos() {
         throw new Error(data.detail || 'Error al generar la búsqueda');
       }
 
+      // El backend devuelve los PDFs en `file_paths` (plural) y el primero
+      // tambien en `file_path`. El componente esperaba `archivos`, que nunca
+      // llegaba: por eso decia "Esta consulta no contiene archivos adjuntos"
+      // aunque el bot hubiera mandado 5 DENUNCIA-*.pdf.
+      const paths = data.data?.file_paths
+        || (data.data?.file_path ? [data.data.file_path] : []);
+
       setGeneratedData({
         ...data.data,
+        archivos: paths,
         parsedDenuncias: parseDenuncias(data.data.raw_text),
         queryTarget: finalTargetId,
         queryType: selectedOption.id

@@ -75,6 +75,9 @@ BOT_COMMANDS: dict[str, dict] = {
 # (el bot a veces parte el resultado en varios mensajes).
 POLL_INTERVAL = 1.5
 STABLE_CYCLES = 2
+# Si ya hay archivos pero aún no texto, se espera más: el bot manda los PDF
+# primero y el listado (denuncias, líneas) unos segundos después.
+STABLE_CYCLES_SIN_TEXTO = 6
 
 # Prefijos de archivo que devuelve el bot → carpeta destino y extensión
 _FILE_KINDS = {
@@ -105,17 +108,22 @@ class BitxResult:
     Resultado normalizado de un comando de BitxData.
 
     Atributos:
-        data:   Campos parseados del texto (dict).
-        files:  Rutas relativas de los archivos descargados.
-        photos: Rutas relativas de las fotos del mensaje (no documentos).
+        data:     Campos parseados del texto (dict).
+        files:    Rutas relativas de los archivos descargados.
+        photos:   Rutas relativas de las fotos del mensaje (no documentos).
+        raw_text: Texto crudo del bot. El frontend lo usa para listar las
+                  denuncias (numero, condicion, fecha del hecho).
     """
 
     data: dict = field(default_factory=dict)
     files: list[str] = field(default_factory=list)
     photos: list[str] = field(default_factory=list)
+    raw_text: str = ""
 
     def to_dict(self) -> dict:
         out = dict(self.data)
+        if self.raw_text:
+            out["raw_text"] = self.raw_text
         if self.files:
             out["file_path"] = self.files[0]
             out["file_paths"] = self.files
@@ -299,7 +307,28 @@ async def run_command(
                 if is_sin_resultados(texto):
                     raise SinResultadosError(mensaje_legible(texto))
 
-                # 3. Media sin texto → puede ser una de las fotos del resultado
+                # 3. Texto con datos → parsear y acumular.
+                #    Se procesa ANTES del media: el bot adjunta el título y el
+                #    listado en el mismo mensaje que el último PDF
+                #    ("DENUNCIA-...-3.pdf ⟨ #BITX ⟩ ➟ DENUNCIAS (1-3/5)").
+                if texto and "➮" in texto:
+                    parsed = parse_bitx_response(texto)
+                    # El bot cierra con su propio encabezado. Solo se acepta
+                    # si lo trae: un texto suelto sin cabecera pertenece a una
+                    # respuesta anterior. No se filtra por DNI porque hay
+                    # respuestas que no lo incluyen (/denuncias lista números
+                    # de denuncia de 8 cifras y se confundirían con un DNI).
+                    if "_title" in parsed:
+                        if not texto_final:
+                            texto_final = texto
+                            result.raw_text = texto
+                            result.data = dict(parsed)
+                    elif len(parsed) > 4 and not texto_final:
+                        texto_final = texto
+                        result.raw_text = texto
+                        result.data = dict(parsed)
+
+                # 4. Media → puede ser una de las fotos o un PDF del resultado
                 if msg.media:
                     nombre = msg.file.name if msg.file else None
                     # El nombre que envía el bot incluye el DNI: si no coincide
@@ -318,32 +347,21 @@ async def run_command(
                         else:
                             result.files.append(ruta)
 
-                # 4. Texto con datos → parsear y acumular                #    (el facial no trae campos ➮, solo una frase + PDF)
-                if texto and ("➮" in texto or (msg.media and texto.strip())):
-                    # Mismo filtro por DNI para el texto
-                    if argument and re.search(r"\d{8}", texto) \
-                            and str(argument) not in texto:
-                        print(f"   ⏭️  texto descartado (no menciona {argument})")
-                        continue
-                    parsed = parse_bitx_response(texto)
-                    if parsed.get("_title") or len(parsed) > 4:
-                        if not texto_final:
-                            texto_final = texto
-                            result.data = dict(parsed)
-
             # ── Criterio de fin ──────────────────────────────────────────────
             # El bot manda el resultado en varios mensajes (texto + 1-2 fotos o
             # un PDF). Antes se esperaba a "progreso_visto o 2 archivos", lo que
             # forzaba sondeos de más. Ahora:
             #   - texto parseado + al menos un archivo -> listo
-            #   - sin mensajes nuevos durante STABLE_CYCLES ciclos tras haber
-            #     recibido algo -> se considera terminado
+            #   - sin mensajes nuevos durante N ciclos -> terminado. N es mayor
+            #     si aún no llegó el texto: en /denuncias el bot manda primero
+            #     los PDF (DENUNCIA-*.pdf) y el listado de denuncias después.
             if texto_final and (result.files or result.photos):
                 break
             if texto_final or result.files or result.photos:
                 if nuevos == 0:
                     quietos += 1
-                    if quietos >= STABLE_CYCLES:
+                    limite = STABLE_CYCLES if texto_final else STABLE_CYCLES_SIN_TEXTO
+                    if quietos >= limite:
                         break
                 else:
                     quietos = 0
