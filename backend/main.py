@@ -1316,15 +1316,18 @@ async def get_numeros_por_dni(request: Request, body: DniRequest, Authorization:
     check_banned_dni(dni)
 
     try:
-        # /fonos devuelve las líneas asociadas a un DNI (BitxData)
+        # /fonos devuelve las líneas asociadas a un DNI (BitxData).
+        # `numeros` ya viene fusionado con el .txt adjunto (lista completa).
         result = await bot_client.query_fonos(dni)
         await db.deduct_credits(user_id, cost)
         await api_log_search(request, user_id, dni, 'telefono_numeros_dni')
+        numeros = result.get("numeros", [])
         return {
             "status": "success",
             "dni": dni,
             "raw_text": result.get("raw_text", ""),
-            "numeros": result.get("numeros", []),
+            "numeros": numeros,
+            "total": len(numeros),
             "data": result,
         }
     except SinResultadosError as e:

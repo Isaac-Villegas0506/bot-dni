@@ -20,6 +20,7 @@ Este módulo se comunica con el bot y delega el parseo en ``bitx_parser``.
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -29,7 +30,9 @@ from telegram.bitx_parser import (
     is_progress_message,
     is_sin_resultados,
     mensaje_legible,
+    merge_numeros,
     parse_bitx_response,
+    parse_lineas_txt,
 )
 from telegram.exceptions import SinResultadosError
 
@@ -69,6 +72,8 @@ _FILE_KINDS = {
     "C4A_Azul":            ("files", "pdf"),
     "C4A_Inscripcion":     ("files", "pdf"),
     "Consolidado_Seeker":  ("files", "pdf"),
+    "Seeker_":             ("files", "txt"),
+    "Lineas_":             ("files", "txt"),
     "DENUNCIA-":           ("files", "pdf"),
     "PLA-DENUNCIA-":       ("files", "pdf"),
     "REPORTE_FACIAL":      ("files", "pdf"),
@@ -79,6 +84,10 @@ _FILE_KINDS = {
     "DNI_Amarillo_Frontal":("images", "png"),
     "DNI_Amarillo_Reverso":("images", "png"),
 }
+
+# El bot trunca el texto ("...y 1 línea(s) más") y manda el listado completo
+# en un .txt adjunto. Sin leerlo, /fonos devolvía 5 de 6 líneas.
+_TXT_COMPANIONS = ("Lineas_", "Seeker_")
 
 
 @dataclass
@@ -315,5 +324,26 @@ async def run_command(
             raise Exception(
                 f"El bot no respondió a tiempo ({etiqueta}). Inténtalo nuevamente."
             )
+
+        # ── Enriquecer con el .txt adjunto ───────────────────────────────
+        # /fonos y /seeker truncan el mensaje ("...y N línea(s) más") y mandan
+        # el listado completo en un .txt. Sin leerlo se perdían filas.
+        for rel in result.files:
+            nombre = os.path.basename(rel)
+            if not any(nombre.startswith(p) for p in _TXT_COMPANIONS):
+                continue
+            try:
+                ruta = static_base_dir / rel
+                contenido = ruta.read_text(encoding="utf-8", errors="replace")
+                txt_data = parse_lineas_txt(contenido)
+                numeros = merge_numeros(result.data, txt_data)
+                if numeros:
+                    result.data["numeros"] = numeros
+                    result.data["total_lineas"] = txt_data.get("total") or len(numeros)
+                    if txt_data.get("titular"):
+                        result.data.setdefault("nombres", txt_data["titular"])
+                    print(f"   📄 {nombre}: {len(numeros)} líneas del txt")
+            except Exception as e:
+                print(f"   ⚠️  no se pudo leer {nombre}: {e}")
 
         return result

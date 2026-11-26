@@ -532,8 +532,19 @@ function TelefonoModal({ option, onClose, onSubmit, loading }) {
 }
 
 // ─── Result view: números de un DNI (mismo diseño que Familiares Texto) ────────
-function NumerosResult({ dni, rawText, onBack }) {
-  const entries = parseTelxResponse(rawText);
+function NumerosResult({ dni, rawText, numeros, onBack }) {
+  // Preferimos el array que ya entrega el backend (BitxData). El parser de
+  // rawText entiende el formato del proveedor anterior y descartaba casi
+  // todas las líneas: la web mostraba 1 número donde el bot manda 6.
+  const fromBackend = Array.isArray(numeros) ? numeros : [];
+  const entries = fromBackend.length
+    ? fromBackend.map(n => ({
+        numero: n.numero || n.telefono || Object.values(n).find(v => /^\d{9}$/.test(v)) || '',
+        operador: n.operador || '',
+        periodo: n.periodo || '',
+        estado: n.estado || '',
+      })).filter(e => e.numero)
+    : parseTelxResponse(rawText);
   const groups = groupByOperator(entries);
   const total = entries.length;
   const [hasDownloaded, setHasDownloaded] = useState(false);
@@ -1575,7 +1586,15 @@ export default function TelefonoDNI() {
         return;
       }
 
-      setResult({ dni: data.dni, rawText: data.raw_text });
+      // El backend ya entrega `numeros` estructurado. Antes solo se guardaba
+      // raw_text y el componente lo re-parseaba con un parser viejo, que
+      // entendía el formato del proveedor anterior y descartaba la mayoría.
+      setResult({
+        dni: data.dni,
+        rawText: data.raw_text,
+        numeros: data.numeros || data.data?.numeros || [],
+        data: data.data || {},
+      });
     } catch (e) {
       setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
@@ -1756,7 +1775,7 @@ export default function TelefonoDNI() {
 
   // Show result views
   if (result) {
-    return <NumerosResult dni={result.dni} rawText={result.rawText} onBack={handleBack} />;
+    return <NumerosResult dni={result.dni} rawText={result.rawText} numeros={result.numeros} onBack={handleBack} />;
   }
   if (infoLineaResult) {
     return <InfoLineaResult phone={infoLineaResult.phone} rawText={infoLineaResult.rawText} onBack={handleBack} />;

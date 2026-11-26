@@ -401,3 +401,108 @@ def flatten_sections(parsed: BitxParsed) -> BitxParsed:
         for key, value in fields.items():
             flat.setdefault(f"{section}_{key}", value)
     return flat
+
+
+# ── Listado completo desde el .txt adjunto ────────────────────────────────────
+# El bot trunca el mensaje con "...y N línea(s) más" y manda el listado
+# completo en un archivo de texto. Formato real:
+#
+#   REPORTE COMPLETO DE LÍNEAS
+#   ================================
+#   DNI: 72928276
+#   TITULAR: VILLEGAS DIAZ LUIS HUMBERTO
+#   TOTAL: 6 lineas
+#   ================================
+#
+#   [1] NUMERO: 900583698
+#       OPERADOR: MOVISTAR
+#       PERIODO: 2023/06
+#   ------------------------------
+_ITEM_RE = re.compile(r"^\[(\d+)\]\s*NUMERO:\s*(\S+)", re.IGNORECASE)
+_SUBFIELD_RE = re.compile(r"^\s+(OPERADOR|PERIODO|ESTADO|PLAN):\s*(.+?)\s*$", re.IGNORECASE)
+_HEADER_RE = re.compile(r"^(DNI|TITULAR|TOTAL):\s*(.+?)\s*$", re.IGNORECASE)
+
+
+def parse_lineas_txt(content: str) -> dict:
+    """
+    Parsea el .txt de líneas que adjunta @Bitxdatabot.
+
+    Returns:
+        {"dni": str, "titular": str, "total": int, "numeros": [dict, ...]}
+    """
+    out: dict = {"dni": "", "titular": "", "total": 0, "numeros": []}
+    if not content:
+        return out
+
+    actual: dict | None = None
+    for raw in content.split("\n"):
+        line = raw.rstrip()
+
+        h = _HEADER_RE.match(line.strip())
+        if h:
+            clave = h.group(1).lower()
+            valor = h.group(2).strip()
+            if clave == "total":
+                try:
+                    out["total"] = int(re.sub(r"\D", "", valor) or 0)
+                except ValueError:
+                    pass
+            else:
+                out[clave] = valor
+            continue
+
+        item = _ITEM_RE.match(line.strip())
+        if item:
+            if actual:
+                out["numeros"].append(actual)
+            actual = {
+                "numero": item.group(2).strip(),
+                "operador": "",
+                "periodo": "",
+                "estado": "",
+            }
+            continue
+
+        if actual:
+            sub = _SUBFIELD_RE.match(line)
+            if sub:
+                actual[sub.group(1).lower()] = sub.group(2).strip()
+
+    if actual:
+        out["numeros"].append(actual)
+
+    if not out["total"]:
+        out["total"] = len(out["numeros"])
+    return out
+
+
+def merge_numeros(parsed: dict, txt_data: dict) -> list[dict]:
+    """
+    Une los números del mensaje con los del .txt, sin duplicados.
+
+    El .txt suele tener la lista completa; el mensaje puede venir truncado.
+    Se conserva el orden del .txt y se rellenan huecos con los del mensaje.
+    """
+    vistos: set[str] = set()
+    resultado: list[dict] = []
+
+    for fuente in (txt_data.get("numeros", []), parsed.get("numeros", [])):
+        for n in fuente:
+            num = n.get("numero") or n.get("telefono") or ""
+            # Los items del mensaje traen claves tipo numero_1
+            if not num:
+                for k, v in n.items():
+                    if k.startswith("numero") and str(v).isdigit():
+                        num = str(v)
+                        break
+            if not num or num in vistos:
+                continue
+            vistos.add(num)
+            resultado.append({
+                "numero": num,
+                "operador": n.get("operador", ""),
+                "periodo": n.get("periodo", ""),
+                "estado": n.get("estado", ""),
+            })
+
+    return resultado
