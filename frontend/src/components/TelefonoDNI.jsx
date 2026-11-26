@@ -538,12 +538,18 @@ function NumerosResult({ dni, rawText, numeros, onBack }) {
   // todas las líneas: la web mostraba 1 número donde el bot manda 6.
   const fromBackend = Array.isArray(numeros) ? numeros : [];
   const entries = fromBackend.length
-    ? fromBackend.map(n => ({
-        numero: n.numero || n.telefono || Object.values(n).find(v => /^\d{9}$/.test(v)) || '',
-        operador: n.operador || '',
-        periodo: n.periodo || '',
-        estado: n.estado || '',
-      })).filter(e => e.numero)
+    ? fromBackend.map(n => {
+        const num = n.numero || n.telefono
+          || Object.values(n).find(v => /^\d{9}$/.test(String(v))) || '';
+        return {
+          // El render usa `e.telefono`; se rellenan ambos para no romper nada.
+          numero: num,
+          telefono: num,
+          operador: n.operador || '',
+          periodo: n.periodo || '',
+          estado: n.estado || '',
+        };
+      }).filter(e => e.telefono)
     : parseTelxResponse(rawText);
   const groups = groupByOperator(entries);
   const total = entries.length;
