@@ -14,7 +14,7 @@ import AnnouncementModal from '../components/AnnouncementModal';
 
 export default function Home({ darkMode }) {
     const navigate = useNavigate();
-    const { user, setShowWelcomeModal } = useAuth();
+    const { user, openWelcomeModal } = useAuth();
     const { announcements, dismissAnnouncement } = useAnnouncements();
     const location = useLocation();
 
@@ -39,6 +39,17 @@ export default function Home({ darkMode }) {
     // Captcha state (UI-level, not in the hook)
     const [captchaToken, setCaptchaToken] = useState(null);
     const [showCaptcha, setShowCaptcha] = useState(false);
+    // Fuerza un widget nuevo en cada apertura (Cloudflare emite un token por
+    // instancia; reutilizar el widget ya resuelto dejaba el modal en blanco).
+    const [captchaKey, setCaptchaKey] = useState(0);
+
+    /** Abre el captcha con un widget fresco y recuerda la búsqueda pendiente. */
+    const abrirCaptcha = (pendiente) => {
+        setCaptchaToken(null);
+        setCaptchaKey((k) => k + 1);
+        setPendingSearch(pendiente);
+        setShowCaptcha(true);
+    };
     const [pendingSearch, setPendingSearch] = useState(null);
 
     // Auto-trigger from state (e.g. from UserHistory)
@@ -76,12 +87,11 @@ export default function Home({ darkMode }) {
         if (!dni || dni.length !== 8) { setAlertMessage('Ingresa un DNI válido de 8 dígitos'); return; }
         if (searchType === 'premium' && !user) {
             setAlertMessage('Regístrate o inicia sesión para recibir 5 créditos premium cada 24 horas.');
-            setShowWelcomeModal(true);
+            openWelcomeModal();
             return;
         }
         if (!user && !captchaToken) {
-            setPendingSearch({ type: 'dni', value: dni, searchType });
-            setShowCaptcha(true);
+            abrirCaptcha({ type: 'dni', value: dni, searchType });
             return;
         }
         setAlertMessage(null);
@@ -97,8 +107,7 @@ export default function Home({ darkMode }) {
         if (parts.length >= 3) { apM = parts.pop(); apP = parts.pop(); n = parts.join(' '); }
         else if (parts.length === 2) { apP = parts.pop(); n = parts[0]; }
         if (!user && !captchaToken) {
-            setPendingSearch({ type: 'name', n, apP, apM });
-            setShowCaptcha(true);
+            abrirCaptcha({ type: 'name', n, apP, apM });
             return;
         }
         setAlertMessage(null);
@@ -109,12 +118,19 @@ export default function Home({ darkMode }) {
     const handleCaptchaSuccess = (turnstileToken) => {
         setCaptchaToken(turnstileToken);
         setShowCaptcha(false);
-        if (!pendingSearch) return;
+        if (!pendingSearch) {
+            // El usuario resolvió el captcha sin búsqueda pendiente: el token
+            // queda guardado para el próximo envío.
+            return;
+        }
         if (pendingSearch.type === 'dni') {
             searchDirectDni(pendingSearch.value, pendingSearch.searchType, turnstileToken);
         } else if (pendingSearch.type === 'name') {
             searchByName(pendingSearch.n, pendingSearch.apP, pendingSearch.apM, turnstileToken);
         }
+        // Un token de Turnstile es de un solo uso: se descarta para que la
+        // siguiente consulta pida uno nuevo en lugar de fallar con 403.
+        setCaptchaToken(null);
         setPendingSearch(null);
     };
 
@@ -206,14 +222,23 @@ export default function Home({ darkMode }) {
                         if (!optionModal.targetUser) return;
                         if (selectedType === 'premium' && !user) {
                             setAlertMessage('Regístrate o inicia sesión para recibir 1 crédito premium cada 24 horas.');
-                            setShowWelcomeModal(true);
+                            setOptionModal({ ...optionModal, isOpen: false });
+                            openWelcomeModal();
                             return;
                         }
                         const targetDni = optionModal.targetUser.documento || optionModal.targetUser.dni;
                         setDni(targetDni);
                         setSearchMode('dni');
                         setSearchType(selectedType);
-                        searchDirectDni(targetDni, selectedType);
+                        // Sin sesión se necesita token de captcha: antes se
+                        // llamaba sin él y el backend respondía 403 "captcha no
+                        // válido" tras elegir un nombre de la lista.
+                        if (!user && !captchaToken) {
+                            abrirCaptcha({ type: 'dni', value: targetDni, searchType: selectedType });
+                            return;
+                        }
+                        searchDirectDni(targetDni, selectedType, captchaToken);
+                        setCaptchaToken(null);
                     }}
                     user={user}
                     targetUser={optionModal.targetUser}
@@ -276,7 +301,7 @@ export default function Home({ darkMode }) {
                     if (!optionModal.targetUser) return;
                     if (selectedType === 'premium' && !user) {
                         setAlertMessage('Regístrate o inicia sesión para recibir 1 crédito premium cada 24 horas.');
-                        setShowWelcomeModal(true);
+                        openWelcomeModal();
                         return;
                     }
                     const targetDni = optionModal.targetUser.documento || optionModal.targetUser.dni;
@@ -308,8 +333,16 @@ export default function Home({ darkMode }) {
                             <div className="p-5 flex flex-col items-center">
                                 <div className="w-full flex justify-center mb-5">
                                     <Turnstile
+                                        // key única por apertura: sin esto React
+                                        // reutiliza el widget ya resuelto y
+                                        // Cloudflare no vuelve a emitir token,
+                                        // así que onSuccess nunca se disparaba y
+                                        // la búsqueda salía con "captcha no válido".
+                                        key={captchaKey}
                                         siteKey="0x4AAAAAADImuetK3dfQj-A1"
                                         onSuccess={handleCaptchaSuccess}
+                                        onError={() => { setCaptchaToken(null); setCaptchaKey(k => k + 1); }}
+                                        onExpire={() => { setCaptchaToken(null); setCaptchaKey(k => k + 1); }}
                                         options={{ theme: darkMode ? 'dark' : 'light' }}
                                     />
                                 </div>
@@ -320,7 +353,7 @@ export default function Home({ darkMode }) {
                                         <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 dark:text-slate-200">¿Usuario frecuente?</p>
                                         <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Omite esta validación</p>
                                     </div>
-                                    <button onClick={() => { setShowCaptcha(false); setShowWelcomeModal(true); }} className="min-h-[44px] px-4 sm:px-5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-[11px] sm:text-[12px] transition-colors shrink-0">
+                                    <button onClick={() => { setShowCaptcha(false); openWelcomeModal(); }} className="min-h-[44px] px-4 sm:px-5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-[11px] sm:text-[12px] transition-colors shrink-0">
                                         Inicia sesión
                                     </button>
                                 </div>

@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordRese
 import { toast } from 'sonner';
 import Modal from './ui/Modal';
 import { ModalButton, ModalCloseButton, ModalHeader } from './ui/ModalElements';
+import { Z_INDEX } from '../lib/zIndex';
 
 const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100';
 
@@ -132,7 +133,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="sm" panelClassName="overflow-hidden">
+        <Modal isOpen={isOpen} onClose={onClose} size="sm" panelClassName="overflow-hidden" zIndex={Z_INDEX.modalAbove}>
             <ModalCloseButton onClick={onClose} />
 
             <div className="space-y-5 p-5 pt-6">

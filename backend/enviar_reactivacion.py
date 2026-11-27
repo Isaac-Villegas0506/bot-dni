@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import time
 import os
 import sys
 from datetime import datetime
@@ -301,14 +302,37 @@ def obtener_destinatarios(cur, reanudar: bool) -> list[tuple[str, str, int, bool
     return cur.fetchall()
 
 
-def registrar(cur, con, email: str, estado: str, error: str | None = None) -> None:
-    cur.execute("""
-        INSERT INTO email_log (email, campaign, estado, error)
-        VALUES (%s, %s, %s, %s)
-        ON CONFLICT (email, campaign) DO UPDATE
-        SET estado = EXCLUDED.estado, error = EXCLUDED.error, enviado_at = NOW()
-    """, (email, CAMPAIGN, estado, error))
-    con.commit()
+def registrar(email: str, estado: str, error: str | None = None, intentos: int = 3) -> bool:
+    """
+    Registra el envío reconectando si Supabase cerró la conexión.
+
+    El plan gratuito de Supabase corta conexiones ociosas: en una campaña
+    larga pasa a mitad del envío (psycopg2.OperationalError: server closed the
+    connection). Antes eso tumbaba el script entero; ahora se reintenta con
+    una conexión nueva. Devuelve True si quedó registrado.
+    """
+    for n in range(1, intentos + 1):
+        try:
+            con = conectar()
+            cur = con.cursor()
+            cur.execute("""
+                INSERT INTO email_log (email, campaign, estado, error)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (email, campaign) DO UPDATE
+                SET estado = EXCLUDED.estado, error = EXCLUDED.error, enviado_at = NOW()
+            """, (email, CAMPAIGN, estado, error))
+            con.commit()
+            con.close()
+            return True
+        except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+            print(f"      ⚠️  BD caída al registrar {email} (intento {n}/{intentos}): {e}")
+            if n < intentos:
+                time.sleep(2 * n)
+        except Exception as e:
+            print(f"      ⚠️  error registrando {email}: {e}")
+            return False
+    print(f"      ❌ no se pudo registrar {email} tras {intentos} intentos")
+    return False
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -320,6 +344,7 @@ async def main() -> None:
     ap.add_argument("--limite", type=int, default=0, help="Máximo de envíos")
     ap.add_argument("--pausa", type=float, default=6.0, help="Segundos entre envíos (Gmail limita el ritmo)")
     ap.add_argument("--reanudar", action="store_true", help="Saltar ya enviados")
+    ap.add_argument("--yes", "-y", action="store_true", help="No pedir confirmación (para ejecución desatendida)")
     args = ap.parse_args()
 
     if not args.dry_run and not args.enviar and not args.solo:
@@ -357,7 +382,7 @@ async def main() -> None:
         print("\nSIMULACRO: no se envió ningún correo.")
         return
 
-    if args.enviar:
+    if args.enviar and not args.yes:
         respuesta = input(f"\n¿Enviar a {total} usuarios? Escribe ENVIAR para confirmar: ")
         if respuesta.strip() != "ENVIAR":
             print("Cancelado.")
@@ -369,11 +394,11 @@ async def main() -> None:
         msg = construir_msg(email, subject, html)
         try:
             await asyncio.to_thread(_send_email_sync, msg)
-            registrar(cur, con, email, "ok")
+            registrar(email, "ok")
             enviados += 1
             print(f"  [{i}/{total}] OK   {email}")
         except Exception as e:
-            registrar(cur, con, email, "error", str(e)[:500])
+            registrar(email, "error", str(e)[:500])
             fallidos += 1
             print(f"  [{i}/{total}] FAIL {email}  -> {type(e).__name__}: {str(e)[:80]}")
         if i < total:

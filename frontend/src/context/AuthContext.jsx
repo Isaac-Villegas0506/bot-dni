@@ -59,6 +59,18 @@ export function AuthProvider({ children }) {
         setShowWelcomeModal(false);
     }, []);
 
+    /**
+     * Abre el modal de bienvenida cerrando el de auth.
+     *
+     * Antes cada llamada hacía setShowWelcomeModal(true) por su cuenta y podía
+     * quedar el AuthModal abierto debajo con el mismo z-index: el de arriba
+     * bloqueaba los clicks y no se podía cerrar ninguno de los dos.
+     */
+    const openWelcomeModal = useCallback(() => {
+        setShowAuthModal(false);
+        setShowWelcomeModal(true);
+    }, []);
+
     const openRegisterModal = useCallback(() => {
         setAuthMode('register');
         setShowAuthModal(true);
@@ -140,7 +152,7 @@ export function AuthProvider({ children }) {
             authMode, setAuthMode,
             showWelcomeModal, setShowWelcomeModal,
             login, logout,
-            openLoginModal, openRegisterModal,
+            openLoginModal, openRegisterModal, openWelcomeModal,
             requireAuth,
             refreshUser,
         }}>

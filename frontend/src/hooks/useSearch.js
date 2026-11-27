@@ -4,7 +4,7 @@ import { useLoading } from '../context/LoadingContext';
 import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 
 export function useSearch() {
-    const { token, setShowWelcomeModal, refreshUser } = useAuth();
+    const { token, openWelcomeModal, refreshUser } = useAuth();
     const { loading, showLoading, hideLoading, registerAbort, showDonation, openDonation, closeDonation } = useLoading();
 
     const [searchMode, setSearchMode] = useState(() => sessionStorage.getItem('searchMode') || 'dni');
@@ -62,7 +62,7 @@ export function useSearch() {
             if (token) refreshUser();
         } catch (e) {
             setAlertMessage(getQueryErrorMessage(e));
-            if (e.message?.includes('Regístrate')) setShowWelcomeModal(true);
+            if (e.message?.includes('Regístrate')) openWelcomeModal();
         } finally {
             hideLoading();
         }

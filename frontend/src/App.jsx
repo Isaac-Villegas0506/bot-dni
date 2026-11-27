@@ -181,7 +181,7 @@ export default function App() {
                 onLoginSuccess={login}
             />
             <WelcomeModal
-                isOpen={!isLoggedIn && showWelcomeModal}
+                isOpen={!isLoggedIn && showWelcomeModal && !showAuthModal}
                 onClose={() => setShowWelcomeModal(false)}
                 onLogin={openLoginModal}
                 onRegister={openRegisterModal}
