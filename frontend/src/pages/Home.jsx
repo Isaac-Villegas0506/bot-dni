@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -42,6 +42,9 @@ export default function Home({ darkMode }) {
     // Fuerza un widget nuevo en cada apertura (Cloudflare emite un token por
     // instancia; reutilizar el widget ya resuelto dejaba el modal en blanco).
     const [captchaKey, setCaptchaKey] = useState(0);
+    const [pendingSearch, setPendingSearch] = useState(null);
+    // DNI cuya consulta premium quedó pendiente de registro.
+    const [pendingPremiumDni, setPendingPremiumDni] = useState(null);
 
     /** Abre el captcha con un widget fresco y recuerda la búsqueda pendiente. */
     const abrirCaptcha = (pendiente) => {
@@ -50,7 +53,6 @@ export default function Home({ darkMode }) {
         setPendingSearch(pendiente);
         setShowCaptcha(true);
     };
-    const [pendingSearch, setPendingSearch] = useState(null);
 
     // Auto-trigger from state (e.g. from UserHistory)
     const hasAutoTriggered = useRef(false);
@@ -76,6 +78,40 @@ export default function Home({ darkMode }) {
     // Other UI state
     const [optionModal, setOptionModal] = useState({ isOpen: false, targetUser: null });
 
+    /**
+     * Lanza la consulta limpiando la vista previa.
+     *
+     * Si había un resultado en pantalla, Home renderiza la vista de resultados
+     * y `searchDirectDni` actualiza el estado, pero al ser el mismo DNI React
+     * no re-renderiza nada: el usuario veía que "no pasaba nada". Se limpia el
+     * resultado anterior antes de buscar para que la vista vuelva al buscador
+     * y luego muestre los datos nuevos.
+     */
+    const ejecutarBusquedaDni = useCallback((value, type, tokenCaptcha) => {
+        clearResult();
+        setAlertMessage(null);
+        searchDirectDni(value, type, tokenCaptcha);
+    }, [clearResult, searchDirectDni, setAlertMessage]);
+
+    // Retoma la consulta premium que quedó pendiente de registro: el usuario
+    // eligió premium desde la lista de nombres, se registró y seguía sin hacer
+    // nada al cerrar los modales. Se lanza en un microtask para no encadenar
+    // setState dentro del efecto.
+    const premiumRef = useRef(null);
+    useEffect(() => {
+        if (!user || !pendingPremiumDni || premiumRef.current === pendingPremiumDni) return;
+        premiumRef.current = pendingPremiumDni;
+        const dniPendiente = pendingPremiumDni;
+        const id = setTimeout(() => {
+            setPendingPremiumDni(null);
+            setDni(dniPendiente);
+            setSearchMode('dni');
+            setSearchType('premium');
+            ejecutarBusquedaDni(dniPendiente, 'premium');
+        }, 0);
+        return () => clearTimeout(id);
+    }, [user, pendingPremiumDni, ejecutarBusquedaDni, setDni, setSearchMode, setSearchType]);
+
     const handleBack = () => {
         resetSearch();
         navigate('/');
@@ -86,7 +122,10 @@ export default function Home({ darkMode }) {
         if (e) e.preventDefault();
         if (!dni || dni.length !== 8) { setAlertMessage('Ingresa un DNI válido de 8 dígitos'); return; }
         if (searchType === 'premium' && !user) {
-            setAlertMessage('Regístrate o inicia sesión para recibir 5 créditos premium cada 24 horas.');
+            // Solo el modal de registro: mostrar además una alerta dejaba dos
+            // modales encima y ninguno se podía cerrar.
+            setAlertMessage(null);
+            setPendingPremiumDni(dni);
             openWelcomeModal();
             return;
         }
@@ -95,7 +134,7 @@ export default function Home({ darkMode }) {
             return;
         }
         setAlertMessage(null);
-        await searchDirectDni(dni, searchType, captchaToken);
+        await ejecutarBusquedaDni(dni, searchType, captchaToken);
         setCaptchaToken(null);
     };
 
@@ -124,7 +163,7 @@ export default function Home({ darkMode }) {
             return;
         }
         if (pendingSearch.type === 'dni') {
-            searchDirectDni(pendingSearch.value, pendingSearch.searchType, turnstileToken);
+            ejecutarBusquedaDni(pendingSearch.value, pendingSearch.searchType, turnstileToken);
         } else if (pendingSearch.type === 'name') {
             searchByName(pendingSearch.n, pendingSearch.apP, pendingSearch.apM, turnstileToken);
         }
@@ -220,13 +259,22 @@ export default function Home({ darkMode }) {
                     onClose={() => setOptionModal({ ...optionModal, isOpen: false })}
                     onConfirm={(selectedType) => {
                         if (!optionModal.targetUser) return;
+                        const targetDni = optionModal.targetUser.documento || optionModal.targetUser.dni;
+                        // Cierra SIEMPRE el selector antes de abrir otra cosa: si
+                        // queda abierto debajo, su backdrop con z-index alto
+                        // bloquea los clicks del modal de arriba.
+                        setOptionModal({ ...optionModal, isOpen: false });
+
                         if (selectedType === 'premium' && !user) {
-                            setAlertMessage('Regístrate o inicia sesión para recibir 1 crédito premium cada 24 horas.');
-                            setOptionModal({ ...optionModal, isOpen: false });
+                            // Un único modal: el de registro. Antes también se
+                            // mostraba un AlertModal encima, y los dos juntos no
+                            // se podían cerrar.
+                            setAlertMessage(null);
+                            setPendingPremiumDni(targetDni);
                             openWelcomeModal();
                             return;
                         }
-                        const targetDni = optionModal.targetUser.documento || optionModal.targetUser.dni;
+
                         setDni(targetDni);
                         setSearchMode('dni');
                         setSearchType(selectedType);
@@ -237,7 +285,7 @@ export default function Home({ darkMode }) {
                             abrirCaptcha({ type: 'dni', value: targetDni, searchType: selectedType });
                             return;
                         }
-                        searchDirectDni(targetDni, selectedType, captchaToken);
+                        ejecutarBusquedaDni(targetDni, selectedType, captchaToken);
                         setCaptchaToken(null);
                     }}
                     user={user}
@@ -299,16 +347,28 @@ export default function Home({ darkMode }) {
                 onClose={() => setOptionModal({ ...optionModal, isOpen: false })}
                 onConfirm={(selectedType) => {
                     if (!optionModal.targetUser) return;
+                    const targetDni = optionModal.targetUser.documento || optionModal.targetUser.dni;
+                    // Se cierra el selector antes de abrir cualquier otro modal:
+                    // si queda abierto debajo, su overlay bloquea los clicks.
+                    setOptionModal({ ...optionModal, isOpen: false });
+
                     if (selectedType === 'premium' && !user) {
-                        setAlertMessage('Regístrate o inicia sesión para recibir 1 crédito premium cada 24 horas.');
+                        // Solo el modal de registro, sin alerta encima.
+                        setAlertMessage(null);
+                        setPendingPremiumDni(targetDni);
                         openWelcomeModal();
                         return;
                     }
-                    const targetDni = optionModal.targetUser.documento || optionModal.targetUser.dni;
+
                     setDni(targetDni);
                     setSearchMode('dni');
                     setSearchType(selectedType);
-                    searchDirectDni(targetDni, selectedType);
+                    if (!user && !captchaToken) {
+                        abrirCaptcha({ type: 'dni', value: targetDni, searchType: selectedType });
+                        return;
+                    }
+                    ejecutarBusquedaDni(targetDni, selectedType, captchaToken);
+                    setCaptchaToken(null);
                 }}
                 user={user}
                 targetUser={optionModal.targetUser}

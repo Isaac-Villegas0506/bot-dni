@@ -61,8 +61,15 @@ export function useSearch() {
             setResult(data);
             if (token) refreshUser();
         } catch (e) {
-            setAlertMessage(getQueryErrorMessage(e));
-            if (e.message?.includes('Regístrate')) openWelcomeModal();
+            const msg = getQueryErrorMessage(e);
+            // Un 403 de captcha no debe abrir el modal de registro: confunde y
+            // apila modales. Se muestra el aviso y se deja reintentar limpio.
+            if (/captcha|turnstile/i.test(msg)) {
+                setAlertMessage('La verificación expiró. Vuelve a intentar la consulta.');
+            } else {
+                setAlertMessage(msg);
+                if (e.message?.includes('Regístrate')) openWelcomeModal();
+            }
         } finally {
             hideLoading();
         }
