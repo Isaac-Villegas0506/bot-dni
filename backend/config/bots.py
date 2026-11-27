@@ -21,13 +21,18 @@ incremental cuando se refactorizan los métodos individuales.
 #   OK      @DEALERDATABOT      C1+C2   menú de consultas
 #   OK      @HexDataBOT         C1+C2   menú de consultas
 #   OK      @ImperialData_bot   C1+C2   menú de consultas
-#   OK      @olimpodataxbot     C1+C2   NUEVO: reemplazo de @OlimpoDataBot
+#   OK      @olimpodataxbot     C1+C2   reemplazo de @OlimpoDataBot
+#   OK      @InsightDataBot     C1+C2   responde /dnix (RENIEC BASE - GRATIS)
+#   OK      @SectaData_Bot      C1+C2   responde /dnix (RENIEC BASE - GRATIS)
+#   OK      @OKANEE_D0X_BOT     C1+C2   responde /dnix (RENIEC BASE - GRATIS)
 #
 #   MUERTO  @OlimpoDataBot      C1+C2   "ha dejado de prestar servicios",
 #                                        migró a @olimpodataxbot
 #   TIENDA  @Infordata1_bot     C1+C2   ahora es mitienda_luffyventas
 #                                        (tienda de ropa, no hace consultas)
 #
+# Los tres últimos comparten formato de respuesta
+# ("[#BOT] ➾ RENIEC BASE - GRATIS"), que el parser actual ya entiende.
 # Se conservan solo los verificados: los caídos gastaban un intento completo
 # (hasta 45 s) en cada consulta antes de saltar al siguiente.
 FREE_BOTS: list[str] = [
@@ -36,6 +41,9 @@ FREE_BOTS: list[str] = [
     "@HexDataBOT",
     "@ImperialData_bot",
     "@olimpodataxbot",
+    "@InsightDataBot",
+    "@SectaData_Bot",
+    "@OKANEE_D0X_BOT",
 ]
 
 # ── Bot PREMIUM (todas las consultas de pago) ────────────────────────────────
