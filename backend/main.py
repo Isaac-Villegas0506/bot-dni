@@ -276,17 +276,12 @@ async def startup_event():
         init_firebase_admin()
         
         await bot_client.start()
-        all_bots = [
-            '@OlimpoDataBot', 
-            '@SeleneSearch_Bot', 
-            '@DEALERDATABOT', 
-            '@HexDataBOT', 
-            '@Infordata1_bot', 
-            '@ImperialData_bot',
-            '@Infordata1_bot'
-        ]
-        bot_client.bot_pool = BotPool(list(dict.fromkeys([b for b in all_bots if b])))
-        logger.info("[OK] Bot pool initialized")
+        # Se usa la lista central de config/bots.py en lugar de duplicarla aquí:
+        # antes estaba hardcodeada, repetía @Infordata1_bot dos veces e incluía
+        # bots ya muertos, gastando un intento (hasta 45 s) por consulta.
+        from config.bots import FREE_BOTS
+        bot_client.bot_pool = BotPool(list(dict.fromkeys(FREE_BOTS)))
+        logger.info(f"[OK] Bot pool initialized ({len(FREE_BOTS)} bots)")
     except Exception as e: logger.error(f"❌ Error Bot/Firebase: {e}")
     
     try: 

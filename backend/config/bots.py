@@ -15,20 +15,27 @@ incremental cuando se refactorizan los métodos individuales.
 """
 
 # ── Bots gratuitos ────────────────────────────────────────────────────────────
-# Verificados el 2026-11-26:
-#   OK   @SeleneSearch_Bot, @DEALERDATABOT, @HexDataBOT, @ImperialData_bot
-#   MUERTO  @Infordata1_bot  → ya no es de consultas, ahora es una tienda
-#   MIGRADO @OlimpoDataBot   → anuncia "NOS HEMOS MUDADO"
-# Los que fallan se dejan al final como último recurso: el código los salta
-# solos al no obtener respuesta con datos.
+# Verificados el 2026-11-26 con AMBAS cuentas (ver diagnosticar_bots.py):
+#
+#   OK      @SeleneSearch_Bot   C1+C2   menú de consultas
+#   OK      @DEALERDATABOT      C1+C2   menú de consultas
+#   OK      @HexDataBOT         C1+C2   menú de consultas
+#   OK      @ImperialData_bot   C1+C2   menú de consultas
+#   OK      @olimpodataxbot     C1+C2   NUEVO: reemplazo de @OlimpoDataBot
+#
+#   MUERTO  @OlimpoDataBot      C1+C2   "ha dejado de prestar servicios",
+#                                        migró a @olimpodataxbot
+#   TIENDA  @Infordata1_bot     C1+C2   ahora es mitienda_luffyventas
+#                                        (tienda de ropa, no hace consultas)
+#
+# Se conservan solo los verificados: los caídos gastaban un intento completo
+# (hasta 45 s) en cada consulta antes de saltar al siguiente.
 FREE_BOTS: list[str] = [
     "@SeleneSearch_Bot",
     "@DEALERDATABOT",
     "@HexDataBOT",
     "@ImperialData_bot",
-    # Último recurso (pueden estar caídos)
-    "@OlimpoDataBot",
-    "@Infordata1_bot",
+    "@olimpodataxbot",
 ]
 
 # ── Bot PREMIUM (todas las consultas de pago) ────────────────────────────────
