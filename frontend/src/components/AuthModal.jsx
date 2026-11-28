@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import Modal from './ui/Modal';
 import { ModalButton, ModalCloseButton, ModalHeader } from './ui/ModalElements';
 import { Z_INDEX } from '../lib/zIndex';
+import { ERRORES_CUENTA } from '../utils/mensajes';
 
 const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100';
 
@@ -49,8 +50,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
             onClose();
         } catch (err) {
             console.error(err);
-            toast.error(err.message || 'Error al iniciar sesión con Google');
-            setError(err.message || 'Error al iniciar sesión con Google');
+            toast.error(ERRORES_CUENTA.googleFalló);
+            setError(ERRORES_CUENTA.googleFalló);
         } finally {
             setLoading(false);
         }
@@ -58,8 +59,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
 
     const handlePasswordReset = async () => {
         if (!email) {
-            toast.error('Por favor, ingresa tu correo electrónico en el campo superior.');
-            setError('Ingresa tu correo antes de solicitar el cambio de contraseña.');
+            toast.error(ERRORES_CUENTA.correoInvalido);
+            setError(ERRORES_CUENTA.correoInvalido);
             return;
         }
         try {
@@ -69,8 +70,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
             setError(null);
         } catch (err) {
             console.error(err);
-            toast.error('Error al enviar el correo de recuperación.');
-            setError('Error al enviar el correo. Verifica que esté bien escrito.');
+            toast.error(ERRORES_CUENTA.correoNoEnviado);
+            setError(ERRORES_CUENTA.correoNoEnviado);
         } finally {
             setLoading(false);
         }

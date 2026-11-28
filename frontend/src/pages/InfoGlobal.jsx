@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
+import { mensajeDeError , ERRORES_CONSULTA} from '../utils/mensajes';
 import AlertModal from '../components/AlertModal';
 import { OptionCard, ResultPanel, BackButton } from '../components/ui/ConsultSurface';
 import HelpModal from '../components/HelpModal';
@@ -72,12 +73,12 @@ export default function InfoGlobal() {
 
     const handleGenerate = useCallback(async (targetDni = dni) => {
         if (!targetDni || targetDni.length !== 8) {
-            setAlertMessage('Por favor ingresa un DNI válido de 8 dígitos.');
+            setAlertMessage(ERRORES_CONSULTA.dniIncompleto);
             return;
         }
 
         if (!user) {
-            setAlertMessage('Debes iniciar sesión para usar esta consulta premium.');
+            setAlertMessage(ERRORES_CONSULTA.requiereSesion);
             setShowInputModal(false);
             openLoginModal();
             return;
@@ -104,9 +105,9 @@ export default function InfoGlobal() {
                 if (response.status === 402) {
                     setAlertMessage(data.detail?.message || 'Créditos insuficientes para realizar esta consulta.');
                 } else if (response.status === 404) {
-                    setAlertMessage('No se encontró información para este DNI.');
+                    setAlertMessage(ERRORES_CONSULTA.dniSinDatosOtro);
                 } else if (response.status === 429) {
-                    setAlertMessage('El bot está procesando demasiadas solicitudes. Por favor, intenta de nuevo en unos momentos.');
+                    setAlertMessage(ERRORES_CONSULTA.demasiadasConsultas);
                 } else {
                     setAlertMessage(data.detail || 'Error al buscar información.');
                 }
@@ -117,7 +118,7 @@ export default function InfoGlobal() {
             setHasDownloaded(false);
             setView('result');
         } catch (e) {
-            setAlertMessage(e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión con el servidor.');
+            setAlertMessage(e?.name === 'TimeoutError' || e?.name === 'AbortError' ? mensajeDeError(e, 'dni').message : 'Error de conexión con el servidor.');
         } finally {
             hideLoading();
         }
@@ -170,7 +171,7 @@ export default function InfoGlobal() {
             setHasDownloaded(true);
         } catch (error) {
             console.error('Error downloading PDF:', error);
-            setAlertMessage('No se pudo descargar el archivo.');
+            setAlertMessage(ERRORES_CONSULTA.archivoNoDisponible);
         }
     };
 

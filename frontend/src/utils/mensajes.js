@@ -82,6 +82,47 @@ export const ERRORES_CONSULTA = {
     archivoVacio:
         'El archivo llegó vacío. ' +
         'Vuelve a generar la consulta.',
+
+    // ── Otros apartados ────────────────────────────────────────────────────
+    telefonoSinDatos: (num) =>
+        `No encontramos información para el número ${num}. ` +
+        'Revisa que tenga 9 dígitos y que sea un celular peruano.',
+
+    telefonoInvalido:
+        'El número debe tener 9 dígitos y empezar por 9. ' +
+        'Escríbelo de nuevo sin espacios ni guiones.',
+
+    placaSinDatos: (placa) =>
+        `No encontramos información para la placa ${placa}. ` +
+        'Verifica que esté bien escrita (6 caracteres, sin guiones).',
+
+    placaInvalida:
+        'La placa debe tener 6 caracteres. ' +
+        'Escríbela sin espacios ni guiones, por ejemplo: ABC123.',
+
+    dniSinDatosOtro:
+        'No encontramos resultados para ese DNI. ' +
+        'Verifica que los 8 dígitos estén bien escritos.',
+
+    rucInvalido:
+        'El RUC debe tener 11 dígitos. ' +
+        'Escríbelo de nuevo sin espacios ni guiones.',
+
+    imagenInvalida:
+        'Ese archivo no es una imagen válida. ' +
+        'Sube una foto en formato JPG o PNG.',
+
+    imagenFaltante:
+        'No adjuntaste ninguna foto. ' +
+        'Selecciona una imagen de tu dispositivo y vuelve a intentarlo.',
+
+    rostroNoReconocido:
+        'No pudimos reconocer un rostro en la foto. ' +
+        'Usa una imagen clara, de frente y con buena luz.',
+
+    campoFaltante: (campo) =>
+        `Falta completar ${campo}. ` +
+        'Rellena ese dato y vuelve a intentarlo.',
 };
 
 /** Errores de cuenta y acceso. */
@@ -132,6 +173,74 @@ export function mensajeDeExcepcion(e) {
     // TypeError de fetch = fallo de red (DNS, sin internet, CORS)
     if (e instanceof TypeError) return ERRORES_RED.sinConexion;
     return ERRORES_RED.generico;
+}
+
+/**
+ * Resuelve cualquier error de una consulta a { type, title, message }.
+ *
+ * Es el punto único que deben usar los componentes de consulta: acepta tanto
+ * una excepción de red como la respuesta de un endpoint con error, así que
+ * sustituye al uso directo de `getQueryErrorMessage(error)` + `type: 'error'`
+ * (que mostraba "Error en la consulta" para todo y dejaba el mensaje vacío
+ * cuando el error venía del backend).
+ *
+ * @param {Error|{status:number, detail?:string}} error
+ * @param {'dni'|'name'|'telefono'|'placa'|'generico'} contexto
+ * @param {string} [valor] DNI, teléfono o placa consultada (para personalizar).
+ */
+export function mensajeDeError(error, contexto = 'generico', valor = '') {
+    // Respuesta HTTP ya inspeccionada por el componente
+    if (error && typeof error.status === 'number') {
+        return mensajeDeRespuesta(error.status, error.detail, contexto, valor);
+    }
+    // Excepción lanzada con un mensaje ya redactado por el backend
+    const detalle = typeof error?.message === 'string' ? error.message : '';
+    if (detalle) {
+        const { type, title } = mensajeDeRespuesta(
+            /cr[eé]dito/i.test(detalle) ? 402 : 0,
+            detalle,
+            contexto,
+            valor,
+        );
+        // Si el mensaje del backend es legible se respeta; si no, catálogo.
+        const legible =
+            detalle.length > 12 &&
+            detalle.length < 180 &&
+            !/[*`➮➾➟➡]|tg:\/\//.test(detalle) &&
+            detalle !== detalle.toUpperCase();
+        return {
+            type,
+            title,
+            message: legible ? detalle : mensajeDeExcepcion(error),
+        };
+    }
+    return {
+        type: 'error',
+        title: 'No se pudo completar la consulta',
+        message: mensajeDeExcepcion(error),
+    };
+}
+
+/**
+ * Elige el texto de "sin resultados" según lo que se consultó.
+ *
+ * Cada apartado busca cosas distintas (DNI, nombre, teléfono, placa), así que
+ * decir siempre "para ese DNI" confundía en búsquedas de teléfono o vehículos.
+ */
+function SIN_DATOS_POR_CONTEXTO(contexto, valor) {
+    const v = valor || '';
+    switch (contexto) {
+        case 'name':
+            return ERRORES_CONSULTA.nombreSinDatos;
+        case 'telefono':
+            return ERRORES_CONSULTA.telefonoSinDatos(v || 'consultado');
+        case 'placa':
+            return ERRORES_CONSULTA.placaSinDatos(v || 'consultada');
+        case 'dni':
+            return ERRORES_CONSULTA.dniSinDatos(v || 'consultado');
+        default:
+            return ERRORES_CONSULTA.dniSinDatosOtro;
+    }
 }
 
 /**
@@ -201,9 +310,7 @@ export function mensajeDeRespuesta(status, detail, contexto = 'dni', valor = '')
             return {
                 type: 'warning',
                 title: 'Sin resultados',
-                message: contexto === 'name'
-                    ? ERRORES_CONSULTA.nombreSinDatos
-                    : ERRORES_CONSULTA.dniSinDatos(valor || 'consultado'),
+                message: SIN_DATOS_POR_CONTEXTO(contexto, valor),
             };
         case 429:
             return {

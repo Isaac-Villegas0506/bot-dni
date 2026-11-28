@@ -8,7 +8,8 @@ import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
+import { mensajeDeError , ERRORES_CONSULTA, ERRORES_RED} from '../utils/mensajes';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
@@ -454,7 +455,7 @@ export default function FamiliaresDNI() {
       setAlert({
         isOpen: true,
         type: 'warning',
-        message: `❌ No tienes suficientes créditos. Esta opción cuesta ${cost} crédito(s) y tienes ${userCredits} disponible(s).`,
+        message: ERRORES_CONSULTA.sinCreditos(userCredits, cost),
       });
       setShowInputModal(false);
       return;
@@ -467,7 +468,7 @@ export default function FamiliaresDNI() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setAlert({ isOpen: true, type: 'warning', message: 'Debes iniciar sesión para usar esta función Premium.' });
+        setAlert({ isOpen: true, type: 'warning', message: ERRORES_CONSULTA.requiereSesion });
         hideLoading();
         return;
       }
@@ -488,7 +489,7 @@ export default function FamiliaresDNI() {
       const data = await res.json();
 
       if (!res.ok) {
-        let errMsg = 'Error al generar el árbol familiar.';
+        let errMsg = ERRORES_RED.generico;
         if (data.detail) {
           if (data.detail?.code === 'INSUFFICIENT_CREDITS') {
             errMsg = `\u274c ${data.detail.message}`;
@@ -561,7 +562,9 @@ export default function FamiliaresDNI() {
     } catch (err) {
       hideLoading();
       if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
-        setAlert({ isOpen: true, type: 'error', message: getQueryErrorMessage(err) });
+        setAlert({ isOpen: true, type: mensajeDeError(err, 'dni').type,
+        title: mensajeDeError(err, 'dni').title,
+        message: mensajeDeError(err, 'dni').message });
         return;
       }
       const isWarning = err.message.includes('\u274c') || err.message.includes('No se encontraron');

@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { useCreditCosts } from '../hooks/useCredits';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
+import { ERRORES_CONSULTA, ERRORES_RED, mensajeDeError } from '../utils/mensajes';
 
 const options = [
   {
@@ -134,7 +135,7 @@ export default function GeneratorReniec() {
       setAlert({
         isOpen: true,
         type: 'warning',
-        message: `❌ No tienes suficientes créditos. Esta opción cuesta ${cost} crédito(s) y tienes ${userCredits} disponible(s).`,
+        message: ERRORES_CONSULTA.sinCreditos(userCredits, cost),
       });
       setShowInputModal(false);
       return;
@@ -155,7 +156,7 @@ export default function GeneratorReniec() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setAlert({ isOpen: true, type: 'warning', message: "Debes iniciar sesión para usar esta función Premium" });
+        setAlert({ isOpen: true, type: 'warning', message: ERRORES_CONSULTA.requiereSesion });
         hideLoading();
         return;
       }
@@ -174,7 +175,7 @@ export default function GeneratorReniec() {
       } else if (selectedOption.id === 'arbol') {
         endpoint = '/api/reniec/arbol';
       } else {
-        setAlert({ isOpen: true, type: 'info', message: "Función en desarrollo." });
+        setAlert({ isOpen: true, type: 'warning', title: 'No disponible', message: ERRORES_CONSULTA.servicioPausado });
         hideLoading();
         return;
       }
@@ -191,7 +192,7 @@ export default function GeneratorReniec() {
       const data = await res.json();
 
       if (!res.ok) {
-        let errMsg = "Error al generar documento";
+        let errMsg = ERRORES_RED.generico;
         if (data.detail) {
           if (data.detail?.code === 'INSUFFICIENT_CREDITS') {
             errMsg = `\u274c ${data.detail.message}`;
@@ -224,7 +225,9 @@ export default function GeneratorReniec() {
 
     } catch (err) {
       console.error(err);
-      setAlert({ isOpen: true, type: 'error', message: getQueryErrorMessage(err) });
+      setAlert({ isOpen: true, type: mensajeDeError(err, 'dni').type,
+        title: mensajeDeError(err, 'dni').title,
+        message: mensajeDeError(err, 'dni').message });
     } finally {
       hideLoading();
     }

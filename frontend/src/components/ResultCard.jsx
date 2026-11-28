@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import AlertModal from './AlertModal';
 import { BackButton } from './ui/ConsultSurface';
 import { getApiUrl } from '../utils/api';
+import { ERRORES_RED } from '../utils/mensajes';
 
 export default function ResultCard({ result: incomingResult, searchType, onOpenDonation, onBack }) {
     const [previewData, setPreviewData] = useState(null);
@@ -442,7 +443,7 @@ export default function ResultCard({ result: incomingResult, searchType, onOpenD
 
     const handleCopyDNI = (dni) => {
         if (!dni) return;
-        navigator.clipboard.writeText(dni).then(() => toast.success('DNI copiado con éxito')).catch(() => toast.error('Error al copiar'));
+        navigator.clipboard.writeText(dni).then(() => toast.success('DNI copiado con éxito')).catch(() => toast.error(ERRORES_RED.generico));
     };
 
     if (!result) return null;

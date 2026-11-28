@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import { ERRORES_CONSULTA } from '../utils/mensajes';
 
 export default function ReferidosPage() {
     useAuth();
@@ -73,7 +74,7 @@ export default function ReferidosPage() {
 
     const handlePromoSubmit = async (e) => {
         e.preventDefault();
-        if (!tiktokUrl || !tiktokUsername) return toast.error('Completa ambos campos');
+        if (!tiktokUrl || !tiktokUsername) return toast.error(ERRORES_CONSULTA.campoFaltante('todos los datos'));
         
         setSubmittingPromo(true);
         try {

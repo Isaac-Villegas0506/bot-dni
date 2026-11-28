@@ -8,9 +8,10 @@ import { useCreditCosts } from '../hooks/useCredits';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
+import { ERRORES_CONSULTA, ERRORES_RED, mensajeDeError } from '../utils/mensajes';
 
 export default function CertificadosPoliciales() {
   const { isFeatureEnabled } = useSettings();
@@ -132,7 +133,7 @@ export default function CertificadosPoliciales() {
       setAlert({
         isOpen: true,
         type: 'insufficient_credits',
-        message: `No tienes suficientes créditos para realizar esta consulta. Esta acción requiere ${cost} créditos.`,
+        message: ERRORES_CONSULTA.sinCreditos(userCredits, cost),
       });
       setShowInputModal(false);
       return;
@@ -163,11 +164,11 @@ export default function CertificadosPoliciales() {
       const data = await res.json();
 
       if (!res.ok) {
-        let errMsg = "Ocurrió un error inesperado. Intenta nuevamente.";
+        let errMsg = ERRORES_RED.generico;
         if (res.status === 402) {
-          errMsg = 'Créditos insuficientes. Recarga para continuar.';
+          errMsg = ERRORES_CONSULTA.sinCreditos();
         } else if (res.status === 404) {
-          errMsg = '⚠️ No se encontraron resultados para el DNI ingresado. Verifica los datos e intenta nuevamente en 15 segundos.';
+          errMsg = ERRORES_CONSULTA.dniSinDatosOtro;
         } else if (data.detail) {
           errMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
         }
@@ -185,7 +186,9 @@ export default function CertificadosPoliciales() {
       setView('result');
       setHasDownloaded(false);
     } catch (err) {
-      setAlert({ isOpen: true, type: 'error', message: getQueryErrorMessage(err) });
+      setAlert({ isOpen: true, type: mensajeDeError(err, 'dni').type,
+        title: mensajeDeError(err, 'dni').title,
+        message: mensajeDeError(err, 'dni').message });
     } finally {
       hideLoading();
     }
@@ -262,7 +265,7 @@ export default function CertificadosPoliciales() {
         document.body.removeChild(link);
       } catch (err) {
         console.error(err);
-        setAlert({ isOpen: true, type: 'error', message: 'Error al generar la imagen' });
+        setAlert({ isOpen: true, type: 'error', title: 'No se pudo generar', message: ERRORES_CONSULTA.archivoNoDisponible });
       }
     }
   };

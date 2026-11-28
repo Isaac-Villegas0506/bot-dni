@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 export default function PromoRequests() {
     const [requests, setRequests] = useState([]);
@@ -54,7 +55,7 @@ export default function PromoRequests() {
                 toast.error(data.detail || 'Error al actualizar');
             }
         } catch {
-            toast.error('Error de conexión');
+            toast.error(ERRORES_RED.sinConexion);
         } finally {
             setUpdating(null);
         }

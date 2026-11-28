@@ -7,6 +7,7 @@ import { useSettings } from '../../context/settingsContextValue';
 import ConfirmationModal from './ConfirmationModal';
 import { PRICE_LABELS } from './priceLabels';
 import Modal from '../ui/Modal';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 
 export default function SettingsManagement() {
@@ -57,10 +58,10 @@ export default function SettingsManagement() {
                 setMaintenance(newState);
                 toast.success(newState ? 'Modo mantenimiento activado' : 'Sistema restaurado');
             } else {
-                toast.error('Error al cambiar estado');
+                toast.error(ERRORES_RED.generico);
             }
         } catch {
-            toast.error('Error de red al cambiar estado');
+            toast.error(ERRORES_RED.sinConexion);
         } finally {
             setModal({ isOpen: false });
         }

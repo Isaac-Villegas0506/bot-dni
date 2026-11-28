@@ -8,7 +8,8 @@ import { useCreditCosts } from '../hooks/useCredits';
 import AlertModal from './AlertModal';
 import HelpModal from './HelpModal';
 import { toast } from 'sonner';
-import { queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { queryFetch, QUERY_TIMEOUTS } from '../utils/api';
+import { mensajeDeError , ERRORES_CONSULTA, ERRORES_RED} from '../utils/mensajes';
 import { OptionCard } from './ui/ConsultSurface';
 
 // ─── Option definitions ───────────────────────────────────────────────────────
@@ -583,7 +584,7 @@ function NumerosResult({ dni, rawText, numeros, onBack }) {
     if (!text) return;
     navigator.clipboard.writeText(text)
       .then(() => toast.success("Copiado al portapapeles"))
-      .catch(() => toast.error("Error al copiar"));
+      .catch(() => toast.error(ERRORES_RED.generico));
   };
 
   return (
@@ -773,7 +774,7 @@ function InfoLineaResult({ phone, rawText, onBack }) {
     if (!text) return;
     navigator.clipboard.writeText(text)
       .then(() => toast.success(`${type} copiado con éxito`))
-      .catch(() => toast.error("Error al copiar"));
+      .catch(() => toast.error(ERRORES_RED.generico));
   };
 
   return (
@@ -1216,7 +1217,7 @@ function TitularResult({ phone, rawText, onBack }) {
     if (!text) return;
     navigator.clipboard.writeText(text)
       .then(() => toast.success(`${type} copiado con éxito`))
-      .catch(() => toast.error("Error al copiar"));
+      .catch(() => toast.error(ERRORES_RED.generico));
   };
 
   return (
@@ -1563,7 +1564,7 @@ export default function TelefonoDNI() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setAlert({ isOpen: true, type: 'warning', message: 'Debes iniciar sesión para usar esta función.' });
+        setAlert({ isOpen: true, type: 'warning', message: ERRORES_CONSULTA.requiereSesion });
         hideLoading();
         return;
       }
@@ -1602,7 +1603,7 @@ export default function TelefonoDNI() {
         data: data.data || {},
       });
     } catch (e) {
-      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? mensajeDeError(e, 'telefono').message : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
       hideLoading();
     }
@@ -1615,7 +1616,7 @@ export default function TelefonoDNI() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setAlert({ isOpen: true, type: 'warning', message: 'Debes iniciar sesión para usar esta función.' });
+        setAlert({ isOpen: true, type: 'warning', message: ERRORES_CONSULTA.requiereSesion });
         hideLoading();
         return;
       }
@@ -1631,9 +1632,9 @@ export default function TelefonoDNI() {
 
       if (!res.ok) {
         if (res.status === 404) {
-          setAlert({ isOpen: true, type: 'warning', message: 'No se encontraron resultados para este número. Verifique el número e intente nuevamente.' });
+          setAlert({ isOpen: true, type: 'warning', title: 'Sin resultados', message: ERRORES_CONSULTA.telefonoSinDatos(phone) });
         } else if (res.status === 422) {
-          setAlert({ isOpen: true, type: 'warning', message: 'No se encontraron datos. Intente nuevamente en 10 segundos.' });
+          setAlert({ isOpen: true, type: 'warning', title: 'Sin resultados', message: ERRORES_CONSULTA.telefonoSinDatos(phone) });
         } else if (res.status === 402) {
           const detail = data.detail || {};
           setAlert({ isOpen: true, type: 'warning', message: detail.message || 'Créditos insuficientes.' });
@@ -1648,7 +1649,7 @@ export default function TelefonoDNI() {
 
       setInfoLineaResult({ phone: data.phone, rawText: data.raw_text });
     } catch (e) {
-      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? mensajeDeError(e, 'telefono').message : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
       hideLoading();
     }
@@ -1661,7 +1662,7 @@ export default function TelefonoDNI() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setAlert({ isOpen: true, type: 'warning', message: 'Debes iniciar sesión para usar esta función.' });
+        setAlert({ isOpen: true, type: 'warning', message: ERRORES_CONSULTA.requiereSesion });
         hideLoading();
         return;
       }
@@ -1681,7 +1682,7 @@ export default function TelefonoDNI() {
       }
       setOperadoraResult(data);
     } catch (e) {
-      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión.' });
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? mensajeDeError(e, 'telefono').message : 'Error de conexión.' });
     } finally {
       hideLoading();
     }
@@ -1694,7 +1695,7 @@ export default function TelefonoDNI() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setAlert({ isOpen: true, type: 'warning', message: 'Debes iniciar sesión para usar esta función.' });
+        setAlert({ isOpen: true, type: 'warning', message: ERRORES_CONSULTA.requiereSesion });
         hideLoading();
         return;
       }
@@ -1710,9 +1711,9 @@ export default function TelefonoDNI() {
 
       if (!res.ok) {
         if (res.status === 404) {
-          setAlert({ isOpen: true, type: 'warning', message: 'No se encontraron datos para este número. Verifique el número e intente nuevamente.' });
+          setAlert({ isOpen: true, type: 'warning', title: 'Sin resultados', message: ERRORES_CONSULTA.telefonoSinDatos(phone) });
         } else if (res.status === 422) {
-          setAlert({ isOpen: true, type: 'warning', message: 'No se encontraron datos. Verifique el número e intente nuevamente en 10 o 15 segundos.' });
+          setAlert({ isOpen: true, type: 'warning', title: 'Sin resultados', message: ERRORES_CONSULTA.telefonoSinDatos(phone) });
         } else if (res.status === 402) {
           const detail = data.detail || {};
           setAlert({ isOpen: true, type: 'warning', message: detail.message || 'Créditos insuficientes.' });
@@ -1727,7 +1728,7 @@ export default function TelefonoDNI() {
 
       setTitularResult({ phone: data.phone, rawText: data.raw_text });
     } catch (e) {
-      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? getQueryErrorMessage(e) : 'Error de conexión. Verifique su internet e intente nuevamente.' });
+      setAlert({ isOpen: true, type: 'error', message: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? mensajeDeError(e, 'telefono').message : 'Error de conexión. Verifique su internet e intente nuevamente.' });
     } finally {
       hideLoading();
     }

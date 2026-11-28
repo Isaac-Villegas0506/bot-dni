@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
 import { useCreditCosts } from '../hooks/useCredits';
 import PdfViewer from '../components/PdfViewer';
 import UploadGuidelinesModal from '../components/UploadGuidelinesModal';
 import AlertModal from '../components/AlertModal';
 import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
+import { ERRORES_CONSULTA, mensajeDeError } from '../utils/mensajes';
 
 export default function Facial() {
     const location = useLocation();
@@ -80,7 +81,7 @@ export default function Facial() {
         const validExtensions = ['jpg', 'jpeg', 'png'];
 
         if ((file.type !== 'image/jpeg' && file.type !== 'image/png') || !validExtensions.includes(extension)) {
-            toast.error("Por favor selecciona un archivo de imagen válido (solo JPG o PNG).");
+            toast.error(ERRORES_CONSULTA.imagenInvalida);
             return;
         }
 
@@ -107,7 +108,7 @@ export default function Facial() {
             const validExtensions = ['jpg', 'jpeg', 'png'];
 
             if ((file.type !== 'image/jpeg' && file.type !== 'image/png') || !validExtensions.includes(extension)) {
-                toast.error("Por favor selecciona un archivo de imagen válido (solo JPG o PNG).");
+                toast.error(ERRORES_CONSULTA.imagenInvalida);
                 return;
             }
             setSelectedFile(file);
@@ -158,7 +159,7 @@ export default function Facial() {
             return;
         }
         if (!selectedFile) {
-            toast.error("Sube una foto para buscar.");
+            toast.error(ERRORES_CONSULTA.imagenFaltante);
             return;
         }
 
@@ -193,7 +194,7 @@ export default function Facial() {
         } catch (error) {
             console.error(error);
             if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-                toast.error(getQueryErrorMessage(error));
+                toast.error(mensajeDeError(error, 'generico').message);
             } else if (error.status === 404 || error.status === 400 || error.message.includes('Créditos insuficientes')) {
                 setAlert({ isOpen: true, type: 'error', message: error.message });
             } else {

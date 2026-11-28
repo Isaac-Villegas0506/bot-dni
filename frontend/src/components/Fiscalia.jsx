@@ -8,7 +8,8 @@ import { useCreditCosts } from '../hooks/useCredits';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import AlertModal from './AlertModal';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
+import { mensajeDeError , ERRORES_CONSULTA} from '../utils/mensajes';
 import PdfViewer from './PdfViewer';
 import { OptionCard } from './ui/ConsultSurface';
 
@@ -235,11 +236,11 @@ export default function Fiscalia() {
     const isRucValid = selectedOption.id === 'fiscalia_ruc' && finalTargetId.length === 11;
 
     if (selectedOption.id === 'fiscalia_dni' && !isDniValid) {
-      setAlert({ isOpen: true, type: 'error', message: 'El DNI debe tener 8 dígitos' });
+      setAlert({ isOpen: true, type: 'warning', title: 'DNI incompleto', message: ERRORES_CONSULTA.dniIncompleto });
       return;
     }
     if (selectedOption.id === 'fiscalia_ruc' && !isRucValid) {
-      setAlert({ isOpen: true, type: 'error', message: 'El RUC debe tener 11 dígitos' });
+      setAlert({ isOpen: true, type: 'warning', title: 'RUC incompleto', message: ERRORES_CONSULTA.rucInvalido });
       return;
     }
 
@@ -252,7 +253,7 @@ export default function Fiscalia() {
       setAlert({
         isOpen: true,
         type: 'insufficient_credits',
-        message: `No tienes suficientes créditos para realizar esta consulta. Esta acción requiere ${cost} créditos.`,
+        message: ERRORES_CONSULTA.sinCreditos(userCredits, cost),
       });
       setShowInputModal(false);
       return;
@@ -291,8 +292,9 @@ export default function Fiscalia() {
     } catch (error) {
       setAlert({
         isOpen: true,
-        type: 'error',
-        message: getQueryErrorMessage(error)
+        type: mensajeDeError(error, 'dni').type,
+        title: mensajeDeError(error, 'dni').title,
+        message: mensajeDeError(error, 'dni').message
       });
     } finally {
       hideLoading();
@@ -321,7 +323,7 @@ export default function Fiscalia() {
       document.body.removeChild(a);
       setHasDownloaded(true);
     } catch {
-      setAlert({ isOpen: true, type: 'error', message: 'No se pudo descargar el archivo de forma segura.' });
+      setAlert({ isOpen: true, type: 'error', title: 'Descarga fallida', message: ERRORES_CONSULTA.archivoNoDisponible });
     }
   };
 

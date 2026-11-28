@@ -4,6 +4,7 @@ import AlertModal from '../AlertModal';
 import { formatLimaDate, formatLimaTime } from './utils';
 import ConfirmationModal from './ConfirmationModal';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 const HIST_CATEGORIES_PANEL = [
     { id: null, label: 'Todos', icon: 'apps' },
@@ -227,7 +228,7 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
             const data = await res.json();
             if (res.ok) { setAlert({ isOpen: true, type: 'success', title: '🚫 IP Baneada', message: `IP ${data.ip} bloqueada.` }); loadDetail(); onUpdate(); }
             else setAlert({ isOpen: true, type: 'error', title: 'Error', message: data.detail || 'Error al banear.' });
-        } catch { setAlert({ isOpen: true, type: 'error', title: 'Error', message: 'Error de red.' }); }
+        } catch { setAlert({ isOpen: true, type: 'error', title: 'Error', message: ERRORES_RED.sinConexion }); }
         finally { setBanIpLoading(false); }
     };
 
