@@ -533,7 +533,6 @@ class Database:
                 return data if isinstance(data, dict) else json.loads(data)
             return None
         except Exception: return None
-
     async def save_dni(self, dni, data):
         await self._ensure_connection()
         try:

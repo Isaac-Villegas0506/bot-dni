@@ -19,6 +19,7 @@ from auth import verify_password, get_password_hash, create_access_token, decode
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 import httpx
+import image_hosting
 
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -229,7 +230,14 @@ async def verify_turnstile(token: Optional[str]):
     
 # --- Cleanup Utility ---
 async def clean_static_files():
-    """Elimina todos los archivos en static/files/"""
+    """
+    Elimina los archivos temporales de static/files/.
+
+    OJO: no borra static/images. La caché de `personas` apunta a esas imágenes,
+    así que vaciarlas dejaba las fichas cacheadas sin foto hasta que expiraba la
+    entrada. Si se necesita liberar espacio, hay que purgar también la columna
+    data de esas personas.
+    """
     files_dir = Path(__file__).parent / "static" / "files"
     deleted_count = 0
     if files_dir.exists():
@@ -1509,6 +1517,39 @@ async def get_titular_numero(request: Request, body: PhoneRequest, Authorization
         raise internal_server_error()
 
 
+async def _refrescar_foto_dni(dni: str) -> None:
+    """
+    Recupera la foto de un DNI cacheado y la deja como URL permanente.
+
+    Las imágenes de static/images no sobreviven a los reinicios de Render, pero
+    la caché de `personas` conserva los datos de texto. Sin esto, al repetir la
+    consulta el usuario recibía la ficha sin foto.
+    Se ejecuta en segundo plano: la respuesta se entrega de inmediato con los
+    datos cacheados y la foto queda disponible en la siguiente consulta.
+    """
+    try:
+        raw, img_path = await bot_client.query_bot(dni)
+        if not img_path:
+            return
+        ruta = Path(__file__).parent / "static" / img_path
+        for _ in range(40):
+            if ruta.exists():
+                break
+            await asyncio.sleep(0.1)
+        if not ruta.exists():
+            return
+
+        url = await image_hosting.subir_imagen(ruta)
+        if url:
+            # Se actualiza la caché con la URL permanente.
+            cached = await db.get_dni(dni) or {}
+            cached['imagen_url'] = url
+            await db.save_dni(dni, cached)
+            logger.info(f"[CACHE] Foto de {dni} guardada en ImgBB")
+    except Exception as e:
+        logger.warning(f"[CACHE] No se pudo refrescar la foto de {dni}: {e}")
+
+
 @app.get("/api/dni/{dni}")
 async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic", user: Optional[dict] = Depends(get_optional_user), x_turnstile_token: Optional[str] = Header(None)):
     settings = await db.get_all_settings()
@@ -1578,10 +1619,28 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
     await api_log_search(request, user_id_to_log, dni, 'dni')
     
     try:
-        # DB Cache Check (Only for Basic Search)
+        # --- Cache ---
+        # La caché de `personas` guarda los datos de texto, pero NO la foto:
+        # static/files e images se vacían cada medianoche, así que una entrada
+        # antigua devolvía `imagen_url` apuntando a un archivo ya borrado y el
+        # usuario veía la ficha sin foto.
+        # Estrategia:
+        #   1. Si la caché trae imagen y el archivo existe -> se devuelve tal cual.
+        #   2. Si la caché no trae imagen (o el archivo ya no está) -> se
+        #      devuelven los datos cacheados igual, pero se intenta recuperar la
+        #      foto del bot en segundo plano para no perder la respuesta rápida.
         cached = await db.get_dni(dni)
-        if cached: return cached
-            
+        if cached:
+            img_ref = cached.get('imagen_url') or ''
+            # Una URL absoluta (ImgBB) es permanente: no hay nada que comprobar.
+            if img_ref.startswith('http'):
+                return cached
+            img_file = Path(__file__).parent / "static" / img_ref.replace('/api/static/', '')
+            if not img_ref or not img_file.exists():
+                # Falta la foto: se intenta refrescar sin bloquear la respuesta.
+                asyncio.create_task(_refrescar_foto_dni(dni))
+            return cached
+
         # Bot Query
         raw, img_path = await bot_client.query_bot(dni)
         parsed = parse_bot_response(raw)
@@ -1611,11 +1670,21 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
                 if full_img_path.exists(): break
                 await asyncio.sleep(0.1)
             if full_img_path.exists():
-                parsed['imagen_url'] = f"/api/static/images/{os.path.basename(img_path)}"
+                # Se sube a ImgBB para tener una URL permanente: el disco de
+                # Render es efímero y borra static/images en cada reinicio, así
+                # que una ruta local dejaría la ficha sin foto al repetirla.
+                url_permanente = await image_hosting.subir_imagen(full_img_path)
+                parsed['imagen_url'] = url_permanente or f"/api/static/images/{os.path.basename(img_path)}"
 
         parsed['documento'] = dni
-        await db.save_dni(dni, parsed)
-        
+        # Se cachea también la imagen si es una URL permanente; si quedó como
+        # ruta local (ImgBB no configurado), se omite para no guardar una
+        # referencia que caducará al reiniciar el servicio.
+        para_cache = {k: v for k, v in parsed.items() if k != 'imagen_url'}
+        if (parsed.get('imagen_url') or '').startswith('http'):
+            para_cache['imagen_url'] = parsed['imagen_url']
+        await db.save_dni(dni, para_cache)
+
         return parsed
 
     except HTTPException as he: raise he # Re-raise HTTP exceptions
