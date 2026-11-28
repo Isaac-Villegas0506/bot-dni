@@ -22,7 +22,9 @@ export default function HomeModals({ modals, user, darkMode, onLoginClick }) {
 
             <AlertModal
                 message={modals.alertMessage}
-                onClose={() => modals.setAlertMessage(null)}
+                title={modals.alertTitle}
+                type={modals.alertType}
+                onClose={modals.clearAlert}
             />
 
             <AnimatePresence>

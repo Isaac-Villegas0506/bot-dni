@@ -1587,12 +1587,22 @@ async def get_dni_data(request: Request, dni: str, type: Optional[str] = "basic"
         parsed = parse_bot_response(raw)
         if not parsed: raise SinResultadosError(f"No se encontraron datos válidos para el DNI {dni}.")
 
-        # --- VALIDATION BASIC SEARCH ---
-        # Si la respuesta contiene datos inválidos/vacíos
-        doc = str(parsed.get('documento', '')).upper()
-        names = str(parsed.get('nombres', '')).upper()
-        if "NONE" in doc or "N/A" in names or doc == "0":
-             raise HTTPException(404, detail="No se encontraron datos.")
+        # --- VALIDACION BASIC SEARCH ---
+        # Algunos bots del pool devuelven datos inventados para DNIs que no
+        # existen (nombre y fecha aleatorios con el documento a 0). Se detecta
+        # aquí, ANTES de sobrescribir `documento` con el DNI consultado, que es
+        # lo que ocultaba el problema: la respuesta decía "00000000 - 0".
+        doc = str(parsed.get('documento', '')).upper().strip()
+        names = str(parsed.get('nombres', '')).upper().strip()
+        genero = str(parsed.get('genero', '')).upper().strip()
+        sin_documento = doc in ('', '0', 'NONE', 'N/A') or doc.endswith('- 0')
+        sin_nombre = names in ('', 'NONE', 'N/A', 'NO REGISTRADO')
+        if sin_documento or sin_nombre or genero == 'NO ESPECIFICADO':
+             raise HTTPException(
+                 404,
+                 detail=f"No se encontraron datos para el DNI {dni}. "
+                        "Verifica que el número esté bien escrito.",
+             )
         # -------------------------------
 
         if img_path:
@@ -1655,16 +1665,22 @@ async def search_by_name(request: Request, nombres: str, ap_paterno: str = "", a
     except Exception as e:
         logger.error(f"Error name search: {e}")
         err_msg = str(e)
-        
+
         # Specific User Validation Errors
         if "INVALID_FORMAT" in err_msg:
-             # Remove internal prefix if desired, but user wants specific message
+             # El bot no acepta el texto como nombre (suele pasar con
+             # cadenas sin vocales o símbolos). Se explica qué corregir en
+             # lugar de dejar el mensaje interno del proveedor.
              clean_msg = err_msg.replace("INVALID_FORMAT:", "").strip()
-             raise HTTPException(400, detail=clean_msg)
-             
+             raise HTTPException(400, detail=(
+                 "El texto ingresado no parece un nombre válido. "
+                 "Usa solo letras y al menos un nombre con apellido, por ejemplo "
+                 "\"JUAN PEREZ GARCIA\"."
+             ))
+
         if "NO_FOUND_404" in err_msg:
              clean_msg = err_msg.replace("NO_FOUND_404:", "").strip()
-             raise HTTPException(404, detail=clean_msg)
+             raise HTTPException(404, detail=clean_msg or "No se encontraron personas con esos nombres.")
 
         if "POR FAVOR ESPERA" in err_msg: raise HTTPException(429, detail=err_msg)
         raise internal_server_error()

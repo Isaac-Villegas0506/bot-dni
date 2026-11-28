@@ -12,9 +12,19 @@ import { useState, useRef } from 'react';
  *
  * Uso:  const modals = useHomeModals({ user, onSearch, onSearchByName, onPremiumBlocked });
  */
-export function useHomeModals({ user, onSearch, onSearchByName, onPremiumBlocked }) {
+export function useHomeModals({ user, onSearch, onSearchByName, onPremiumBlocked, alertState, alertMeta }) {
     const [optionModal, setOptionModal] = useState({ isOpen: false, targetUser: null });
-    const [alertMessage, setAlertMessage] = useState(null);
+
+    // Alertas: Home es dueño del estado y lo comparte con useSearch para que
+    // exista una SOLA fuente. Antes estaba duplicado y los errores de búsqueda
+    // se escribían en un estado que ningún modal leía (fallaban en silencio).
+    const [localAlert, setLocalAlert] = useState(null);
+    const [alertMessage, setAlertMessage] = alertState || [localAlert, setLocalAlert];
+    const [localType, setLocalType] = useState('info');
+    const [localTitle, setLocalTitle] = useState(null);
+    const alertType = alertMeta?.type ?? localType;
+    const alertTitle = alertMeta?.title ?? localTitle;
+
     const [showCaptcha, setShowCaptcha] = useState(false);
     const [captchaToken, setCaptchaToken] = useState(null);
     // Cloudflare emite un token por instancia: una key nueva por apertura
@@ -22,6 +32,24 @@ export function useHomeModals({ user, onSearch, onSearchByName, onPremiumBlocked
     // onSuccess y deja el modal en blanco).
     const [captchaKey, setCaptchaKey] = useState(0);
     const pendingRef = useRef(null);
+
+    /**
+     * Muestra una alerta con su tipo y título.
+     *
+     * `type`: success | error | warning | info | insufficient_credits.
+     * Cada caso tiene su icono, color y título en AlertModal.
+     */
+    const alert = (message, type = 'info', title = null) => {
+        (alertMeta?.setType || setLocalType)(type);
+        (alertMeta?.setTitle || setLocalTitle)(title);
+        setAlertMessage(message);
+    };
+
+    const clearAlert = () => {
+        setAlertMessage(null);
+        (alertMeta?.setTitle || setLocalTitle)(null);
+        (alertMeta?.setType || setLocalType)('info');
+    };
 
     const openCaptcha = (pendiente) => {
         pendingRef.current = pendiente;
@@ -83,7 +111,7 @@ export function useHomeModals({ user, onSearch, onSearchByName, onPremiumBlocked
         if (selectedType === 'premium' && !user) {
             // Solo el modal de registro: mostrar además una alerta dejaba dos
             // modales encima y ninguno se podía cerrar.
-            setAlertMessage(null);
+            clearAlert();
             onPremiumBlocked(targetDni);
             return;
         }
@@ -98,7 +126,7 @@ export function useHomeModals({ user, onSearch, onSearchByName, onPremiumBlocked
 
     return {
         optionModal, openOptions, closeOptions, confirmOption,
-        alertMessage, setAlertMessage,
+        alertMessage, alertType, alertTitle, alert, clearAlert,
         showCaptcha, openCaptcha, closeCaptcha,
         captchaKey, handleCaptchaSuccess, captchaToken, setCaptchaToken,
     };

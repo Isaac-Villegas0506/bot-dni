@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
 import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
 
-export function useSearch() {
+export function useSearch({ notify } = {}) {
     const { token, openWelcomeModal, refreshUser } = useAuth();
     const { loading, showLoading, hideLoading, registerAbort, showDonation, openDonation, closeDonation } = useLoading();
 
@@ -23,6 +23,18 @@ export function useSearch() {
     const [totalResults, setTotalResults] = useState(0);
     const [alertMessage, setAlertMessage] = useState(null);
 
+    /**
+     * Publica un aviso para el modal.
+     *
+     * Si Home pasa `notify` (alert del hook de modales), se usa esa vía para
+     * que el mensaje llegue al modal con su tipo y título. Sin `notify` se cae
+     * al estado local: así el hook sigue funcionando aislado en tests.
+     */
+    const avisar = (message, type = 'info', title = null) => {
+        if (notify) notify(message, type, title);
+        else setAlertMessage(message);
+    };
+
     useEffect(() => { sessionStorage.setItem('searchMode', searchMode); }, [searchMode]);
     useEffect(() => { sessionStorage.setItem('searchType', searchType); }, [searchType]);
     useEffect(() => { sessionStorage.setItem('dni', dni); }, [dni]);
@@ -36,6 +48,61 @@ export function useSearch() {
         else sessionStorage.removeItem('nameResults');
     }, [nameResults]);
 
+    /**
+     * Traduce la respuesta de error del backend a (tipo, título, mensaje).
+     *
+     * Cada caso tiene su modal: sin resultados no es lo mismo que captcha
+     * vencido, créditos insuficientes o el servicio caído.
+     */
+    const clasificarError = (status, detail, contexto) => {
+        const texto = typeof detail === 'string' ? detail : '';
+
+        if (status === 404) {
+            return [
+                'warning',
+                'Sin resultados',
+                contexto === 'dni'
+                    ? 'No se encontraron datos para ese DNI. Verifica que el número esté bien escrito e intenta de nuevo.'
+                    : 'No se encontró ninguna persona con esos nombres. Prueba con menos apellidos o revisa la ortografía.',
+            ];
+        }
+        if (status === 402) {
+            return ['insufficient_credits', null, texto || 'No tienes créditos suficientes para esta consulta.'];
+        }
+        if (status === 429) {
+            return [
+                'warning',
+                'Demasiadas solicitudes',
+                texto || 'Hiciste varias consultas seguidas. Espera unos segundos y vuelve a intentarlo.',
+            ];
+        }
+        if (status === 503) {
+            return [
+                'warning',
+                'Servicio no disponible',
+                texto || 'Este apartado está deshabilitado temporalmente. Intenta más tarde.',
+            ];
+        }
+        if (status === 403) {
+            if (/captcha|turnstile/i.test(texto)) {
+                return [
+                    'warning',
+                    'Verificación vencida',
+                    'La verificación de seguridad expiró o no se completó. Cierra este aviso y repite la consulta para que aparezca de nuevo.',
+                ];
+            }
+            return ['warning', 'Acceso denegado', texto || 'No tienes permisos para realizar esta consulta.'];
+        }
+        if (status === 400) {
+            return [
+                'warning',
+                'Revisa los datos',
+                texto || 'El texto ingresado no es válido. Revisa los datos e intenta nuevamente.',
+            ];
+        }
+        return ['error', 'No se pudo completar la consulta', texto || 'Ocurrió un problema al consultar. Intenta nuevamente.'];
+    };
+
     const searchDirectDni = async (dniVal, type = 'basic', captchaToken = null) => {
         showLoading(null, 'reniec');
         try {
@@ -45,29 +112,51 @@ export function useSearch() {
                 ? getApiUrl(`/api/dni/${dniVal}?type=premium`)
                 : getApiUrl(`/api/dni/${dniVal}`);
             const res = await queryFetch(url, { headers }, { timeoutMs: QUERY_TIMEOUTS.reniec, registerAbort });
-            const data = await res.json();
+
+            let data = {};
+            try { data = await res.json(); } catch { /* respuesta no-JSON */ }
+
             if (!res.ok) {
-                if (res.status === 403 && data.detail?.includes('crédito')) throw new Error(data.detail);
-                throw new Error(data.detail || 'Error');
+                const [tipo, titulo, texto] = clasificarError(res.status, data.detail, 'dni');
+                // El detalle del backend suele ser genérico; el mensaje del DNI
+                // concreto es más útil para el usuario.
+                const mensaje = res.status === 404
+                    ? `No se encontraron datos para el DNI ${dniVal}. Verifica que el número esté bien escrito e intenta de nuevo.`
+                    : texto;
+                avisar(mensaje, tipo, titulo);
+                return;
             }
+
             const isEmpty =
                 (!data.nombres || data.nombres === 'N/A') &&
                 (!data.apellidos || data.apellidos === 'N/A N/A' || data.apellidos === 'N/A') &&
                 (!data.genero || data.genero === 'NO ESPECIFICADO');
             if (isEmpty) {
-                setAlertMessage(`No se encontraron datos para el DNI ${dniVal}. Verifica el número e intenta nuevamente.`);
+                avisar(
+                    `No se encontraron datos para el DNI ${dniVal}. Puede estar mal escrito o no estar registrado en RENIEC.`,
+                    'warning',
+                    'Sin resultados',
+                );
                 return;
             }
             setResult(data);
             if (token) refreshUser();
         } catch (e) {
             const msg = getQueryErrorMessage(e);
-            // Un 403 de captcha no debe abrir el modal de registro: confunde y
-            // apila modales. Se muestra el aviso y se deja reintentar limpio.
-            if (/captcha|turnstile/i.test(msg)) {
-                setAlertMessage('La verificación expiró. Vuelve a intentar la consulta.');
+            if (e?.name === 'TimeoutError') {
+                avisar(
+                    'La consulta tardó demasiado en responder. El proveedor puede estar saturado; intenta de nuevo en un momento.',
+                    'warning',
+                    'La consulta expiró',
+                );
+            } else if (/captcha|turnstile/i.test(msg)) {
+                avisar(
+                    'La verificación de seguridad expiró. Repite la consulta para que aparezca de nuevo.',
+                    'warning',
+                    'Verificación vencida',
+                );
             } else {
-                setAlertMessage(msg);
+                avisar(msg, 'error', 'No se pudo completar la consulta');
                 if (e.message?.includes('Regístrate')) openWelcomeModal();
             }
         } finally {
@@ -87,18 +176,40 @@ export function useSearch() {
             const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
             if (captchaToken) headers['X-Turnstile-Token'] = captchaToken;
             const res = await queryFetch(getApiUrl(`/api/search/name?${p.toString()}`), { headers }, { timeoutMs: QUERY_TIMEOUTS.reniec, registerAbort });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Error');
-            if (Array.isArray(data)) {
-                setNameResults(data);
-                setTotalResults(data.length);
-            } else if (data.resultados) {
-                setNameResults(data.resultados);
-                setDownloadUrl(data.archivo_url);
-                setTotalResults(data.total_count || data.resultados.length);
+
+            let data = {};
+            try { data = await res.json(); } catch { /* respuesta no-JSON */ }
+
+            if (!res.ok) {
+                const [tipo, titulo, texto] = clasificarError(res.status, data.detail, 'name');
+                avisar(texto, tipo, titulo);
+                return;
             }
+
+            const lista = Array.isArray(data) ? data : (data.resultados || []);
+            if (lista.length === 0) {
+                avisar(
+                    'No se encontró ninguna persona con esos nombres. Prueba con menos apellidos o revisa la ortografía.',
+                    'warning',
+                    'Sin resultados',
+                );
+                return;
+            }
+
+            setNameResults(lista);
+            setDownloadUrl(data.archivo_url || null);
+            setTotalResults(data.total_count || lista.length);
         } catch (e) {
-            setAlertMessage(getQueryErrorMessage(e));
+            const msg = getQueryErrorMessage(e);
+            if (e?.name === 'TimeoutError') {
+                avisar(
+                    'La búsqueda por nombre tardó demasiado. Intenta de nuevo o prueba con menos apellidos.',
+                    'warning',
+                    'La búsqueda expiró',
+                );
+            } else {
+                avisar(msg, 'error', 'No se pudo completar la búsqueda');
+            }
         } finally {
             hideLoading();
         }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import random
+import re
 import uuid
 from pathlib import Path
 from telegram.exceptions import SinResultadosError
@@ -80,7 +81,10 @@ async def query_dni_gratis(
                     continue
 
                 if is_sin_resultados(text):
-                    raise SinResultadosError(text)
+                    raise SinResultadosError(
+                        f"No se encontraron datos para el DNI {dni}. "
+                        "Verifica que el numero este bien escrito."
+                    )
 
                 text_upper = text.upper()
                 has_data = any(k in text_upper for k in ["NOMBRES", "APELLIDOS", "DOCUMENTO", "FECHA", "DIRECCION", "DISTRITO"])
@@ -90,9 +94,15 @@ async def query_dni_gratis(
                         ("NOMBRES" in text_upper and "N/A" in text_upper) or
                         ("NOMBRES" in text_upper and "NO ESPECIFICADO" in text_upper) or
                         ("DOCUMENTO" in text_upper and "NONE" in text_upper)
+                        # Varios bots del pool rellenan con datos inventados los
+                        # DNI inexistentes y marcan el documento como "N - 0".
+                        or re.search(r"DOCUMENTO\D{0,8}\d{8}\s*-\s*0", text_upper)
                     )
                     if is_na:
-                        raise SinResultadosError(text)
+                        raise SinResultadosError(
+                            f"No se encontraron datos para el DNI {dni}. "
+                            "Verifica que el numero este bien escrito."
+                        )
 
                     img_path = None
                     if msg.media:

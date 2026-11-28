@@ -18,6 +18,26 @@ export default function Home({ darkMode }) {
     const { announcements, dismissAnnouncement } = useAnnouncements();
     const location = useLocation();
 
+    // ─── Alertas: una sola fuente para toda la página ──────────────────────
+    // El modal lee este estado. useSearch escribe aquí vía `notify`, así que
+    // los errores de búsqueda sí llegan a la pantalla (antes se guardaban en
+    // un estado paralelo que ningún modal mostraba).
+    const [alertMessage, setAlertMessage] = useState(null);
+    const [alertType, setAlertType] = useState('info');
+    const [alertTitle, setAlertTitle] = useState(null);
+
+    const notificar = useCallback((message, type = 'info', title = null) => {
+        setAlertType(type);
+        setAlertTitle(title);
+        setAlertMessage(message);
+    }, []);
+
+    const limpiarAlerta = useCallback(() => {
+        setAlertMessage(null);
+        setAlertTitle(null);
+        setAlertType('info');
+    }, []);
+
     const {
         searchMode, setSearchMode,
         searchType, setSearchType,
@@ -29,12 +49,11 @@ export default function Home({ darkMode }) {
         totalResults,
         loading,
         openDonation,
-        setAlertMessage,
         searchDirectDni,
         searchByName,
         resetSearch,
         clearResult,
-    } = useSearch();
+    } = useSearch({ notify: notificar });
 
     // DNI cuya consulta premium quedó pendiente de registro.
     const [pendingPremiumDni, setPendingPremiumDni] = useState(null);
@@ -48,12 +67,12 @@ export default function Home({ darkMode }) {
      */
     const ejecutarBusquedaDni = useCallback((value, type, tokenCaptcha) => {
         clearResult();
-        setAlertMessage(null);
+        limpiarAlerta();
         setSearchMode('dni');
         setSearchType(type);
         setDni(value);
         searchDirectDni(value, type, tokenCaptcha);
-    }, [clearResult, searchDirectDni, setAlertMessage, setDni, setSearchMode, setSearchType]);
+    }, [clearResult, limpiarAlerta, searchDirectDni, setDni, setSearchMode, setSearchType]);
 
     // Modales centralizados: viven fuera de las vistas para que no se
     // desmonten a mitad de flujo (elegir un nombre -> captcha -> búsqueda).
@@ -65,6 +84,9 @@ export default function Home({ darkMode }) {
             setPendingPremiumDni(targetDni);
             openWelcomeModal();
         },
+        // Alertas compartidas con useSearch
+        alertState: [alertMessage, setAlertMessage],
+        alertMeta: { type: alertType, title: alertTitle, setType: setAlertType, setTitle: setAlertTitle },
     });
 
     // Auto-trigger from state (e.g. from UserHistory)
