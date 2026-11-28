@@ -9,6 +9,7 @@ import SearchBar from '../components/SearchBar';
 import ResultCard from '../components/ResultCard';
 import SearchOptionModal from '../components/SearchOptionModal';
 import AnnouncementModal from '../components/AnnouncementModal';
+import { ERRORES_CONSULTA } from '../utils/mensajes';
 import HomeModals from './home/HomeModals';
 import { useHomeModals } from './home/useHomeModals';
 
@@ -129,7 +130,10 @@ export default function Home({ darkMode }) {
     // ─── Submit handlers ──────────────────────────────────────────────────────
     const handleDniSubmit = async (e) => {
         if (e) e.preventDefault();
-        if (!dni || dni.length !== 8) { setAlertMessage('Ingresa un DNI válido de 8 dígitos'); return; }
+        if (!dni || dni.length !== 8) {
+            notificar(ERRORES_CONSULTA.dniIncompleto, 'warning', 'DNI incompleto');
+            return;
+        }
         if (searchType === 'premium' && !user) {
             setAlertMessage(null);
             setPendingPremiumDni(dni);
@@ -146,7 +150,10 @@ export default function Home({ darkMode }) {
 
     const handleNameSubmit = async (e) => {
         if (e) e.preventDefault();
-        if (!nombres) { setAlertMessage('Ingresa nombres para buscar'); return; }
+        if (!nombres) {
+            notificar(ERRORES_CONSULTA.nombreVacio, 'warning', 'Falta el nombre');
+            return;
+        }
         const parts = nombres.trim().split(/\s+/);
         let n = nombres, apP = '', apM = '';
         if (parts.length >= 3) { apM = parts.pop(); apP = parts.pop(); n = parts.join(' '); }

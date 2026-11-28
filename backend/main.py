@@ -1668,14 +1668,9 @@ async def search_by_name(request: Request, nombres: str, ap_paterno: str = "", a
 
         # Specific User Validation Errors
         if "INVALID_FORMAT" in err_msg:
-             # El bot no acepta el texto como nombre (suele pasar con
-             # cadenas sin vocales o símbolos). Se explica qué corregir en
-             # lugar de dejar el mensaje interno del proveedor.
-             clean_msg = err_msg.replace("INVALID_FORMAT:", "").strip()
              raise HTTPException(400, detail=(
-                 "El texto ingresado no parece un nombre válido. "
-                 "Usa solo letras y al menos un nombre con apellido, por ejemplo "
-                 "\"JUAN PEREZ GARCIA\"."
+                 "No pudimos reconocer ese nombre. Escribe el nombre y el apellido, "
+                 "solo con letras. Por ejemplo: JUAN PEREZ GARCIA."
              ))
 
         if "NO_FOUND_404" in err_msg:

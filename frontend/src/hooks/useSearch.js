@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLoading } from '../context/LoadingContext';
-import { getApiUrl, queryFetch, getQueryErrorMessage, QUERY_TIMEOUTS } from '../utils/api';
+import { getApiUrl, queryFetch, QUERY_TIMEOUTS } from '../utils/api';
+import {
+    ERRORES_CONSULTA,
+    ERRORES_RED,
+    mensajeDeExcepcion,
+    mensajeDeRespuesta,
+} from '../utils/mensajes';
 
 export function useSearch({ notify } = {}) {
     const { token, openWelcomeModal, refreshUser } = useAuth();
@@ -48,61 +54,6 @@ export function useSearch({ notify } = {}) {
         else sessionStorage.removeItem('nameResults');
     }, [nameResults]);
 
-    /**
-     * Traduce la respuesta de error del backend a (tipo, título, mensaje).
-     *
-     * Cada caso tiene su modal: sin resultados no es lo mismo que captcha
-     * vencido, créditos insuficientes o el servicio caído.
-     */
-    const clasificarError = (status, detail, contexto) => {
-        const texto = typeof detail === 'string' ? detail : '';
-
-        if (status === 404) {
-            return [
-                'warning',
-                'Sin resultados',
-                contexto === 'dni'
-                    ? 'No se encontraron datos para ese DNI. Verifica que el número esté bien escrito e intenta de nuevo.'
-                    : 'No se encontró ninguna persona con esos nombres. Prueba con menos apellidos o revisa la ortografía.',
-            ];
-        }
-        if (status === 402) {
-            return ['insufficient_credits', null, texto || 'No tienes créditos suficientes para esta consulta.'];
-        }
-        if (status === 429) {
-            return [
-                'warning',
-                'Demasiadas solicitudes',
-                texto || 'Hiciste varias consultas seguidas. Espera unos segundos y vuelve a intentarlo.',
-            ];
-        }
-        if (status === 503) {
-            return [
-                'warning',
-                'Servicio no disponible',
-                texto || 'Este apartado está deshabilitado temporalmente. Intenta más tarde.',
-            ];
-        }
-        if (status === 403) {
-            if (/captcha|turnstile/i.test(texto)) {
-                return [
-                    'warning',
-                    'Verificación vencida',
-                    'La verificación de seguridad expiró o no se completó. Cierra este aviso y repite la consulta para que aparezca de nuevo.',
-                ];
-            }
-            return ['warning', 'Acceso denegado', texto || 'No tienes permisos para realizar esta consulta.'];
-        }
-        if (status === 400) {
-            return [
-                'warning',
-                'Revisa los datos',
-                texto || 'El texto ingresado no es válido. Revisa los datos e intenta nuevamente.',
-            ];
-        }
-        return ['error', 'No se pudo completar la consulta', texto || 'Ocurrió un problema al consultar. Intenta nuevamente.'];
-    };
-
     const searchDirectDni = async (dniVal, type = 'basic', captchaToken = null) => {
         showLoading(null, 'reniec');
         try {
@@ -117,13 +68,8 @@ export function useSearch({ notify } = {}) {
             try { data = await res.json(); } catch { /* respuesta no-JSON */ }
 
             if (!res.ok) {
-                const [tipo, titulo, texto] = clasificarError(res.status, data.detail, 'dni');
-                // El detalle del backend suele ser genérico; el mensaje del DNI
-                // concreto es más útil para el usuario.
-                const mensaje = res.status === 404
-                    ? `No se encontraron datos para el DNI ${dniVal}. Verifica que el número esté bien escrito e intenta de nuevo.`
-                    : texto;
-                avisar(mensaje, tipo, titulo);
+                const { type, title, message } = mensajeDeRespuesta(res.status, data.detail, 'dni', dniVal);
+                avisar(message, type, title);
                 return;
             }
 
@@ -132,32 +78,17 @@ export function useSearch({ notify } = {}) {
                 (!data.apellidos || data.apellidos === 'N/A N/A' || data.apellidos === 'N/A') &&
                 (!data.genero || data.genero === 'NO ESPECIFICADO');
             if (isEmpty) {
-                avisar(
-                    `No se encontraron datos para el DNI ${dniVal}. Puede estar mal escrito o no estar registrado en RENIEC.`,
-                    'warning',
-                    'Sin resultados',
-                );
+                avisar(ERRORES_CONSULTA.dniSinDatos(dniVal), 'warning', 'Sin resultados');
                 return;
             }
             setResult(data);
             if (token) refreshUser();
         } catch (e) {
-            const msg = getQueryErrorMessage(e);
             if (e?.name === 'TimeoutError') {
-                avisar(
-                    'La consulta tardó demasiado en responder. El proveedor puede estar saturado; intenta de nuevo en un momento.',
-                    'warning',
-                    'La consulta expiró',
-                );
-            } else if (/captcha|turnstile/i.test(msg)) {
-                avisar(
-                    'La verificación de seguridad expiró. Repite la consulta para que aparezca de nuevo.',
-                    'warning',
-                    'Verificación vencida',
-                );
+                avisar(ERRORES_RED.timeout, 'warning', 'La consulta tardó demasiado');
             } else {
-                avisar(msg, 'error', 'No se pudo completar la consulta');
-                if (e.message?.includes('Regístrate')) openWelcomeModal();
+                avisar(mensajeDeExcepcion(e), 'error', 'No se pudo completar la consulta');
+                if (e?.message?.includes('Regístrate')) openWelcomeModal();
             }
         } finally {
             hideLoading();
@@ -181,18 +112,14 @@ export function useSearch({ notify } = {}) {
             try { data = await res.json(); } catch { /* respuesta no-JSON */ }
 
             if (!res.ok) {
-                const [tipo, titulo, texto] = clasificarError(res.status, data.detail, 'name');
-                avisar(texto, tipo, titulo);
+                const { type, title, message } = mensajeDeRespuesta(res.status, data.detail, 'name');
+                avisar(message, type, title);
                 return;
             }
 
             const lista = Array.isArray(data) ? data : (data.resultados || []);
             if (lista.length === 0) {
-                avisar(
-                    'No se encontró ninguna persona con esos nombres. Prueba con menos apellidos o revisa la ortografía.',
-                    'warning',
-                    'Sin resultados',
-                );
+                avisar(ERRORES_CONSULTA.nombreSinDatos, 'warning', 'Sin resultados');
                 return;
             }
 
@@ -200,15 +127,10 @@ export function useSearch({ notify } = {}) {
             setDownloadUrl(data.archivo_url || null);
             setTotalResults(data.total_count || lista.length);
         } catch (e) {
-            const msg = getQueryErrorMessage(e);
             if (e?.name === 'TimeoutError') {
-                avisar(
-                    'La búsqueda por nombre tardó demasiado. Intenta de nuevo o prueba con menos apellidos.',
-                    'warning',
-                    'La búsqueda expiró',
-                );
+                avisar(ERRORES_RED.timeout, 'warning', 'La búsqueda tardó demasiado');
             } else {
-                avisar(msg, 'error', 'No se pudo completar la búsqueda');
+                avisar(mensajeDeExcepcion(e), 'error', 'No se pudo completar la búsqueda');
             }
         } finally {
             hideLoading();

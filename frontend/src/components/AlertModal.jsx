@@ -21,11 +21,33 @@ const cleanErrorMessage = (msg) => {
                      .replace(/\*\*/g, '')
                      .replace(/\*/g, '')
                      .replace(/➤/g, '')
+                     .replace(/\s+/g, ' ')
                      .trim();
     if (cleaned.length > 0) {
         cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     }
     return cleaned;
+};
+
+/**
+ * Divide el mensaje en "qué pasó" y "qué hacer".
+ *
+ * Los mensajes del catálogo son de dos frases: la primera explica el problema y
+ * la segunda indica la acción. Al pintarlas en líneas distintas se leen de un
+ * vistazo, en vez de quedar un párrafo que nadie termina de leer.
+ */
+const dividirMensaje = (msg) => {
+    const texto = cleanErrorMessage(msg);
+    if (!texto) return { principal: '', accion: '' };
+    // Corta en el primer punto seguido de espacio, si queda texto detrás.
+    const i = texto.indexOf('. ');
+    if (i > 20 && i < texto.length - 10) {
+        return {
+            principal: texto.slice(0, i + 1),
+            accion: texto.slice(i + 2),
+        };
+    }
+    return { principal: texto, accion: '' };
 };
 
 export default function AlertModal({
@@ -100,10 +122,27 @@ export default function AlertModal({
             <div className="space-y-5 p-5 pt-6">
                 <ModalHeader
                     title={displayTitle}
-                    description={cleanErrorMessage(message)}
                     icon={config.icon}
                     tone={config.tone}
                 />
+
+                {/* Mensaje en dos bloques: qué pasó y qué hacer. */}
+                {(() => {
+                    const { principal, accion } = dividirMensaje(message);
+                    return (
+                        <div className="space-y-2">
+                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                                {principal}
+                            </p>
+                            {accion && (
+                                <p className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+                                    <span className="material-icons-round mt-0.5 shrink-0 text-[16px] text-slate-400" aria-hidden="true">lightbulb</span>
+                                    <span>{accion}</span>
+                                </p>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {isInsufficientCredits && user && (
                     <ModalSection>
