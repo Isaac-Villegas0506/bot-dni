@@ -9,6 +9,8 @@ import { getApiUrl } from '../../utils/api';
 // 171 KB aunque solo se abriera el dashboard. Ahora cada pestaña se descarga
 // la primera vez que se visita y queda cacheada por el navegador.
 import DashboardHome from './DashboardHome';
+import { ERRORES_RED } from '../../utils/mensajes';
+import ErrorBanner from './ErrorBanner';
 
 const UserManagement         = lazy(() => import('./UserManagement'));
 const BotManagement          = lazy(() => import('./BotManagement'));
@@ -95,6 +97,7 @@ export default function AdminDashboard({ onBackToHome }) {
     const { logout } = useAuth();
     const [activeTab, setActiveTab] = useSearchParamState('tab', 'dashboard');
     const [stats, setStats]         = useState(null);
+    const [errorCarga, setErrorCarga] = useState(null);
     const [loading, setLoading]     = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -105,7 +108,9 @@ export default function AdminDashboard({ onBackToHome }) {
             const token = localStorage.getItem('token');
             const res = await fetch(getApiUrl('/api/admin/stats'), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setStats(await res.json());
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setErrorCarga(ERRORES_RED.sinConexion);
+        } finally { setLoading(false); }
     };
 
     const renderContent = () => {
@@ -207,7 +212,8 @@ export default function AdminDashboard({ onBackToHome }) {
                                 transition={{ duration: 0.15 }}
                                 className="w-full max-w-full"
                             >
-                                <Suspense fallback={<SectionSkeleton />}>
+                                <ErrorBanner mensaje={errorCarga} onReintentar={() => { setErrorCarga(null); fetchStats(); }} />
+                            <Suspense fallback={<SectionSkeleton />}>
                                     {renderContent()}
                                 </Suspense>
                             </motion.div>

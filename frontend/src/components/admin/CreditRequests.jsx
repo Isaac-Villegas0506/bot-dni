@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParamState } from '../../hooks/useSearchParamState';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
+import ErrorBanner from './ErrorBanner';
 
 const STATUS_UI = {
     pending: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
@@ -189,6 +191,7 @@ function RequestDetailModal({ purchase, onClose, onAction, onRejectModalOpen }) 
 export default function CreditRequests() {
     const [purchases, setPurchases] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [errorCarga, setErrorCarga] = useState(null);
     const [filter, setFilter] = useSearchParamState('s', 'pending');
     const [selectedPurchase, setSelectedPurchase] = useState(null);
     const [rejectModal, setRejectModal] = useState({ isOpen: false, purchaseId: null, reason: '' });
@@ -206,7 +209,9 @@ export default function CreditRequests() {
             const url = filter === 'all' ? '/api/admin/purchases' : `/api/admin/purchases?status_filter=${filter}`;
             const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setPurchases(await res.json());
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setErrorCarga(ERRORES_RED.sinConexion);
+        } finally { setLoading(false); }
     }, [filter]);
 
     useEffect(() => { fetchPurchases(); }, [fetchPurchases]);
@@ -222,7 +227,9 @@ export default function CreditRequests() {
                 if (actionStr === 'reject') setRejectModal({ isOpen: false, purchaseId: null, reason: '' });
                 if (selectedPurchase?.id === id) setSelectedPurchase(null);
             } else { const data = await res.json(); alert(data.detail || 'Error procesando'); }
-        } catch (e) { console.error(e); }
+        } catch {
+            setErrorCarga(ERRORES_RED.sinConexion);
+        }
     };
 
     const FILTER_TABS = [
@@ -235,6 +242,7 @@ export default function CreditRequests() {
 
     return (
         <div className="space-y-6 w-full">
+            <ErrorBanner mensaje={errorCarga} onReintentar={() => { setErrorCarga(null); fetchPurchases(); }} />
             {/* Header Area */}
             <div className="flex flex-col gap-3 md:gap-4">
                 <div>

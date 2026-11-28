@@ -164,15 +164,16 @@ export default function CertificadosPoliciales() {
       const data = await res.json();
 
       if (!res.ok) {
-        let errMsg = ERRORES_RED.generico;
-        if (res.status === 402) {
-          errMsg = ERRORES_CONSULTA.sinCreditos();
-        } else if (res.status === 404) {
-          errMsg = ERRORES_CONSULTA.dniSinDatosOtro;
-        } else if (data.detail) {
-          errMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
-        }
-        throw new Error(errMsg);
+        // mensajeDeError normaliza cualquier formato de `detail` (string,
+        // lista de validación o {code, message}) sin exponer el JSON crudo.
+        const { type, title, message } = mensajeDeError(
+          { status: res.status, detail: data.detail },
+          'dni',
+          dni,
+        );
+        setAlert({ isOpen: true, type, title, message });
+        hideLoading();
+        return;
       }
 
       // Success
@@ -186,9 +187,8 @@ export default function CertificadosPoliciales() {
       setView('result');
       setHasDownloaded(false);
     } catch (err) {
-      setAlert({ isOpen: true, type: mensajeDeError(err, 'dni').type,
-        title: mensajeDeError(err, 'dni').title,
-        message: mensajeDeError(err, 'dni').message });
+      const { type, title, message } = mensajeDeError(err, 'dni', dni);
+        setAlert({ isOpen: true, type, title, message });
     } finally {
       hideLoading();
     }

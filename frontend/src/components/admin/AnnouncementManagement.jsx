@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmationModal from './ConfirmationModal';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
+import ErrorBanner from './ErrorBanner';
 
 const FREQUENCIES = [
     { value: 15, label: 'Cada 15 minutos' },
@@ -27,6 +29,7 @@ function AnnouncementSkeleton() {
 export default function AnnouncementManagement() {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [errorCarga, setErrorCarga] = useState(null);
     const [title, setTitle] = useState('');
     const [msg, setMsg] = useState('');
     const [frequency, setFrequency] = useState(60);
@@ -41,7 +44,9 @@ export default function AnnouncementManagement() {
         try {
             const res = await fetch(getApiUrl('/api/admin/announcements'), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setAnnouncements(await res.json());
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setErrorCarga(ERRORES_RED.sinConexion);
+        } finally { setLoading(false); }
     };
 
     const create = async (e) => {
@@ -75,6 +80,7 @@ export default function AnnouncementManagement() {
 
     return (
         <div className="space-y-6 w-full">
+            <ErrorBanner mensaje={errorCarga} onReintentar={() => { setErrorCarga(null); loadAnn(); }} />
             <ConfirmationModal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} onConfirm={handleDelete}
                 title="Eliminar Anuncio" message="¿Estás seguro de eliminar este comunicado permanentemente?" type="danger" />
 

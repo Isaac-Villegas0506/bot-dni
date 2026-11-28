@@ -5,6 +5,7 @@ import ConfirmationModal from './ConfirmationModal';
 import { formatLimaDate, formatLimaTime } from './utils';
 import UserDetailPanel from './UserDetailPanel';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 // ─── Skeleton Component ───────────────────────────────────────────────────
 function TableSkeleton() {
@@ -35,7 +36,9 @@ export default function UserManagement() {
             const res = await fetch(getApiUrl('/api/admin/users?limit=100'), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             setUsers(data);
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo cargar', message: ERRORES_RED.sinConexion });
+        } finally { setLoading(false); }
     };
 
     const confirmAction = (title, message, action, type = 'warning') => setModal({ isOpen: true, title, message, action, type });

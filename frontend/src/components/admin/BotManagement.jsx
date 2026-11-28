@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AlertModal from '../AlertModal';
 import ConfirmationModal from './ConfirmationModal';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 const BOT_TYPES = [
     { value: 'dni', label: 'Búsqueda DNI', icon: 'badge', color: 'text-primary bg-primary/10 dark:bg-primary-dark/15' },
@@ -42,7 +43,9 @@ export default function BotManagement() {
         try {
             const res = await fetch(getApiUrl('/api/admin/bots'), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setBots((await res.json()).bots || []);
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo cargar', message: ERRORES_RED.sinConexion });
+        } finally { setLoading(false); }
     };
 
     const handleAdd = async (e) => {
@@ -54,20 +57,30 @@ export default function BotManagement() {
             const res = await fetch(getApiUrl('/api/admin/bots'), { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ username: newUsername.trim(), bot_type: newType }) });
             if (res.ok) { setAlert({ isOpen: true, type: 'success', title: '¡Bot registrado!', message: `Bot ${newUsername} añadido.` }); setNewUsername(''); setShowForm(false); loadBots(); }
             else { const err = await res.json(); setAlert({ isOpen: true, type: 'error', title: 'Error', message: err.detail || 'No se pudo registrar.' }); }
-        } catch (e) { console.error(e); } finally { setAdding(false); }
+        } catch { setAlert({ isOpen: true, type: 'error', title: 'No se pudo registrar', message: ERRORES_RED.sinConexion }); } finally { setAdding(false); }
     };
 
     const handleUpdateType = async (bot, newBotType) => {
         const token = localStorage.getItem('token');
-        await fetch(getApiUrl(`/api/admin/bots/${encodeURIComponent(bot.username)}`), { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ bot_type: newBotType }) });
-        setEditingBot(null); loadBots();
+        try {
+            const res = await fetch(getApiUrl(`/api/admin/bots/${encodeURIComponent(bot.username)}`), { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ bot_type: newBotType }) });
+            if (!res.ok) throw new Error();
+            setEditingBot(null); loadBots();
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo actualizar', message: ERRORES_RED.sinConexion });
+        }
     };
 
     const handleDelete = async () => {
         if (!modal.bot) return;
         const token = localStorage.getItem('token');
-        await fetch(getApiUrl(`/api/admin/bots/${encodeURIComponent(modal.bot.username)}`), { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-        setModal({ isOpen: false, bot: null }); loadBots();
+        try {
+            const res = await fetch(getApiUrl(`/api/admin/bots/${encodeURIComponent(modal.bot.username)}`), { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            if (!res.ok) throw new Error();
+            setModal({ isOpen: false, bot: null }); loadBots();
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo eliminar', message: ERRORES_RED.sinConexion });
+        }
     };
 
     const copyToClipboard = (text) => {

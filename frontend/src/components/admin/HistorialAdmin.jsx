@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { getApiUrl } from '../../utils/api';
 import Modal from '../ui/Modal';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 const HIST_TYPE_INFO = {
     dni: { icon: 'badge', label: 'DNI Básico', color: 'bg-primary/15 text-primary dark:bg-primary-dark/25 dark:text-primary-dark' },
@@ -203,6 +204,7 @@ export default function HistorialAdmin() {
     const [dateFilter, setDateFilter] = useState('all');
     const [userFilter, setUserFilter] = useState('all');
     const [selectedHistory, setSelectedHistory] = useState(null);
+    const [errorCarga, setErrorCarga] = useState(null);
 
     useEffect(() => { loadHistory(); }, []);
 
@@ -212,7 +214,9 @@ export default function HistorialAdmin() {
         try {
             const res = await fetch(getApiUrl('/api/admin/history?limit=300'), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setHistory(await res.json());
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setErrorCarga(ERRORES_RED.sinConexion);
+        } finally { setLoading(false); }
     };
 
     const filtered = useMemo(() => {
@@ -249,6 +253,21 @@ export default function HistorialAdmin() {
             {/* Header */}
             <div className="flex flex-col gap-3 md:gap-4">
                 <div>
+            {errorCarga && (
+                <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/50 dark:bg-red-950/20">
+                    <span className="material-icons-round shrink-0 text-red-600 dark:text-red-400">error</span>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-red-900 dark:text-red-200">No se pudo cargar el historial</p>
+                        <p className="mt-0.5 text-sm text-red-800 dark:text-red-300">{errorCarga}</p>
+                    </div>
+                    <button
+                        onClick={() => { setErrorCarga(null); loadHistory(); }}
+                        className="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-700"
+                    >
+                        Reintentar
+                    </button>
+                </div>
+            )}
                     <h2 className="text-lg md:text-2xl font-black text-primary dark:text-primary-dark">Registro de Auditoría</h2>
                     <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs md:text-sm font-medium">Monitoreo en tiempo real de las últimas 300 transacciones.</p>
                 </div>

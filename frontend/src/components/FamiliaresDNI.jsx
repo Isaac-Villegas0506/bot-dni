@@ -489,19 +489,17 @@ export default function FamiliaresDNI() {
       const data = await res.json();
 
       if (!res.ok) {
-        let errMsg = ERRORES_RED.generico;
-        if (data.detail) {
-          if (data.detail?.code === 'INSUFFICIENT_CREDITS') {
-            errMsg = `\u274c ${data.detail.message}`;
-          } else {
-            errMsg = typeof data.detail === 'string'
-              ? data.detail
-              : Array.isArray(data.detail)
-                ? data.detail.map(e => e.msg || JSON.stringify(e)).join(', ')
-                : JSON.stringify(data.detail);
-          }
-        }
-        throw new Error(errMsg);
+        // El backend devuelve detalle en varios formatos (string, lista de
+        // validación o {code, message}). Se normaliza al catálogo para no
+        // mostrar nunca el JSON crudo ni un emoji escapado como "\u274c".
+        const { type, title, message } = mensajeDeError(
+          { status: res.status, detail: data.detail },
+          'dni',
+          dni,
+        );
+        setAlert({ isOpen: true, type, title, message });
+        hideLoading();
+        return;
       }
 
       if (isTxt) {
@@ -562,13 +560,13 @@ export default function FamiliaresDNI() {
     } catch (err) {
       hideLoading();
       if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
-        setAlert({ isOpen: true, type: mensajeDeError(err, 'dni').type,
-        title: mensajeDeError(err, 'dni').title,
-        message: mensajeDeError(err, 'dni').message });
+        const { type, title, message } = mensajeDeError(err, 'dni', dni);
+        setAlert({ isOpen: true, type, title, message });
         return;
       }
-      const isWarning = err.message.includes('\u274c') || err.message.includes('No se encontraron');
-      setAlert({ isOpen: true, type: isWarning ? 'warning' : 'error', message: err.message });
+      // El tipo lo decide el catálogo según el texto del error.
+      const { type, title, message } = mensajeDeError(err, 'dni', dni);
+      setAlert({ isOpen: true, type, title, message });
     } finally {
       hideLoading();
     }

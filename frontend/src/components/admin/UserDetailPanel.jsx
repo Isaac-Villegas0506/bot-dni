@@ -212,7 +212,9 @@ export default function UserDetailPanel({ userId, onClose, onUpdate }) {
         try {
             const res = await fetch(getApiUrl(`/api/admin/users/${userId}/detail`), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) setDetail(await res.json());
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo cargar', message: ERRORES_RED.sinConexion });
+        } finally { setLoading(false); }
     };
 
     useState(() => { if (userId) loadDetail(); }, [userId]);

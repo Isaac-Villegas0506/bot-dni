@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import AlertModal from '../AlertModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getApiUrl } from '../../utils/api';
+import { ERRORES_RED } from '../../utils/mensajes';
 
 const PRICE_LABELS = {
     c4_azul: { label: 'Ficha C4 Azul', cat: 'RENIEC', icon: 'article' },
@@ -166,7 +167,9 @@ export default function PriceManagement() {
         try {
             const res = await fetch(getApiUrl('/api/credits/costs'));
             if (res.ok) { const d = await res.json(); setCosts(d.costs || {}); }
-        } catch (e) { console.error(e); }
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo cargar', message: ERRORES_RED.sinConexion });
+        }
     }, []);
 
     const loadPackages = useCallback(async () => {
@@ -174,7 +177,9 @@ export default function PriceManagement() {
         try {
             const res = await fetch(getApiUrl('/api/admin/credit-packages'), { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) { const data = await res.json(); if (Array.isArray(data)) setPackages(data); }
-        } catch (e) { console.error(e); }
+        } catch {
+            setAlert({ isOpen: true, type: 'error', title: 'No se pudo cargar', message: ERRORES_RED.sinConexion });
+        }
     }, []);
 
     const loadData = useCallback(async () => {
@@ -198,8 +203,8 @@ export default function PriceManagement() {
                 body: JSON.stringify({ cost: costs[optionId]?.cost ?? 1 })
             });
             if (res.ok) setAlert({ isOpen: true, type: 'success', title: 'Precio Actualizado', message: `El costo de "${PRICE_LABELS[optionId]?.label || optionId}" ahora es ${costs[optionId]?.cost} cr.` });
-            else setAlert({ isOpen: true, type: 'error', title: 'Error', message: 'No se pudo actualizar.' });
-        } catch (e) { console.error(e); } finally { setSavingCost(prev => ({ ...prev, [optionId]: false })); }
+            else setAlert({ isOpen: true, type: 'error', title: 'Error', message: ERRORES_RED.generico });
+        } catch { setAlert({ isOpen: true, type: 'error', title: 'No se pudo guardar', message: ERRORES_RED.sinConexion }); } finally { setSavingCost(prev => ({ ...prev, [optionId]: false })); }
     };
 
     const handleSavePackage = async (pkg) => {
@@ -212,8 +217,8 @@ export default function PriceManagement() {
                 body: JSON.stringify({ name: pkg.name, price_soles: Number(pkg.price_soles), credits: Number(pkg.credits), is_premium: Boolean(pkg.is_premium), is_active: Boolean(pkg.is_active), unlimited_days: pkg.unlimited_days ? Number(pkg.unlimited_days) : null })
             });
             if (res.ok) { setAlert({ isOpen: true, type: 'success', title: 'Paquete Guardado', message: `El plan "${pkg.name}" se actualizó correctamente.` }); loadPackages(); }
-            else setAlert({ isOpen: true, type: 'error', title: 'Error', message: 'No se pudo actualizar el paquete.' });
-        } catch (e) { console.error(e); } finally { setSavingPackage(prev => ({ ...prev, [pkg.id]: false })); }
+            else setAlert({ isOpen: true, type: 'error', title: 'Error', message: ERRORES_RED.generico });
+        } catch { setAlert({ isOpen: true, type: 'error', title: 'No se pudo guardar', message: ERRORES_RED.sinConexion }); } finally { setSavingPackage(prev => ({ ...prev, [pkg.id]: false })); }
     };
 
     if (loading) {

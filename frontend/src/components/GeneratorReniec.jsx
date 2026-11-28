@@ -192,19 +192,17 @@ export default function GeneratorReniec() {
       const data = await res.json();
 
       if (!res.ok) {
-        let errMsg = ERRORES_RED.generico;
-        if (data.detail) {
-          if (data.detail?.code === 'INSUFFICIENT_CREDITS') {
-            errMsg = `\u274c ${data.detail.message}`;
-          } else if (typeof data.detail === 'string') {
-            errMsg = data.detail;
-          } else if (Array.isArray(data.detail)) {
-            errMsg = data.detail.map(e => e.msg || JSON.stringify(e)).join(', ');
-          } else {
-            errMsg = JSON.stringify(data.detail);
-          }
-        }
-        throw new Error(errMsg);
+        // El backend devuelve detalle en varios formatos (string, lista de
+        // validación o {code, message}). Se normaliza al catálogo para no
+        // mostrar nunca el JSON crudo ni un emoji escapado como "\u274c".
+        const { type, title, message } = mensajeDeError(
+          { status: res.status, detail: data.detail },
+          'dni',
+          dni,
+        );
+        setAlert({ isOpen: true, type, title, message });
+        hideLoading();
+        return;
       }
 
       // Success - Support both old and new (nested data) response formats
@@ -225,9 +223,8 @@ export default function GeneratorReniec() {
 
     } catch (err) {
       console.error(err);
-      setAlert({ isOpen: true, type: mensajeDeError(err, 'dni').type,
-        title: mensajeDeError(err, 'dni').title,
-        message: mensajeDeError(err, 'dni').message });
+      const { type, title, message } = mensajeDeError(err, 'dni', dni);
+        setAlert({ isOpen: true, type, title, message });
     } finally {
       hideLoading();
     }
